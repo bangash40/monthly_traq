@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:monthly_traq/app/auth_gate.dart';
 import 'package:monthly_traq/app/theme.dart';
-import 'package:monthly_traq/features/auth/login_screen.dart';
 
 class MonthlyTraqApp extends StatelessWidget {
   const MonthlyTraqApp({super.key});
@@ -9,8 +9,8 @@ class MonthlyTraqApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MonthlyTraq',
-      debugShowCheckedModeBanner: true,
-      home: const LoginScreen(),
+      debugShowCheckedModeBanner: false,
+      home: const AuthGate(),
       theme: monthlyTraqTheme(),
     );
   }

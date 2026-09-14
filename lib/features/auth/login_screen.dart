@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:monthly_traq/features/auth/signup_screen.dart';
-import 'package:monthly_traq/features/dashboard/dashboard_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -38,12 +37,8 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-      );
+      // AuthGate listens for the auth state change and swaps to the
+      // dashboard automatically — no navigation needed here.
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
