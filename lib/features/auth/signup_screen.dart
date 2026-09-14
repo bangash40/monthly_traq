@@ -1,17 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:monthly_traq/features/auth/signup_screen.dart';
-import 'package:monthly_traq/features/dashboard/dashboard_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
 
@@ -28,27 +26,24 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      await _authService.signIn(
+      await _authService.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-      );
+      Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Login failed')));
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Sign up failed')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -68,14 +63,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 60),
 
                 const Text(
-                  'Welcome back',
+                  'Create account',
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 8),
 
                 Text(
-                  'Sign in to continue to MonthlyTraq',
+                  'Sign up to get started with MonthlyTraq',
                   style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                 ),
 
@@ -139,23 +134,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
 
-                const SizedBox(height: 12),
-
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: const Text('Forgot password?'),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
 
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
+                    onPressed: _isLoading ? null : _signUp,
                     child: _isLoading
                         ? const SizedBox(
                             width: 20,
@@ -165,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Login', style: TextStyle(fontSize: 16)),
+                        : const Text('Sign up', style: TextStyle(fontSize: 16)),
                   ),
                 ),
 
@@ -174,15 +159,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.center,
                   child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SignupScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text("Don't have an account? Sign up"),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Already have an account? Log in'),
                   ),
                 ),
               ],

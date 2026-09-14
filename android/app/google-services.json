@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "720765164093",
+    "project_id": "monthly-traq",
+    "storage_bucket": "monthly-traq.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:720765164093:android:5dc5b67bf12bc8635e6854",
+        "android_client_info": {
+          "package_name": "com.example.monthly_traq"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "720765164093-v7o953fpvbc0d1ubptp3l24dg94pjqaa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBahwf18uYshZN2YJ_5Bq3vZuJXQ4mteSI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "720765164093-v7o953fpvbc0d1ubptp3l24dg94pjqaa.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
