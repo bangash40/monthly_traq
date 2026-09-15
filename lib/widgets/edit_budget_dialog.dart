@@ -31,7 +31,7 @@ Future<void> showEditBudgetDialog(
             ),
             validator: (value) {
               final parsed = double.tryParse(value ?? '');
-              if (parsed == null || parsed <= 0) {
+              if (parsed == null || parsed < 0) {
                 return 'Enter a valid amount';
               }
               return null;
