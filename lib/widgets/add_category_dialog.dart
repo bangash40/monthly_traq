@@ -75,13 +75,15 @@ Future<CategoryModel?> showAddCategoryDialog(
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (nameController.text.trim().isEmpty) return;
-                  final created = repo.addCategory(
+                  final created = await repo.addCategory(
                     name: nameController.text.trim(),
                     icon: selectedIcon,
                   );
-                  Navigator.pop(dialogContext, created);
+                  if (dialogContext.mounted) {
+                    Navigator.pop(dialogContext, created);
+                  }
                 },
                 child: const Text('Add'),
               ),

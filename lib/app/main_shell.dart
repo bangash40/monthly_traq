@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:monthly_traq/features/analytics/analytics_screen.dart';
 import 'package:monthly_traq/features/dashboard/dashboard_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
 import 'package:monthly_traq/features/transactions/transactions_screen.dart';
+import 'package:monthly_traq/services/transactions_repository.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -18,6 +20,10 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = context.select<TransactionsRepository, bool>(
+      (repo) => repo.isLoading,
+    );
+
     final screens = [
       DashboardScreen(onSeeAllTransactions: _goToTransactions),
       const TransactionsScreen(),
@@ -25,7 +31,9 @@ class _MainShellState extends State<MainShell> {
     ];
 
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: screens),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : IndexedStack(index: _selectedIndex, children: screens),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
           context,

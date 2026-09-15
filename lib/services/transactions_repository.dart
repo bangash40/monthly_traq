@@ -1,26 +1,111 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 
+const _defaultSeedCategories = [
+  (name: 'Food', icon: Icons.restaurant),
+  (name: 'Transport', icon: Icons.directions_car),
+  (name: 'Shopping', icon: Icons.shopping_bag),
+  (name: 'Bills', icon: Icons.receipt_long),
+  (name: 'Entertainment', icon: Icons.movie),
+  (name: 'Health', icon: Icons.favorite),
+  (name: 'Education', icon: Icons.school),
+  (name: 'Other', icon: Icons.category),
+];
+
 /// Holds transactions, categories and the monthly budget for the signed-in
-/// user. Backed by in-memory dummy data for now — the public API (streams of
-/// computed totals via ChangeNotifier) is shaped so the dummy lists here can
-/// later be swapped for Firestore-backed data without touching the UI.
+/// user, mirrored live from that user's Firestore subtree
+/// (`users/{uid}/transactions`, `users/{uid}/categories`,
+/// `users/{uid}.monthlyBudget`). Recreates its subscriptions whenever the
+/// signed-in user changes, and clears its local cache on sign-out.
 class TransactionsRepository extends ChangeNotifier {
-  TransactionsRepository() {
-    _seedDummyData();
+  TransactionsRepository({FirebaseFirestore? firestore, FirebaseAuth? auth})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      _auth = auth ?? FirebaseAuth.instance {
+    _authSub = _auth.authStateChanges().listen(_onAuthChanged);
   }
 
-  double monthlyBudget = 60000;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
 
-  final List<CategoryModel> _categories = [];
-  final List<TransactionModel> _transactions = [];
+  StreamSubscription<User?>? _authSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _categoriesSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _transactionsSub;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userDocSub;
+
+  List<CategoryModel> _categories = [];
+  List<TransactionModel> _transactions = [];
+  double monthlyBudget = 60000;
+  bool isLoading = true;
 
   List<CategoryModel> get categories => List.unmodifiable(_categories);
-  List<TransactionModel> get transactions => List.unmodifiable(
-    _transactions..sort((a, b) => b.date.compareTo(a.date)),
-  );
+  List<TransactionModel> get transactions => List.unmodifiable(_transactions);
+
+  String? get _uid => _auth.currentUser?.uid;
+
+  DocumentReference<Map<String, dynamic>>? get _userDoc {
+    final uid = _uid;
+    if (uid == null) return null;
+    return _firestore.collection('users').doc(uid);
+  }
+
+  void _onAuthChanged(User? user) {
+    _categoriesSub?.cancel();
+    _transactionsSub?.cancel();
+    _userDocSub?.cancel();
+
+    if (user == null) {
+      _categories = [];
+      _transactions = [];
+      isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    isLoading = true;
+    notifyListeners();
+
+    final userDoc = _firestore.collection('users').doc(user.uid);
+
+    _userDocSub = userDoc.snapshots().listen((snap) {
+      final budget = snap.data()?['monthlyBudget'];
+      if (budget is num) monthlyBudget = budget.toDouble();
+      notifyListeners();
+    });
+
+    _categoriesSub = userDoc
+        .collection('categories')
+        .orderBy('createdAt')
+        .snapshots()
+        .listen((snap) {
+          _categories = snap.docs.map(CategoryModel.fromDoc).toList();
+          isLoading = false;
+          notifyListeners();
+        });
+
+    _transactionsSub = userDoc
+        .collection('transactions')
+        .orderBy('date', descending: true)
+        .snapshots()
+        .listen((snap) {
+          _transactions = snap.docs.map(TransactionModel.fromDoc).toList();
+          notifyListeners();
+        });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    _categoriesSub?.cancel();
+    _transactionsSub?.cancel();
+    _userDocSub?.cancel();
+    super.dispose();
+  }
 
   CategoryModel? categoryById(String? id) {
     if (id == null) return null;
@@ -32,11 +117,11 @@ class TransactionsRepository extends ChangeNotifier {
 
   double get totalIncome => _transactions
       .where((t) => t.type == TransactionType.income)
-      .fold(0, (sum, t) => sum + t.amount);
+      .fold(0, (total, t) => total + t.amount);
 
   double get totalExpense => _transactions
       .where((t) => t.type == TransactionType.expense)
-      .fold(0, (sum, t) => sum + t.amount);
+      .fold(0, (total, t) => total + t.amount);
 
   double get balance => totalIncome - totalExpense;
 
@@ -55,28 +140,33 @@ class TransactionsRepository extends ChangeNotifier {
     }
 
     final entries = totals.entries
-        .map((e) => MapEntry(categoryById(e.key)!, e.value))
+        .map((e) => MapEntry(categoryById(e.key), e.value))
+        .whereType<MapEntry<CategoryModel, double>>()
         .toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     return entries;
   }
 
-  void addTransaction(TransactionModel transaction) {
-    _transactions.add(transaction);
-    notifyListeners();
+  Future<void> addTransaction(TransactionModel transaction) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    await userDoc.collection('transactions').add(transaction.toMap());
   }
 
-  void updateTransaction(TransactionModel transaction) {
-    final index = _transactions.indexWhere((t) => t.id == transaction.id);
-    if (index == -1) return;
-    _transactions[index] = transaction;
-    notifyListeners();
+  Future<void> updateTransaction(TransactionModel transaction) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    await userDoc
+        .collection('transactions')
+        .doc(transaction.id)
+        .update(transaction.toMap());
   }
 
-  void deleteTransaction(String id) {
-    _transactions.removeWhere((t) => t.id == id);
-    notifyListeners();
+  Future<void> deleteTransaction(String id) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    await userDoc.collection('transactions').doc(id).delete();
   }
 
   // Beyond a generous cap, further categories are still allowed — each one
@@ -86,168 +176,69 @@ class TransactionsRepository extends ChangeNotifier {
 
   bool get canAddCategory => _categories.length < _maxCategories;
 
-  CategoryModel? addCategory({required String name, required IconData icon}) {
-    if (!canAddCategory) return null;
+  Future<CategoryModel?> addCategory({
+    required String name,
+    required IconData icon,
+  }) async {
+    final userDoc = _userDoc;
+    if (userDoc == null || !canAddCategory) return null;
+
     final color =
         AppPalette.categorical[_categories.length % AppPalette.categorical.length];
-    final category = CategoryModel(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
-      name: name,
-      icon: icon,
-      color: color,
-    );
-    _categories.add(category);
-    notifyListeners();
-    return category;
+    final category = CategoryModel(id: '', name: name, icon: icon, color: color);
+    final ref = await userDoc.collection('categories').add({
+      ...category.toMap(),
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    return CategoryModel(id: ref.id, name: name, icon: icon, color: color);
   }
 
-  void deleteCategory(String id) {
-    _categories.removeWhere((c) => c.id == id);
-    for (final t in _transactions.where((t) => t.categoryId == id).toList()) {
-      updateTransaction(t.copyWith(categoryId: null));
+  Future<void> deleteCategory(String id) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+
+    final affected = await userDoc
+        .collection('transactions')
+        .where('categoryId', isEqualTo: id)
+        .get();
+
+    final batch = _firestore.batch();
+    for (final doc in affected.docs) {
+      batch.update(doc.reference, {'categoryId': null});
     }
-    notifyListeners();
+    batch.delete(userDoc.collection('categories').doc(id));
+    await batch.commit();
   }
 
-  void _seedDummyData() {
-    const seedCategories = [
-      (name: 'Food', icon: Icons.restaurant),
-      (name: 'Transport', icon: Icons.directions_car),
-      (name: 'Shopping', icon: Icons.shopping_bag),
-      (name: 'Bills', icon: Icons.receipt_long),
-      (name: 'Entertainment', icon: Icons.movie),
-      (name: 'Health', icon: Icons.favorite),
-      (name: 'Education', icon: Icons.school),
-      (name: 'Other', icon: Icons.category),
-    ];
+  /// Seeds default categories and a starting budget for a brand-new
+  /// account. Safe to call every sign-up — it no-ops if the user already
+  /// has categories (e.g. this ran already, or synced from elsewhere).
+  Future<void> seedDefaultsForNewUser() async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
 
-    for (var i = 0; i < seedCategories.length; i++) {
-      _categories.add(
-        CategoryModel(
-          id: 'cat_$i',
-          name: seedCategories[i].name,
-          icon: seedCategories[i].icon,
-          color: AppPalette.categorical[i],
-        ),
-      );
+    final categoriesRef = userDoc.collection('categories');
+    final existing = await categoriesRef.limit(1).get();
+    if (existing.docs.isNotEmpty) return;
+
+    final batch = _firestore.batch();
+    batch.set(userDoc, {
+      'monthlyBudget': 60000,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    for (var i = 0; i < _defaultSeedCategories.length; i++) {
+      final seed = _defaultSeedCategories[i];
+      final ref = categoriesRef.doc();
+      batch.set(ref, {
+        'name': seed.name,
+        'iconCodePoint': seed.icon.codePoint,
+        'color': AppPalette.categorical[i].toARGB32(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
     }
 
-    final now = DateTime.now();
-    DateTime daysAgo(int days) => now.subtract(Duration(days: days));
-
-    final seed = <TransactionModel>[
-      TransactionModel(
-        id: 't1',
-        title: 'Salary',
-        amount: 80000,
-        type: TransactionType.income,
-        date: daysAgo(20),
-      ),
-      TransactionModel(
-        id: 't2',
-        title: 'Freelance project',
-        amount: 12000,
-        type: TransactionType.income,
-        date: daysAgo(6),
-      ),
-      TransactionModel(
-        id: 't3',
-        title: 'Groceries',
-        amount: 8500,
-        type: TransactionType.expense,
-        categoryId: 'cat_0',
-        date: daysAgo(18),
-      ),
-      TransactionModel(
-        id: 't4',
-        title: 'Restaurant',
-        amount: 3200,
-        type: TransactionType.expense,
-        categoryId: 'cat_0',
-        date: daysAgo(3),
-      ),
-      TransactionModel(
-        id: 't5',
-        title: 'Fuel',
-        amount: 4000,
-        type: TransactionType.expense,
-        categoryId: 'cat_1',
-        date: daysAgo(15),
-      ),
-      TransactionModel(
-        id: 't6',
-        title: 'Ride-hailing',
-        amount: 2500,
-        type: TransactionType.expense,
-        categoryId: 'cat_1',
-        date: daysAgo(4),
-      ),
-      TransactionModel(
-        id: 't7',
-        title: 'New shoes',
-        amount: 6800,
-        type: TransactionType.expense,
-        categoryId: 'cat_2',
-        date: daysAgo(10),
-      ),
-      TransactionModel(
-        id: 't8',
-        title: 'Electricity bill',
-        amount: 9200,
-        type: TransactionType.expense,
-        categoryId: 'cat_3',
-        date: daysAgo(12),
-      ),
-      TransactionModel(
-        id: 't9',
-        title: 'Internet bill',
-        amount: 1500,
-        type: TransactionType.expense,
-        categoryId: 'cat_3',
-        date: daysAgo(11),
-      ),
-      TransactionModel(
-        id: 't10',
-        title: 'Movie night',
-        amount: 2300,
-        type: TransactionType.expense,
-        categoryId: 'cat_4',
-        date: daysAgo(7),
-      ),
-      TransactionModel(
-        id: 't11',
-        title: 'Streaming subscription',
-        amount: 1200,
-        type: TransactionType.expense,
-        categoryId: 'cat_4',
-        date: daysAgo(1),
-      ),
-      TransactionModel(
-        id: 't12',
-        title: 'Pharmacy',
-        amount: 1800,
-        type: TransactionType.expense,
-        categoryId: 'cat_5',
-        date: daysAgo(9),
-      ),
-      TransactionModel(
-        id: 't13',
-        title: 'Online course',
-        amount: 5000,
-        type: TransactionType.expense,
-        categoryId: 'cat_6',
-        date: daysAgo(14),
-      ),
-      TransactionModel(
-        id: 't14',
-        title: 'Miscellaneous',
-        amount: 900,
-        type: TransactionType.expense,
-        categoryId: 'cat_7',
-        date: daysAgo(2),
-      ),
-    ];
-
-    _transactions.addAll(seed);
+    await batch.commit();
   }
 }

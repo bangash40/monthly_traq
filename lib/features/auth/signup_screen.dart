@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:monthly_traq/services/auth_service.dart';
+import 'package:monthly_traq/services/transactions_repository.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -36,6 +38,8 @@ class _SignupScreenState extends State<SignupScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+      if (!mounted) return;
+      await context.read<TransactionsRepository>().seedDefaultsForNewUser();
 
       if (!mounted) return;
       Navigator.pop(context);
