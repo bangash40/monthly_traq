@@ -115,6 +115,7 @@ class TransactionsRepository extends ChangeNotifier {
     return null;
   }
 
+  // All-time totals — used only for `balance`, your overall net worth.
   double get totalIncome => _transactions
       .where((t) => t.type == TransactionType.income)
       .fold(0, (total, t) => total + t.amount);
@@ -125,16 +126,35 @@ class TransactionsRepository extends ChangeNotifier {
 
   double get balance => totalIncome - totalExpense;
 
-  double get budgetRemaining => monthlyBudget - totalExpense;
+  bool _isThisMonth(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month;
+  }
+
+  // Current-month totals — what the budget meter, the Income/Expense tiles,
+  // and the category breakdown are actually scoped to, since a "monthly
+  // budget" should reset each month rather than compare against all-time
+  // spending.
+  double get monthlyIncome => _transactions
+      .where((t) => t.type == TransactionType.income && _isThisMonth(t.date))
+      .fold(0, (total, t) => total + t.amount);
+
+  double get monthlyExpense => _transactions
+      .where((t) => t.type == TransactionType.expense && _isThisMonth(t.date))
+      .fold(0, (total, t) => total + t.amount);
+
+  double get budgetRemaining => monthlyBudget - monthlyExpense;
 
   double get budgetUsedRatio =>
-      monthlyBudget <= 0 ? 0 : (totalExpense / monthlyBudget).clamp(0, 2);
+      monthlyBudget <= 0 ? 0 : (monthlyExpense / monthlyBudget).clamp(0, 2);
 
-  /// Expense totals per category, highest first. Categories with no
-  /// expenses yet are omitted.
+  /// This month's expense totals per category, highest first. Categories
+  /// with no expenses yet this month are omitted.
   List<MapEntry<CategoryModel, double>> get expenseByCategory {
     final totals = <String, double>{};
-    for (final t in _transactions.where((t) => t.type == TransactionType.expense)) {
+    for (final t in _transactions.where(
+      (t) => t.type == TransactionType.expense && _isThisMonth(t.date),
+    )) {
       if (t.categoryId == null) continue;
       totals[t.categoryId!] = (totals[t.categoryId!] ?? 0) + t.amount;
     }
@@ -146,6 +166,12 @@ class TransactionsRepository extends ChangeNotifier {
       ..sort((a, b) => b.value.compareTo(a.value));
 
     return entries;
+  }
+
+  Future<void> updateMonthlyBudget(double budget) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    await userDoc.set({'monthlyBudget': budget}, SetOptions(merge: true));
   }
 
   Future<void> addTransaction(TransactionModel transaction) async {

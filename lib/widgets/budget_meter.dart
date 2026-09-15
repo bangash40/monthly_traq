@@ -8,12 +8,14 @@ class BudgetMeter extends StatelessWidget {
   final double ratio;
   final String spentLabel;
   final String budgetLabel;
+  final VoidCallback? onEdit;
 
   const BudgetMeter({
     super.key,
     required this.ratio,
     required this.spentLabel,
     required this.budgetLabel,
+    this.onEdit,
   });
 
   Color get _fillColor {
@@ -38,9 +40,28 @@ class BudgetMeter extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Monthly budget',
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              Row(
+                children: [
+                  Text(
+                    'Monthly budget',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                  if (onEdit != null) ...[
+                    const SizedBox(width: 4),
+                    InkWell(
+                      onTap: onEdit,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: Icon(
+                          Icons.edit_outlined,
+                          size: 14,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               Text(
                 ratio >= 1 ? 'Over budget' : '${(clamped * 100).round()}% used',

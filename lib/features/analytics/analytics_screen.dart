@@ -11,7 +11,7 @@ class AnalyticsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = context.watch<TransactionsRepository>();
     final breakdown = repo.expenseByCategory;
-    final totalExpense = repo.totalExpense;
+    final totalExpense = repo.monthlyExpense;
     final maxAmount = breakdown.isEmpty ? 0.0 : breakdown.first.value;
 
     return Scaffold(
@@ -32,12 +32,16 @@ class AnalyticsScreen extends StatelessWidget {
             'Spending by category',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
+          Text(
+            'This month',
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          ),
           const SizedBox(height: 12),
           if (breakdown.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
-                'No expenses recorded yet.',
+                'No expenses recorded this month yet.',
                 style: TextStyle(color: Colors.grey.shade600),
               ),
             )
