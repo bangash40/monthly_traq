@@ -30,6 +30,8 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
   late String? _categoryId = widget.existing?.categoryId;
   late DateTime _date = widget.existing?.date ?? DateTime.now();
 
+  bool _isSaving = false;
+
   bool get _isEditing => widget.existing != null;
 
   @override
@@ -50,44 +52,66 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     if (picked != null) setState(() => _date = picked);
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
 
     final repo = context.read<TransactionsRepository>();
     final amount = double.parse(_amountController.text);
     final categoryId = _type == TransactionType.expense ? _categoryId : null;
 
-    if (_isEditing) {
-      repo.updateTransaction(
-        widget.existing!.copyWith(
-          title: _titleController.text.trim(),
-          amount: amount,
-          type: _type,
-          categoryId: categoryId,
-          date: _date,
-          note: _noteController.text.trim(),
-        ),
-      );
-    } else {
-      repo.addTransaction(
-        TransactionModel(
-          id: DateTime.now().microsecondsSinceEpoch.toString(),
-          title: _titleController.text.trim(),
-          amount: amount,
-          type: _type,
-          categoryId: categoryId,
-          date: _date,
-          note: _noteController.text.trim(),
-        ),
-      );
-    }
+    try {
+      if (_isEditing) {
+        await repo.updateTransaction(
+          widget.existing!.copyWith(
+            title: _titleController.text.trim(),
+            amount: amount,
+            type: _type,
+            categoryId: categoryId,
+            date: _date,
+            note: _noteController.text.trim(),
+          ),
+        );
+      } else {
+        await repo.addTransaction(
+          TransactionModel(
+            id: DateTime.now().microsecondsSinceEpoch.toString(),
+            title: _titleController.text.trim(),
+            amount: amount,
+            type: _type,
+            categoryId: categoryId,
+            date: _date,
+            note: _noteController.text.trim(),
+          ),
+        );
+      }
 
-    Navigator.pop(context);
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
-  void _delete() {
-    context.read<TransactionsRepository>().deleteTransaction(widget.existing!.id);
-    Navigator.pop(context);
+  Future<void> _delete() async {
+    try {
+      await context.read<TransactionsRepository>().deleteTransaction(
+        widget.existing!.id,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
+    }
   }
 
   @override
@@ -246,8 +270,17 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: _save,
-                    child: Text(_isEditing ? 'Save changes' : 'Add transaction'),
+                    onPressed: _isSaving ? null : _save,
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(_isEditing ? 'Save changes' : 'Add transaction'),
                   ),
                 ),
               ],

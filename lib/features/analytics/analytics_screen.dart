@@ -91,7 +91,16 @@ class AnalyticsScreen extends StatelessWidget {
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
                         tooltip: 'Delete category',
-                        onPressed: () => repo.deleteCategory(c.id),
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            await repo.deleteCategory(c.id);
+                          } catch (e) {
+                            messenger.showSnackBar(
+                              SnackBar(content: Text('Could not delete: $e')),
+                            );
+                          }
+                        },
                       ),
                     ),
                   )

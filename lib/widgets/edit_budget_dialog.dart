@@ -46,8 +46,16 @@ Future<void> showEditBudgetDialog(
           ElevatedButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
-              await repo.updateMonthlyBudget(double.parse(controller.text));
-              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              try {
+                await repo.updateMonthlyBudget(double.parse(controller.text));
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+              } catch (e) {
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(content: Text('Could not save budget: $e')),
+                  );
+                }
+              }
             },
             child: const Text('Save'),
           ),

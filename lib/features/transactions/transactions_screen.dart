@@ -78,13 +78,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           color: Colors.red.shade400,
                           child: const Icon(Icons.delete, color: Colors.white),
                         ),
-                        onDismissed: (_) {
-                          context.read<TransactionsRepository>().deleteTransaction(
-                            t.id,
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Transaction deleted')),
-                          );
+                        onDismissed: (_) async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            await context
+                                .read<TransactionsRepository>()
+                                .deleteTransaction(t.id);
+                            messenger.showSnackBar(
+                              const SnackBar(content: Text('Transaction deleted')),
+                            );
+                          } catch (e) {
+                            messenger.showSnackBar(
+                              SnackBar(content: Text('Could not delete: $e')),
+                            );
+                          }
                         },
                         child: TransactionTile(
                           transaction: t,

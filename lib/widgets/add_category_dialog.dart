@@ -77,12 +77,20 @@ Future<CategoryModel?> showAddCategoryDialog(
               ElevatedButton(
                 onPressed: () async {
                   if (nameController.text.trim().isEmpty) return;
-                  final created = await repo.addCategory(
-                    name: nameController.text.trim(),
-                    icon: selectedIcon,
-                  );
-                  if (dialogContext.mounted) {
-                    Navigator.pop(dialogContext, created);
+                  try {
+                    final created = await repo.addCategory(
+                      name: nameController.text.trim(),
+                      icon: selectedIcon,
+                    );
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext, created);
+                    }
+                  } catch (e) {
+                    if (dialogContext.mounted) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(content: Text('Could not add category: $e')),
+                      );
+                    }
                   }
                 },
                 child: const Text('Add'),
