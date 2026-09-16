@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/add_category_dialog.dart';
 import 'package:monthly_traq/widgets/category_bar_row.dart';
+import 'package:monthly_traq/widgets/monthly_trend_chart.dart';
 
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
@@ -28,6 +29,9 @@ class AnalyticsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
         children: [
+          MonthlyTrendChart(months: repo.lastSixMonths),
+          const SizedBox(height: 28),
+
           const Text(
             'Spending by category',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),

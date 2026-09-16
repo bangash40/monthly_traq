@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/models/category_model.dart';
+import 'package:monthly_traq/models/monthly_total.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 
 /// Thrown when a Firestore write doesn't get an ack within [_writeTimeout] —
@@ -171,6 +172,32 @@ class TransactionsRepository extends ChangeNotifier {
   double get budgetUsedRatio =>
       monthlyBudget <= 0 ? 0 : (monthlyExpense / monthlyBudget).clamp(0, 2);
 
+  /// Income and expense totals for each of the last 6 calendar months
+  /// (oldest first, current month last) — the data behind the trend chart.
+  List<MonthlyTotal> get lastSixMonths {
+    final now = DateTime.now();
+    return List.generate(6, (i) {
+      final month = DateTime(now.year, now.month - (5 - i), 1);
+      final income = _transactions
+          .where(
+            (t) =>
+                t.type == TransactionType.income &&
+                t.date.year == month.year &&
+                t.date.month == month.month,
+          )
+          .fold(0.0, (total, t) => total + t.amount);
+      final expense = _transactions
+          .where(
+            (t) =>
+                t.type == TransactionType.expense &&
+                t.date.year == month.year &&
+                t.date.month == month.month,
+          )
+          .fold(0.0, (total, t) => total + t.amount);
+      return MonthlyTotal(month: month, income: income, expense: expense);
+    });
+  }
+
   /// This month's expense totals per category, highest first. Categories
   /// with no expenses yet this month are omitted.
   List<MapEntry<CategoryModel, double>> get expenseByCategory {
@@ -182,11 +209,13 @@ class TransactionsRepository extends ChangeNotifier {
       totals[t.categoryId!] = (totals[t.categoryId!] ?? 0) + t.amount;
     }
 
-    final entries = totals.entries
-        .map((e) => MapEntry(categoryById(e.key), e.value))
-        .whereType<MapEntry<CategoryModel, double>>()
-        .toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final entries = <MapEntry<CategoryModel, double>>[];
+    for (final e in totals.entries) {
+      final category = categoryById(e.key);
+      if (category == null) continue;
+      entries.add(MapEntry(category, e.value));
+    }
+    entries.sort((a, b) => b.value.compareTo(a.value));
 
     return entries;
   }
