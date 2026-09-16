@@ -29,6 +29,7 @@ Future<CategoryModel?> showAddCategoryDialog(
 
   final nameController = TextEditingController();
   IconData selectedIcon = _kCategoryIconChoices.first;
+  bool isSaving = false;
 
   return showDialog<CategoryModel>(
     context: context,
@@ -75,25 +76,35 @@ Future<CategoryModel?> showAddCategoryDialog(
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  if (nameController.text.trim().isEmpty) return;
-                  try {
-                    final created = await repo.addCategory(
-                      name: nameController.text.trim(),
-                      icon: selectedIcon,
-                    );
-                    if (dialogContext.mounted) {
-                      Navigator.pop(dialogContext, created);
-                    }
-                  } catch (e) {
-                    if (dialogContext.mounted) {
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        SnackBar(content: Text('Could not add category: $e')),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Add'),
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        if (nameController.text.trim().isEmpty) return;
+                        setState(() => isSaving = true);
+                        try {
+                          final created = await repo.addCategory(
+                            name: nameController.text.trim(),
+                            icon: selectedIcon,
+                          );
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext, created);
+                          }
+                        } catch (e) {
+                          if (dialogContext.mounted) {
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              SnackBar(content: Text('Could not add category: $e')),
+                            );
+                            setState(() => isSaving = false);
+                          }
+                        }
+                      },
+                child: isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Add'),
               ),
             ],
           );

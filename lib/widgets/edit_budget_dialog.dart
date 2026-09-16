@@ -12,54 +12,71 @@ Future<void> showEditBudgetDialog(
     text: repo.monthlyBudget.toStringAsFixed(0),
   );
   final formKey = GlobalKey<FormState>();
+  bool isSaving = false;
 
   return showDialog(
     context: context,
     builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text('Edit monthly budget'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Budget',
-              prefixText: 'Rs. ',
-              border: OutlineInputBorder(),
+      return StatefulBuilder(
+        builder: (dialogContext, setState) {
+          return AlertDialog(
+            title: const Text('Edit monthly budget'),
+            content: Form(
+              key: formKey,
+              child: TextFormField(
+                controller: controller,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Budget',
+                  prefixText: 'Rs. ',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  final parsed = double.tryParse(value ?? '');
+                  if (parsed == null || parsed < 0) {
+                    return 'Enter a valid amount';
+                  }
+                  return null;
+                },
+              ),
             ),
-            validator: (value) {
-              final parsed = double.tryParse(value ?? '');
-              if (parsed == null || parsed < 0) {
-                return 'Enter a valid amount';
-              }
-              return null;
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-              try {
-                await repo.updateMonthlyBudget(double.parse(controller.text));
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-              } catch (e) {
-                if (dialogContext.mounted) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(content: Text('Could not save budget: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        setState(() => isSaving = true);
+                        try {
+                          await repo.updateMonthlyBudget(
+                            double.parse(controller.text),
+                          );
+                          if (dialogContext.mounted) Navigator.pop(dialogContext);
+                        } catch (e) {
+                          if (dialogContext.mounted) {
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              SnackBar(content: Text('Could not save budget: $e')),
+                            );
+                            setState(() => isSaving = false);
+                          }
+                        }
+                      },
+                child: isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save'),
+              ),
+            ],
+          );
+        },
       );
     },
   );

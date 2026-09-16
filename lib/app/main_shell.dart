@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/features/analytics/analytics_screen.dart';
 import 'package:monthly_traq/features/dashboard/dashboard_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
@@ -23,6 +24,9 @@ class _MainShellState extends State<MainShell> {
     final isLoading = context.select<TransactionsRepository, bool>(
       (repo) => repo.isLoading,
     );
+    final isOffline = context.select<TransactionsRepository, bool>(
+      (repo) => repo.isOffline,
+    );
 
     final screens = [
       DashboardScreen(onSeeAllTransactions: _goToTransactions),
@@ -31,9 +35,34 @@ class _MainShellState extends State<MainShell> {
     ];
 
     return Scaffold(
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : IndexedStack(index: _selectedIndex, children: screens),
+      body: Column(
+        children: [
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            child: !isOffline || isLoading
+                ? const SizedBox(width: double.infinity)
+                : Container(
+                    width: double.infinity,
+                    color: AppPalette.warning,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: const Text(
+                      "You're offline — showing cached data",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+          ),
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : IndexedStack(index: _selectedIndex, children: screens),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
           context,

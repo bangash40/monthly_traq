@@ -7,6 +7,19 @@ import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 
+/// Thrown when a Firestore write doesn't get an ack within [_writeTimeout] —
+/// almost always because the device is offline. The write itself is NOT
+/// cancelled: Firestore's own offline queue still holds it and will sync it
+/// once connectivity returns, so this just stops the UI from waiting
+/// forever with no feedback.
+class SyncTimeoutException implements Exception {
+  @override
+  String toString() =>
+      "No internet connection. This will be saved automatically once you're back online.";
+}
+
+const _writeTimeout = Duration(seconds: 10);
+
 const _defaultSeedCategories = [
   (name: 'Food', icon: Icons.restaurant),
   (name: 'Transport', icon: Icons.directions_car),
@@ -42,6 +55,15 @@ class TransactionsRepository extends ChangeNotifier {
   List<TransactionModel> _transactions = [];
   double monthlyBudget = 60000;
   bool isLoading = true;
+
+  /// True while the most recent categories snapshot was served from local
+  /// cache rather than confirmed by the server — the app's best signal for
+  /// "you're offline (or a write is still in flight)".
+  bool isOffline = false;
+
+  Future<T> _withTimeout<T>(Future<T> future) {
+    return future.timeout(_writeTimeout, onTimeout: () => throw SyncTimeoutException());
+  }
 
   List<CategoryModel> get categories => List.unmodifiable(_categories);
   List<TransactionModel> get transactions => List.unmodifiable(_transactions);
@@ -81,10 +103,11 @@ class TransactionsRepository extends ChangeNotifier {
     _categoriesSub = userDoc
         .collection('categories')
         .orderBy('createdAt')
-        .snapshots()
+        .snapshots(includeMetadataChanges: true)
         .listen((snap) {
           _categories = snap.docs.map(CategoryModel.fromDoc).toList();
           isLoading = false;
+          isOffline = snap.metadata.isFromCache;
           notifyListeners();
         });
 
@@ -171,28 +194,29 @@ class TransactionsRepository extends ChangeNotifier {
   Future<void> updateMonthlyBudget(double budget) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await userDoc.set({'monthlyBudget': budget}, SetOptions(merge: true));
+    await _withTimeout(
+      userDoc.set({'monthlyBudget': budget}, SetOptions(merge: true)),
+    );
   }
 
   Future<void> addTransaction(TransactionModel transaction) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await userDoc.collection('transactions').add(transaction.toMap());
+    await _withTimeout(userDoc.collection('transactions').add(transaction.toMap()));
   }
 
   Future<void> updateTransaction(TransactionModel transaction) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await userDoc
-        .collection('transactions')
-        .doc(transaction.id)
-        .update(transaction.toMap());
+    await _withTimeout(
+      userDoc.collection('transactions').doc(transaction.id).update(transaction.toMap()),
+    );
   }
 
   Future<void> deleteTransaction(String id) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await userDoc.collection('transactions').doc(id).delete();
+    await _withTimeout(userDoc.collection('transactions').doc(id).delete());
   }
 
   // Beyond a generous cap, further categories are still allowed — each one
@@ -212,10 +236,12 @@ class TransactionsRepository extends ChangeNotifier {
     final color =
         AppPalette.categorical[_categories.length % AppPalette.categorical.length];
     final category = CategoryModel(id: '', name: name, icon: icon, color: color);
-    final ref = await userDoc.collection('categories').add({
-      ...category.toMap(),
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    final ref = await _withTimeout(
+      userDoc.collection('categories').add({
+        ...category.toMap(),
+        'createdAt': FieldValue.serverTimestamp(),
+      }),
+    );
 
     return CategoryModel(id: ref.id, name: name, icon: icon, color: color);
   }
@@ -224,17 +250,16 @@ class TransactionsRepository extends ChangeNotifier {
     final userDoc = _userDoc;
     if (userDoc == null) return;
 
-    final affected = await userDoc
-        .collection('transactions')
-        .where('categoryId', isEqualTo: id)
-        .get();
+    final affected = await _withTimeout(
+      userDoc.collection('transactions').where('categoryId', isEqualTo: id).get(),
+    );
 
     final batch = _firestore.batch();
     for (final doc in affected.docs) {
       batch.update(doc.reference, {'categoryId': null});
     }
     batch.delete(userDoc.collection('categories').doc(id));
-    await batch.commit();
+    await _withTimeout(batch.commit());
   }
 
   /// Seeds default categories and a starting budget for a brand-new
@@ -245,7 +270,7 @@ class TransactionsRepository extends ChangeNotifier {
     if (userDoc == null) return;
 
     final categoriesRef = userDoc.collection('categories');
-    final existing = await categoriesRef.limit(1).get();
+    final existing = await _withTimeout(categoriesRef.limit(1).get());
     if (existing.docs.isNotEmpty) return;
 
     final batch = _firestore.batch();
@@ -265,6 +290,6 @@ class TransactionsRepository extends ChangeNotifier {
       });
     }
 
-    await batch.commit();
+    await _withTimeout(batch.commit());
   }
 }
