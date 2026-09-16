@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
+import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/transaction_tile.dart';
 
@@ -13,19 +14,57 @@ class TransactionsScreen extends StatefulWidget {
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
   String? _categoryFilter;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  bool _matchesSearch(TransactionModel t) {
+    if (_searchQuery.isEmpty) return true;
+    final query = _searchQuery.toLowerCase();
+    return t.title.toLowerCase().contains(query) ||
+        (t.note?.toLowerCase().contains(query) ?? false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final repo = context.watch<TransactionsRepository>();
+    final hasFilters = _categoryFilter != null || _searchQuery.isNotEmpty;
     final transactions = repo.transactions.where((t) {
-      if (_categoryFilter == null) return true;
-      return t.categoryId == _categoryFilter;
+      if (_categoryFilter != null && t.categoryId != _categoryFilter) return false;
+      return _matchesSearch(t);
     }).toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Transactions')),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search transactions',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      ),
+                isDense: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onChanged: (value) => setState(() => _searchQuery = value),
+            ),
+          ),
           SizedBox(
             height: 44,
             child: ListView(
@@ -59,7 +98,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             child: transactions.isEmpty
                 ? Center(
                     child: Text(
-                      'No transactions found.',
+                      hasFilters
+                          ? 'No transactions match your search.'
+                          : 'No transactions found.',
                       style: TextStyle(color: Colors.grey.shade600),
                     ),
                   )
