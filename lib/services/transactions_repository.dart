@@ -22,14 +22,14 @@ class SyncTimeoutException implements Exception {
 const _writeTimeout = Duration(seconds: 10);
 
 const _defaultSeedCategories = [
-  (name: 'Food', icon: Icons.restaurant),
-  (name: 'Transport', icon: Icons.directions_car),
-  (name: 'Shopping', icon: Icons.shopping_bag),
-  (name: 'Bills', icon: Icons.receipt_long),
-  (name: 'Entertainment', icon: Icons.movie),
-  (name: 'Health', icon: Icons.favorite),
-  (name: 'Education', icon: Icons.school),
-  (name: 'Other', icon: Icons.category),
+  (name: 'Food', iconKey: 'restaurant'),
+  (name: 'Transport', iconKey: 'directions_car'),
+  (name: 'Shopping', iconKey: 'shopping_bag'),
+  (name: 'Bills', iconKey: 'receipt_long'),
+  (name: 'Entertainment', iconKey: 'movie'),
+  (name: 'Health', iconKey: 'favorite'),
+  (name: 'Education', iconKey: 'school'),
+  (name: 'Other', iconKey: 'category'),
 ];
 
 /// Holds transactions, categories and the monthly budget for the signed-in
@@ -326,7 +326,7 @@ class TransactionsRepository extends ChangeNotifier {
       final ref = categoriesRef.doc();
       batch.set(ref, {
         'name': seed.name,
-        'iconCodePoint': seed.icon.codePoint,
+        'iconKey': seed.iconKey,
         'color': AppPalette.categorical[i].toARGB32(),
         'createdAt': FieldValue.serverTimestamp(),
       });

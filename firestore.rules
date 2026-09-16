@@ -33,10 +33,10 @@ service cloud.firestore {
     }
 
     function isValidCategory(data) {
-      return data.keys().hasOnly(['name', 'iconCodePoint', 'color', 'createdAt'])
-        && data.keys().hasAll(['name', 'iconCodePoint', 'color', 'createdAt'])
+      return data.keys().hasOnly(['name', 'iconKey', 'color', 'createdAt'])
+        && data.keys().hasAll(['name', 'iconKey', 'color', 'createdAt'])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 40
-        && data.iconCodePoint is int
+        && data.iconKey is string && data.iconKey.size() > 0 && data.iconKey.size() <= 40
         && data.color is int
         && data.createdAt is timestamp;
     }

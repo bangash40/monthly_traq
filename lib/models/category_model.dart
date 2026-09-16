@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:monthly_traq/app/category_icons.dart';
 
 class CategoryModel {
   final String id;
@@ -19,12 +20,7 @@ class CategoryModel {
     return CategoryModel(
       id: doc.id,
       name: data['name'] as String,
-      // Every codePoint stored here comes from the fixed icon set in
-      // add_category_dialog.dart, which is referenced with const Icons.*
-      // literals elsewhere — so icon tree-shaking still keeps these glyphs
-      // even though this particular constructor call isn't itself const.
-      // ignore: non_const_argument_for_const_parameter
-      icon: IconData(data['iconCodePoint'] as int, fontFamily: 'MaterialIcons'),
+      icon: iconForKey(data['iconKey'] as String? ?? defaultCategoryIconKey),
       color: Color(data['color'] as int),
     );
   }
@@ -32,7 +28,7 @@ class CategoryModel {
   Map<String, dynamic> toMap() {
     return {
       'name': name,
-      'iconCodePoint': icon.codePoint,
+      'iconKey': keyForIcon(icon),
       'color': color.toARGB32(),
     };
   }
