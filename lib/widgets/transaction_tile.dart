@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
+import 'package:monthly_traq/services/transactions_repository.dart';
 
 class TransactionTile extends StatelessWidget {
   final TransactionModel transaction;
@@ -23,9 +25,10 @@ class TransactionTile extends StatelessWidget {
     final icon = isIncome
         ? Icons.arrow_downward_rounded
         : (category?.icon ?? Icons.category);
+    final symbol = context.watch<TransactionsRepository>().currencySymbol;
 
     final amountText =
-        '${isIncome ? '+' : '-'}Rs. ${NumberFormat.decimalPattern().format(transaction.amount)}';
+        '${isIncome ? '+' : '-'}$symbol ${NumberFormat.decimalPattern().format(transaction.amount)}';
 
     return ListTile(
       onTap: onTap,

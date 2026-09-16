@@ -27,10 +27,10 @@ Future<void> showEditBudgetDialog(
                 controller: controller,
                 autofocus: true,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Budget',
-                  prefixText: 'Rs. ',
-                  border: OutlineInputBorder(),
+                  prefixText: '${repo.currencySymbol} ',
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (value) {
                   final parsed = double.tryParse(value ?? '');

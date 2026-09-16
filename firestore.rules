@@ -8,13 +8,17 @@ service cloud.firestore {
     }
 
     function isValidUserDoc(data) {
-      // Only monthlyBudget is validated here. createdAt is intentionally
-      // not policed — it's written via FieldValue.serverTimestamp(), and a
-      // plain budget edit merge-writes monthlyBudget alone, so requiring
-      // createdAt to already be a certain shape on every write is fragile
-      // for no real security benefit (this doc has a single owner and no
-      // other reader).
-      return data.monthlyBudget is number && data.monthlyBudget >= 0;
+      // createdAt is intentionally not policed here — it's written via
+      // FieldValue.serverTimestamp(), and a plain budget/currency edit
+      // merge-writes just that one field, so requiring createdAt to
+      // already be a certain shape on every write is fragile for no real
+      // security benefit (this doc has a single owner and no other
+      // reader). currencySymbol is optional (older accounts predate it).
+      return data.monthlyBudget is number && data.monthlyBudget >= 0
+        && (!('currencySymbol' in data.keys())
+            || (data.currencySymbol is string
+                && data.currencySymbol.size() > 0
+                && data.currencySymbol.size() <= 10));
     }
 
     function isValidTransaction(data) {

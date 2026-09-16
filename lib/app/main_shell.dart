@@ -4,6 +4,7 @@ import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/features/analytics/analytics_screen.dart';
 import 'package:monthly_traq/features/dashboard/dashboard_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
+import 'package:monthly_traq/features/settings/settings_screen.dart';
 import 'package:monthly_traq/features/transactions/transactions_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 
@@ -32,6 +33,7 @@ class _MainShellState extends State<MainShell> {
       DashboardScreen(onSeeAllTransactions: _goToTransactions),
       const TransactionsScreen(),
       const AnalyticsScreen(),
+      const SettingsScreen(),
     ];
 
     return Scaffold(
@@ -63,13 +65,17 @@ class _MainShellState extends State<MainShell> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const AddEditTransactionScreen()),
-        ),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _selectedIndex == 0 || _selectedIndex == 1
+          ? FloatingActionButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddEditTransactionScreen(),
+                ),
+              ),
+              child: const Icon(Icons.add),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) => setState(() => _selectedIndex = index),
@@ -88,6 +94,11 @@ class _MainShellState extends State<MainShell> {
             icon: Icon(Icons.pie_chart_outline),
             selectedIcon: Icon(Icons.pie_chart),
             label: 'Analytics',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),

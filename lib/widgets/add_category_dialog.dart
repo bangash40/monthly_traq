@@ -38,37 +38,39 @@ Future<CategoryModel?> showAddCategoryDialog(
         builder: (dialogContext, setState) {
           return AlertDialog(
             title: const Text('Add category'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: nameController,
-                  autofocus: true,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _kCategoryIconChoices.map((icon) {
-                    final isSelected = icon == selectedIcon;
-                    return InkWell(
-                      onTap: () => setState(() => selectedIcon = icon),
-                      borderRadius: BorderRadius.circular(20),
-                      child: CircleAvatar(
-                        backgroundColor: isSelected
-                            ? Theme.of(dialogContext).colorScheme.primary
-                            : Colors.grey.shade200,
-                        child: Icon(
-                          icon,
-                          color: isSelected ? Colors.white : Colors.black54,
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    autofocus: true,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _kCategoryIconChoices.map((icon) {
+                      final isSelected = icon == selectedIcon;
+                      return InkWell(
+                        onTap: () => setState(() => selectedIcon = icon),
+                        borderRadius: BorderRadius.circular(20),
+                        child: CircleAvatar(
+                          backgroundColor: isSelected
+                              ? Theme.of(dialogContext).colorScheme.primary
+                              : Colors.grey.shade200,
+                          child: Icon(
+                            icon,
+                            color: isSelected ? Colors.white : Colors.black54,
+                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(

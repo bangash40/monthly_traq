@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
-import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/budget_meter.dart';
 import 'package:monthly_traq/widgets/edit_budget_dialog.dart';
@@ -19,19 +18,11 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = context.watch<TransactionsRepository>();
     final currency = NumberFormat.decimalPattern();
+    final symbol = repo.currencySymbol;
     final recent = repo.transactions.take(5).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('MonthlyTraq'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Log out',
-            onPressed: () => AuthService().signOut(),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('MonthlyTraq')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
         children: [
@@ -41,7 +32,7 @@ class DashboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Rs. ${currency.format(repo.balance)}',
+            '$symbol ${currency.format(repo.balance)}',
             style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
@@ -61,7 +52,7 @@ class DashboardScreen extends StatelessWidget {
               Expanded(
                 child: StatTile(
                   label: 'Income',
-                  value: 'Rs. ${currency.format(repo.monthlyIncome)}',
+                  value: '$symbol ${currency.format(repo.monthlyIncome)}',
                   icon: Icons.arrow_downward_rounded,
                   accentColor: AppPalette.good,
                 ),
@@ -70,7 +61,7 @@ class DashboardScreen extends StatelessWidget {
               Expanded(
                 child: StatTile(
                   label: 'Expense',
-                  value: 'Rs. ${currency.format(repo.monthlyExpense)}',
+                  value: '$symbol ${currency.format(repo.monthlyExpense)}',
                   icon: Icons.arrow_upward_rounded,
                   accentColor: AppPalette.critical,
                 ),
@@ -81,8 +72,8 @@ class DashboardScreen extends StatelessWidget {
 
           BudgetMeter(
             ratio: repo.budgetUsedRatio,
-            spentLabel: 'Rs. ${currency.format(repo.monthlyExpense)} spent',
-            budgetLabel: 'of Rs. ${currency.format(repo.monthlyBudget)}',
+            spentLabel: '$symbol ${currency.format(repo.monthlyExpense)} spent',
+            budgetLabel: 'of $symbol ${currency.format(repo.monthlyBudget)}',
             onEdit: () => showEditBudgetDialog(context, repo),
           ),
           const SizedBox(height: 24),

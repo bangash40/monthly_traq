@@ -55,6 +55,7 @@ class TransactionsRepository extends ChangeNotifier {
   List<CategoryModel> _categories = [];
   List<TransactionModel> _transactions = [];
   double monthlyBudget = 60000;
+  String currencySymbol = 'Rs.';
   bool isLoading = true;
 
   /// True while the most recent categories snapshot was served from local
@@ -96,8 +97,11 @@ class TransactionsRepository extends ChangeNotifier {
     final userDoc = _firestore.collection('users').doc(user.uid);
 
     _userDocSub = userDoc.snapshots().listen((snap) {
-      final budget = snap.data()?['monthlyBudget'];
+      final data = snap.data();
+      final budget = data?['monthlyBudget'];
       if (budget is num) monthlyBudget = budget.toDouble();
+      final currency = data?['currencySymbol'];
+      if (currency is String && currency.isNotEmpty) currencySymbol = currency;
       notifyListeners();
     });
 
@@ -220,6 +224,14 @@ class TransactionsRepository extends ChangeNotifier {
     return entries;
   }
 
+  Future<void> updateCurrencySymbol(String symbol) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    await _withTimeout(
+      userDoc.set({'currencySymbol': symbol}, SetOptions(merge: true)),
+    );
+  }
+
   Future<void> updateMonthlyBudget(double budget) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
@@ -305,6 +317,7 @@ class TransactionsRepository extends ChangeNotifier {
     final batch = _firestore.batch();
     batch.set(userDoc, {
       'monthlyBudget': 60000,
+      'currencySymbol': 'Rs.',
       'createdAt': FieldValue.serverTimestamp(),
     });
 

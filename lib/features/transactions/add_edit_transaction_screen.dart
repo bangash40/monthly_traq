@@ -116,7 +116,8 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = context.watch<TransactionsRepository>().categories;
+    final repo = context.watch<TransactionsRepository>();
+    final categories = repo.categories;
 
     return Scaffold(
       appBar: AppBar(
@@ -179,10 +180,10 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Amount',
-                    prefixText: 'Rs. ',
-                    border: OutlineInputBorder(),
+                    prefixText: '${repo.currencySymbol} ',
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     final parsed = double.tryParse(value ?? '');

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:monthly_traq/models/category_model.dart';
+import 'package:monthly_traq/services/transactions_repository.dart';
 
 /// One row of the spending-by-category breakdown. Bar width is proportional
 /// to [amount] / [maxAmount]; the bar always uses the category's own fixed
@@ -22,6 +24,7 @@ class CategoryBarRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratio = maxAmount <= 0 ? 0.0 : (amount / maxAmount).clamp(0.0, 1.0);
+    final symbol = context.watch<TransactionsRepository>().currencySymbol;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -39,7 +42,7 @@ class CategoryBarRow extends StatelessWidget {
                 ),
               ),
               Text(
-                'Rs. ${NumberFormat.decimalPattern().format(amount)}',
+                '$symbol ${NumberFormat.decimalPattern().format(amount)}',
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: 6),
