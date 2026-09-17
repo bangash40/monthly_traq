@@ -15,7 +15,12 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = context.watch<TransactionsRepository>();
     final themeController = context.watch<ThemeController>();
-    final email = FirebaseAuth.instance.currentUser?.email ?? '';
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName = user?.displayName;
+    final email = user?.email ?? '';
+    final name = (displayName != null && displayName.trim().isNotEmpty)
+        ? displayName
+        : email;
     final currency = NumberFormat.decimalPattern();
     final cardColor = Theme.of(context).cardColor;
     final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
@@ -49,13 +54,21 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        email,
+                        name,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (email.isNotEmpty && name != email) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          email,
+                          style: TextStyle(fontSize: 12, color: onSurfaceVariant),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ],
                   ),
                 ),

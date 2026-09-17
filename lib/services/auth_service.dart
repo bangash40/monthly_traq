@@ -15,13 +15,17 @@ class AuthService {
   }
 
   Future<UserCredential> signUp({
+    required String name,
     required String email,
     required String password,
-  }) {
-    return _firebaseAuth.createUserWithEmailAndPassword(
+  }) async {
+    final credential = await _firebaseAuth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
+    await credential.user?.updateDisplayName(name);
+    await credential.user?.reload();
+    return credential;
   }
 
   /// Signs in with Google, creating a Firebase account automatically the

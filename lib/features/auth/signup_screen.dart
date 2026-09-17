@@ -16,6 +16,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
 
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -25,6 +26,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -37,6 +39,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       await _authService.signUp(
+        name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -113,6 +116,25 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
 
                 const SizedBox(height: 40),
+
+                TextFormField(
+                  controller: _nameController,
+                  keyboardType: TextInputType.name,
+                  decoration: const InputDecoration(
+                    labelText: 'Full name',
+                    hintText: 'Enter your name',
+                    prefixIcon: Icon(Icons.person_outline),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter your name';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
 
                 TextFormField(
                   controller: _emailController,
