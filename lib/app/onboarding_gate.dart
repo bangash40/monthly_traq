@@ -17,6 +17,7 @@ class OnboardingGate extends StatefulWidget {
 
 class _OnboardingGateState extends State<OnboardingGate> {
   bool? _hasSeenOnboarding;
+  bool _justFinishedOnboarding = false;
 
   @override
   void initState() {
@@ -34,7 +35,10 @@ class _OnboardingGateState extends State<OnboardingGate> {
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_seenOnboardingKey, true);
-    setState(() => _hasSeenOnboarding = true);
+    setState(() {
+      _hasSeenOnboarding = true;
+      _justFinishedOnboarding = true;
+    });
   }
 
   @override
@@ -47,6 +51,6 @@ class _OnboardingGateState extends State<OnboardingGate> {
       return OnboardingScreen(onDone: _completeOnboarding);
     }
 
-    return const AuthGate();
+    return AuthGate(startOnSignup: _justFinishedOnboarding);
   }
 }

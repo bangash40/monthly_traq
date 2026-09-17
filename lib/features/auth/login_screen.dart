@@ -4,7 +4,12 @@ import 'package:monthly_traq/features/auth/signup_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  /// True right after a fresh install finishes onboarding — a new user has
+  /// no account yet, so this pushes straight to sign-up on first frame
+  /// instead of sitting on the login form.
+  final bool startOnSignup;
+
+  const LoginScreen({super.key, this.startOnSignup = false});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -19,6 +24,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.startOnSignup) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SignupScreen()),
+        );
+      });
+    }
+  }
 
   @override
   void dispose() {
