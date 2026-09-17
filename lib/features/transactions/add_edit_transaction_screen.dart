@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
@@ -59,7 +60,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
 
     final repo = context.read<TransactionsRepository>();
     final amount = double.parse(_amountController.text);
-    final categoryId = _type == TransactionType.expense ? _categoryId : null;
+    final categoryId = _categoryId;
 
     try {
       if (_isEditing) {
@@ -121,7 +122,11 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit transaction' : 'Add transaction'),
+        title: Text(
+          _isEditing ? 'Edit' : 'Add',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
         actions: [
           if (_isEditing)
             IconButton(
@@ -139,23 +144,29 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SegmentedButton<TransactionType>(
-                  segments: const [
-                    ButtonSegment(
-                      value: TransactionType.expense,
-                      label: Text('Expense'),
-                      icon: Icon(Icons.arrow_upward_rounded),
-                    ),
-                    ButtonSegment(
-                      value: TransactionType.income,
-                      label: Text('Income'),
-                      icon: Icon(Icons.arrow_downward_rounded),
-                    ),
-                  ],
-                  selected: {_type},
-                  onSelectionChanged: (selection) {
-                    setState(() => _type = selection.first);
-                  },
+                Center(
+                  child: SegmentedButton<TransactionType>(
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment(
+                        value: TransactionType.expense,
+                        label: Text('Expense'),
+                        icon: Icon(Icons.arrow_upward_rounded),
+                      ),
+                      ButtonSegment(
+                        value: TransactionType.income,
+                        label: Text('Income'),
+                        icon: Icon(Icons.arrow_downward_rounded),
+                      ),
+                    ],
+                    selected: {_type},
+                    onSelectionChanged: (selection) {
+                      setState(() {
+                        _type = selection.first;
+                        _categoryId = null;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 20),
 
@@ -195,55 +206,58 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                if (_type == TransactionType.expense) ...[
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _categoryId,
-                          decoration: const InputDecoration(
-                            labelText: 'Category',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: categories
-                              .map(
-                                (CategoryModel c) => DropdownMenuItem(
-                                  value: c.id,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(c.icon, size: 18, color: c.color),
-                                      const SizedBox(width: 8),
-                                      Text(c.name),
-                                    ],
-                                  ),
-                                ),
-                              )
+                Text(
+                  'Category',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                FormField<String>(
+                  key: ValueKey(_type),
+                  initialValue: _categoryId,
+                  validator: (value) =>
+                      value == null ? 'Select a category' : null,
+                  builder: (field) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _CategoryGrid(
+                          categories: categories
+                              .where((c) => c.type == _type)
                               .toList(),
-                          onChanged: (value) => setState(() => _categoryId = value),
-                          validator: (value) {
-                            if (value == null) return 'Select a category';
-                            return null;
+                          selectedId: _categoryId,
+                          onSelect: (id) {
+                            setState(() => _categoryId = id);
+                            field.didChange(id);
+                          },
+                          onAddCategory: () async {
+                            final repo = context.read<TransactionsRepository>();
+                            final created = await showAddCategoryDialog(
+                              context,
+                              repo,
+                              type: _type,
+                            );
+                            if (created != null) {
+                              setState(() => _categoryId = created.id);
+                              field.didChange(created.id);
+                            }
                           },
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton.filledTonal(
-                        icon: const Icon(Icons.add),
-                        tooltip: 'Add a new category',
-                        onPressed: () async {
-                          final repo = context.read<TransactionsRepository>();
-                          final created = await showAddCategoryDialog(context, repo);
-                          if (created != null) {
-                            setState(() => _categoryId = created.id);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                        if (field.hasError)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              field.errorText!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
 
                 InkWell(
                   onTap: _pickDate,
@@ -288,6 +302,130 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CategoryGrid extends StatelessWidget {
+  final List<CategoryModel> categories;
+  final String? selectedId;
+  final ValueChanged<String> onSelect;
+  final VoidCallback onAddCategory;
+
+  const _CategoryGrid({
+    required this.categories,
+    required this.selectedId,
+    required this.onSelect,
+    required this.onAddCategory,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 18,
+      crossAxisSpacing: 4,
+      childAspectRatio: 0.72,
+      children: [
+        for (final category in categories)
+          _CategoryTile(
+            category: category,
+            isSelected: category.id == selectedId,
+            onTap: () => onSelect(category.id),
+          ),
+        _AddCategoryTile(onTap: onAddCategory),
+      ],
+    );
+  }
+}
+
+class _CategoryTile extends StatelessWidget {
+  final CategoryModel category;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _CategoryTile({
+    required this.category,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: category.color.withValues(alpha: 0.18),
+              border: isSelected
+                  ? Border.all(color: category.color, width: 2.5)
+                  : null,
+            ),
+            child: Icon(category.icon, color: category.color, size: 28),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            category.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected
+                  ? themeAccent(context)
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddCategoryTile extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AddCategoryTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: color),
+            ),
+            child: Icon(Icons.add, color: color, size: 28),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Add category',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 11, color: color),
+          ),
+        ],
       ),
     );
   }

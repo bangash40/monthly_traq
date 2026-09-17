@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:monthly_traq/models/category_model.dart';
+import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 
 const _kCategoryIconChoices = [
@@ -18,8 +19,9 @@ const _kCategoryIconChoices = [
 /// or null if the user cancelled or the category cap was already reached.
 Future<CategoryModel?> showAddCategoryDialog(
   BuildContext context,
-  TransactionsRepository repo,
-) async {
+  TransactionsRepository repo, {
+  required TransactionType type,
+}) async {
   if (!repo.canAddCategory) {
     ScaffoldMessenger.of(
       context,
@@ -91,6 +93,7 @@ Future<CategoryModel?> showAddCategoryDialog(
                           final created = await repo.addCategory(
                             name: nameController.text.trim(),
                             icon: selectedIcon,
+                            type: type,
                           );
                           if (dialogContext.mounted) {
                             Navigator.pop(dialogContext, created);

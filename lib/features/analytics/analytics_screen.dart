@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/add_category_dialog.dart';
 import 'package:monthly_traq/widgets/category_bar_row.dart';
@@ -24,7 +25,11 @@ class AnalyticsScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Add category',
-            onPressed: () => showAddCategoryDialog(context, repo),
+            onPressed: () => showAddCategoryDialog(
+              context,
+              repo,
+              type: TransactionType.expense,
+            ),
           ),
         ],
       ),

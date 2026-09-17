@@ -22,14 +22,41 @@ class SyncTimeoutException implements Exception {
 const _writeTimeout = Duration(seconds: 10);
 
 const _defaultSeedCategories = [
-  (name: 'Food', iconKey: 'restaurant'),
-  (name: 'Transport', iconKey: 'directions_car'),
   (name: 'Shopping', iconKey: 'shopping_bag'),
-  (name: 'Bills', iconKey: 'receipt_long'),
+  (name: 'Food', iconKey: 'restaurant'),
+  (name: 'Phone', iconKey: 'smartphone'),
   (name: 'Entertainment', iconKey: 'movie'),
-  (name: 'Health', iconKey: 'favorite'),
   (name: 'Education', iconKey: 'school'),
-  (name: 'Other', iconKey: 'category'),
+  (name: 'Beauty', iconKey: 'content_cut'),
+  (name: 'Sports', iconKey: 'directions_run'),
+  (name: 'Social', iconKey: 'people'),
+  (name: 'Transportation', iconKey: 'directions_bus'),
+  (name: 'Clothing', iconKey: 'checkroom'),
+  (name: 'Car', iconKey: 'directions_car'),
+  (name: 'Alcohol', iconKey: 'wine_bar'),
+  (name: 'Cigarettes', iconKey: 'smoking_rooms'),
+  (name: 'Electronics', iconKey: 'computer'),
+  (name: 'Travel', iconKey: 'flight'),
+  (name: 'Health', iconKey: 'favorite'),
+  (name: 'Pets', iconKey: 'pets'),
+  (name: 'Repairs', iconKey: 'build'),
+  (name: 'Housing', iconKey: 'house'),
+  (name: 'Home', iconKey: 'weekend'),
+  (name: 'Gifts', iconKey: 'card_giftcard'),
+  (name: 'Donations', iconKey: 'volunteer_activism'),
+  (name: 'Lottery', iconKey: 'casino'),
+  (name: 'Snacks', iconKey: 'cookie'),
+  (name: 'Kids', iconKey: 'child_care'),
+  (name: 'Vegetables', iconKey: 'eco'),
+  (name: 'Fruits', iconKey: 'apple'),
+];
+
+const _defaultIncomeSeedCategories = [
+  (name: 'Salary', iconKey: 'work'),
+  (name: 'Investments', iconKey: 'trending_up'),
+  (name: 'Part-Time', iconKey: 'handshake'),
+  (name: 'Bonus', iconKey: 'emoji_events'),
+  (name: 'Others', iconKey: 'paid'),
 ];
 
 /// Holds transactions, categories and the monthly budget for the signed-in
@@ -270,13 +297,14 @@ class TransactionsRepository extends ChangeNotifier {
   Future<CategoryModel?> addCategory({
     required String name,
     required IconData icon,
+    required TransactionType type,
   }) async {
     final userDoc = _userDoc;
     if (userDoc == null || !canAddCategory) return null;
 
     final color =
         AppPalette.categorical[_categories.length % AppPalette.categorical.length];
-    final category = CategoryModel(id: '', name: name, icon: icon, color: color);
+    final category = CategoryModel(id: '', name: name, icon: icon, color: color, type: type);
     final ref = await _withTimeout(
       userDoc.collection('categories').add({
         ...category.toMap(),
@@ -284,7 +312,7 @@ class TransactionsRepository extends ChangeNotifier {
       }),
     );
 
-    return CategoryModel(id: ref.id, name: name, icon: icon, color: color);
+    return CategoryModel(id: ref.id, name: name, icon: icon, color: color, type: type);
   }
 
   Future<void> deleteCategory(String id) async {
@@ -321,15 +349,28 @@ class TransactionsRepository extends ChangeNotifier {
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    for (var i = 0; i < _defaultSeedCategories.length; i++) {
-      final seed = _defaultSeedCategories[i];
+    var i = 0;
+    for (final seed in _defaultSeedCategories) {
       final ref = categoriesRef.doc();
       batch.set(ref, {
         'name': seed.name,
         'iconKey': seed.iconKey,
-        'color': AppPalette.categorical[i].toARGB32(),
+        'color': AppPalette.categorical[i % AppPalette.categorical.length].toARGB32(),
+        'type': 'expense',
         'createdAt': FieldValue.serverTimestamp(),
       });
+      i++;
+    }
+    for (final seed in _defaultIncomeSeedCategories) {
+      final ref = categoriesRef.doc();
+      batch.set(ref, {
+        'name': seed.name,
+        'iconKey': seed.iconKey,
+        'color': AppPalette.categorical[i % AppPalette.categorical.length].toARGB32(),
+        'type': 'income',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      i++;
     }
 
     await _withTimeout(batch.commit());
