@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:monthly_traq/app/auth_gate.dart';
+import 'package:monthly_traq/app/onboarding_gate.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 
@@ -14,7 +14,7 @@ class MonthlyTraqApp extends StatelessWidget {
       child: MaterialApp(
         title: 'MonthlyTraq',
         debugShowCheckedModeBanner: false,
-        home: const AuthGate(),
+        home: const OnboardingGate(),
         theme: monthlyTraqTheme(),
       ),
     );
