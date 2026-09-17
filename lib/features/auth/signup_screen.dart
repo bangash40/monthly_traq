@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/widgets/google_sign_in_button.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -20,6 +21,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
 
   @override
   void dispose() {
@@ -55,6 +57,30 @@ class _SignupScreenState extends State<SignupScreen> {
       ).showSnackBar(SnackBar(content: Text('Sign up failed: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      final userCredential = await _authService.signInWithGoogle();
+      if (userCredential == null) return; // user cancelled the picker
+
+      if (userCredential.additionalUserInfo?.isNewUser ?? false) {
+        if (!mounted) return;
+        await context.read<TransactionsRepository>().seedDefaultsForNewUser();
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Google sign-in failed: $e')));
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -174,6 +200,12 @@ class _SignupScreenState extends State<SignupScreen> {
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Already have an account? Log in'),
                   ),
+                ),
+
+                const SizedBox(height: 12),
+
+                GoogleSignInButton(
+                  onPressed: _isGoogleLoading ? null : _signInWithGoogle,
                 ),
               ],
             ),

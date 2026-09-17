@@ -1,7 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:monthly_traq/features/auth/signup_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
+import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/widgets/google_sign_in_button.dart';
 
 class LoginScreen extends StatefulWidget {
   /// True right after a fresh install finishes onboarding — a new user has
@@ -24,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
 
   @override
   void initState() {
@@ -65,6 +69,29 @@ class _LoginScreenState extends State<LoginScreen> {
       ).showSnackBar(SnackBar(content: Text(e.message ?? 'Login failed')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      final userCredential = await _authService.signInWithGoogle();
+      if (userCredential == null) return; // user cancelled the picker
+
+      if (userCredential.additionalUserInfo?.isNewUser ?? false) {
+        if (!mounted) return;
+        await context.read<TransactionsRepository>().seedDefaultsForNewUser();
+      }
+      // AuthGate listens for the auth state change and swaps to the
+      // dashboard automatically — no navigation needed here.
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Google sign-in failed: $e')));
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -201,6 +228,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: const Text("Don't have an account? Sign up"),
                   ),
+                ),
+
+                const SizedBox(height: 12),
+
+                GoogleSignInButton(
+                  onPressed: _isGoogleLoading ? null : _signInWithGoogle,
                 ),
               ],
             ),
