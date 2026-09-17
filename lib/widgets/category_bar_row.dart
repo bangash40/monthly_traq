@@ -48,7 +48,10 @@ class CategoryBarRow extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 '${sharePercent.round()}%',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),

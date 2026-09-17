@@ -26,6 +26,8 @@ class TransactionTile extends StatelessWidget {
         ? Icons.arrow_downward_rounded
         : (category?.icon ?? Icons.category);
     final symbol = context.watch<TransactionsRepository>().currencySymbol;
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
 
     final amountText =
         '${isIncome ? '+' : '-'}$symbol ${NumberFormat.decimalPattern().format(transaction.amount)}';
@@ -43,7 +45,7 @@ class TransactionTile extends StatelessWidget {
       ),
       subtitle: Text(
         isIncome ? 'Income' : (category?.name ?? 'Uncategorized'),
-        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+        style: TextStyle(color: onSurfaceVariant, fontSize: 13),
       ),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -53,13 +55,15 @@ class TransactionTile extends StatelessWidget {
             amountText,
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: isIncome ? AppPalette.successText : Colors.black87,
+              color: isIncome
+                  ? AppPalette.successText(Theme.of(context).brightness)
+                  : onSurface,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             DateFormat('MMM d').format(transaction.date),
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 12, color: onSurfaceVariant),
           ),
         ],
       ),

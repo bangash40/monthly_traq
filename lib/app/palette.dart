@@ -15,14 +15,15 @@ class AppPalette {
     Color(0xFFE34948), // 8 red
   ];
 
-  static const Color sequentialTrack = Color(0xFFCDE2FB); // step 100
-  static const Color sequentialFill = Color(0xFF2A78D6); // step 450
-
+  // Status colors — fixed across light and dark (validated to read on both).
   static const Color good = Color(0xFF0CA30C);
   static const Color warning = Color(0xFFFAB219);
   static const Color critical = Color(0xFFD03B3B);
 
-  static const Color successText = Color(0xFF006300);
-  static const Color secondaryInk = Color(0xFF52514E);
-  static const Color mutedInk = Color(0xFF898781);
+  /// Income-amount text needs enough contrast against whatever surface
+  /// it's sitting on, and that surface differs by theme — near-black
+  /// green reads fine on a light card, but is nearly invisible on a dark
+  /// one, where the brighter "good" green is what's legible instead.
+  static Color successText(Brightness brightness) =>
+      brightness == Brightness.dark ? good : const Color(0xFF006300);
 }

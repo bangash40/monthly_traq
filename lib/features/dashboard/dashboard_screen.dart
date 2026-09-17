@@ -20,6 +20,7 @@ class DashboardScreen extends StatelessWidget {
     final currency = NumberFormat.decimalPattern();
     final symbol = repo.currencySymbol;
     final recent = repo.transactions.take(5).toList();
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Scaffold(
       appBar: AppBar(title: const Text('MonthlyTraq')),
@@ -28,7 +29,7 @@ class DashboardScreen extends StatelessWidget {
         children: [
           Text(
             'Balance',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 14, color: onSurfaceVariant),
           ),
           const SizedBox(height: 4),
           Text(
@@ -42,7 +43,7 @@ class DashboardScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+              color: onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 12),
@@ -97,7 +98,7 @@ class DashboardScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
                 'No transactions yet.',
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(color: onSurfaceVariant),
               ),
             )
           else

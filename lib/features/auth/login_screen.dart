@@ -71,7 +71,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 Text(
                   'Sign in to continue to MonthlyTraq',
-                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
 
                 const SizedBox(height: 40),

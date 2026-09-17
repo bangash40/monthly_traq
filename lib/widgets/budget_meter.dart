@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/app/theme.dart';
 
 /// A single ratio against a limit — a linear meter whose fill escalates
 /// from the brand hue to warning to critical as spending approaches and
-/// then exceeds the monthly budget.
+/// then exceeds the monthly budget. The unfilled track is a paler step of
+/// that same brand hue, so the meter reads as one ramp rather than an
+/// unrelated fixed color dropped into whichever theme is active.
 class BudgetMeter extends StatelessWidget {
   final double ratio;
   final String spentLabel;
@@ -18,20 +21,23 @@ class BudgetMeter extends StatelessWidget {
     this.onEdit,
   });
 
-  Color get _fillColor {
+  Color _fillColor(BuildContext context) {
     if (ratio >= 1) return AppPalette.critical;
     if (ratio >= 0.7) return AppPalette.warning;
-    return AppPalette.sequentialFill;
+    return themeAccent(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final clamped = ratio.clamp(0.0, 1.0);
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
+    final fillColor = _fillColor(context);
+    final trackColor = themeAccent(context).withValues(alpha: 0.18);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -44,7 +50,7 @@ class BudgetMeter extends StatelessWidget {
                 children: [
                   Text(
                     'Monthly budget',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 13, color: onSurfaceVariant),
                   ),
                   if (onEdit != null) ...[
                     const SizedBox(width: 4),
@@ -56,7 +62,7 @@ class BudgetMeter extends StatelessWidget {
                         child: Icon(
                           Icons.edit_outlined,
                           size: 14,
-                          color: Colors.grey.shade500,
+                          color: onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -68,7 +74,7 @@ class BudgetMeter extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: _fillColor,
+                  color: fillColor,
                 ),
               ),
             ],
@@ -80,13 +86,13 @@ class BudgetMeter extends StatelessWidget {
               height: 14,
               child: Stack(
                 children: [
-                  Container(color: AppPalette.sequentialTrack),
+                  Container(color: trackColor),
                   AnimatedFractionallySizedBox(
                     duration: const Duration(milliseconds: 400),
                     curve: Curves.easeOut,
                     widthFactor: clamped,
                     alignment: Alignment.centerLeft,
-                    child: Container(color: _fillColor),
+                    child: Container(color: fillColor),
                   ),
                 ],
               ),
@@ -102,7 +108,7 @@ class BudgetMeter extends StatelessWidget {
               ),
               Text(
                 budgetLabel,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 13, color: onSurfaceVariant),
               ),
             ],
           ),

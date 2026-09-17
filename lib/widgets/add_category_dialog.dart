@@ -60,10 +60,14 @@ Future<CategoryModel?> showAddCategoryDialog(
                         child: CircleAvatar(
                           backgroundColor: isSelected
                               ? Theme.of(dialogContext).colorScheme.primary
-                              : Colors.grey.shade200,
+                              : Theme.of(
+                                  dialogContext,
+                                ).colorScheme.surfaceContainerHighest,
                           child: Icon(
                             icon,
-                            color: isSelected ? Colors.white : Colors.black54,
+                            color: isSelected
+                                ? Colors.white
+                                : Theme.of(dialogContext).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       );

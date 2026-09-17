@@ -101,7 +101,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       hasFilters
                           ? 'No transactions match your search.'
                           : 'No transactions found.',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   )
                 : ListView.separated(

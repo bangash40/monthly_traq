@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/onboarding_gate.dart';
 import 'package:monthly_traq/app/theme.dart';
+import 'package:monthly_traq/app/theme_controller.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 
 class MonthlyTraqApp extends StatelessWidget {
@@ -9,13 +10,22 @@ class MonthlyTraqApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => TransactionsRepository(),
-      child: MaterialApp(
-        title: 'MonthlyTraq',
-        debugShowCheckedModeBanner: false,
-        home: const OnboardingGate(),
-        theme: monthlyTraqTheme(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => TransactionsRepository()),
+        ChangeNotifierProvider(create: (context) => ThemeController()),
+      ],
+      child: Consumer<ThemeController>(
+        builder: (context, themeController, _) {
+          return MaterialApp(
+            title: 'MonthlyTraq',
+            debugShowCheckedModeBanner: false,
+            home: const OnboardingGate(),
+            theme: monthlyTraqLightTheme(),
+            darkTheme: monthlyTraqDarkTheme(),
+            themeMode: themeController.mode,
+          );
+        },
       ),
     );
   }

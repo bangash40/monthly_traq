@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/models/onboarding_slide.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -35,7 +36,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final accent = themeAccent(context);
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
+    final trackColor = Theme.of(context).colorScheme.surfaceContainerHighest;
 
     return Scaffold(
       body: SafeArea(
@@ -49,7 +52,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPressed: _isLast ? null : widget.onDone,
                   child: Text(
                     _isLast ? '' : 'Skip',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(color: onSurfaceVariant),
                   ),
                 ),
               ),
@@ -72,7 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: isActive ? 22 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: isActive ? primary : Colors.grey.shade300,
+                    color: isActive ? accent : trackColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );
@@ -154,7 +157,11 @@ class _SlideView extends StatelessWidget {
           Text(
             slide.subtitle,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 15, color: Colors.grey.shade600, height: 1.4),
+            style: TextStyle(
+              fontSize: 15,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
           ),
         ],
       ),

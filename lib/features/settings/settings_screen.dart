@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/theme_controller.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/edit_budget_dialog.dart';
@@ -13,8 +14,11 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repo = context.watch<TransactionsRepository>();
+    final themeController = context.watch<ThemeController>();
     final email = FirebaseAuth.instance.currentUser?.email ?? '';
     final currency = NumberFormat.decimalPattern();
+    final cardColor = Theme.of(context).cardColor;
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -24,7 +28,7 @@ class SettingsScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: cardColor,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -39,9 +43,9 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Signed in as',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 12, color: onSurfaceVariant),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -61,12 +65,49 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           const Text(
+            'Appearance',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 12),
+          Material(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SegmentedButton<ThemeMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: ThemeMode.system,
+                    label: Text('System'),
+                    icon: Icon(Icons.brightness_auto),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.light,
+                    label: Text('Light'),
+                    icon: Icon(Icons.light_mode),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.dark,
+                    label: Text('Dark'),
+                    icon: Icon(Icons.dark_mode),
+                  ),
+                ],
+                selected: {themeController.mode},
+                onSelectionChanged: (selection) =>
+                    themeController.setMode(selection.first),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          const Text(
             'Preferences',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           Material(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: Column(
@@ -94,7 +135,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           Material(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: ListTile(

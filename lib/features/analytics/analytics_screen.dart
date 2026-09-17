@@ -14,6 +14,8 @@ class AnalyticsScreen extends StatelessWidget {
     final breakdown = repo.expenseByCategory;
     final totalExpense = repo.monthlyExpense;
     final maxAmount = breakdown.isEmpty ? 0.0 : breakdown.first.value;
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
+    final cardColor = Theme.of(context).cardColor;
 
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +40,7 @@ class AnalyticsScreen extends StatelessWidget {
           ),
           Text(
             'This month',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 13, color: onSurfaceVariant),
           ),
           const SizedBox(height: 12),
           if (breakdown.isEmpty)
@@ -46,14 +48,14 @@ class AnalyticsScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
                 'No expenses recorded this month yet.',
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(color: onSurfaceVariant),
               ),
             )
           else
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -79,7 +81,7 @@ class AnalyticsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Material(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: Column(

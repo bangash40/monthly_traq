@@ -80,7 +80,10 @@ class _SignupScreenState extends State<SignupScreen> {
 
                 Text(
                   'Sign up to get started with MonthlyTraq',
-                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
 
                 const SizedBox(height: 40),
