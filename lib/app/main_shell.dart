@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/features/analytics/analytics_screen.dart';
 import 'package:monthly_traq/features/dashboard/dashboard_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
@@ -65,42 +66,128 @@ class _MainShellState extends State<MainShell> {
           ),
         ],
       ),
-      floatingActionButton: _selectedIndex == 0 || _selectedIndex == 1
-          ? FloatingActionButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddEditTransactionScreen(),
+      floatingActionButton: FloatingActionButton(
+        shape: const CircleBorder(),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AddEditTransactionScreen()),
+        ),
+        child: const Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: const _SunkenCenterDockedFabLocation(),
+      bottomNavigationBar: BottomAppBar(
+        // No notch shape — the button sits flush on top of a flat bar,
+        // rather than being recessed into a cutout.
+        shape: null,
+        padding: EdgeInsets.zero,
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 64,
+            child: Row(
+              children: [
+                Expanded(
+                  child: _NavButton(
+                    icon: Icons.dashboard_outlined,
+                    selectedIcon: Icons.dashboard,
+                    label: 'Dashboard',
+                    isSelected: _selectedIndex == 0,
+                    onTap: () => setState(() => _selectedIndex = 0),
+                  ),
                 ),
-              ),
-              child: const Icon(Icons.add),
-            )
-          : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+                Expanded(
+                  child: _NavButton(
+                    icon: Icons.receipt_long_outlined,
+                    selectedIcon: Icons.receipt_long,
+                    label: 'Transactions',
+                    isSelected: _selectedIndex == 1,
+                    onTap: () => setState(() => _selectedIndex = 1),
+                  ),
+                ),
+                const SizedBox(width: 56),
+                Expanded(
+                  child: _NavButton(
+                    icon: Icons.pie_chart_outline,
+                    selectedIcon: Icons.pie_chart,
+                    label: 'Analytics',
+                    isSelected: _selectedIndex == 2,
+                    onTap: () => setState(() => _selectedIndex = 2),
+                  ),
+                ),
+                Expanded(
+                  child: _NavButton(
+                    icon: Icons.settings_outlined,
+                    selectedIcon: Icons.settings,
+                    label: 'Settings',
+                    isSelected: _selectedIndex == 3,
+                    onTap: () => setState(() => _selectedIndex = 3),
+                  ),
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Transactions',
+        ),
+      ),
+    );
+  }
+}
+
+/// Like [FloatingActionButtonLocation.centerDocked], but sinks the button
+/// further down so most of it sits within the bottom bar rather than the
+/// standard 50/50 split above/below the bar's top edge.
+class _SunkenCenterDockedFabLocation extends FloatingActionButtonLocation {
+  const _SunkenCenterDockedFabLocation();
+
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
+    final fabX =
+        (scaffoldGeometry.scaffoldSize.width -
+            scaffoldGeometry.floatingActionButtonSize.width) /
+        2.0;
+    final fabHeight = scaffoldGeometry.floatingActionButtonSize.height;
+    // Only a small cap of the button's height peeks above the bar's top edge.
+    final fabY = scaffoldGeometry.contentBottom - fabHeight * 0.12;
+    return Offset(fabX, fabY);
+  }
+}
+
+class _NavButton extends StatelessWidget {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavButton({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isSelected
+        ? themeAccent(context)
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(isSelected ? selectedIcon : icon, color: color, size: 22),
+              const SizedBox(height: 2),
+              Text(label, style: TextStyle(fontSize: 11, color: color)),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.pie_chart_outline),
-            selectedIcon: Icon(Icons.pie_chart),
-            label: 'Analytics',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
+        ),
       ),
     );
   }
