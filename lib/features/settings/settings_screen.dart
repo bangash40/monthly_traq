@@ -1,32 +1,25 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import 'package:monthly_traq/app/theme_controller.dart';
+import 'package:monthly_traq/features/settings/appearance_screen.dart';
+import 'package:monthly_traq/features/settings/preferences_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
-import 'package:monthly_traq/services/transactions_repository.dart';
-import 'package:monthly_traq/widgets/edit_budget_dialog.dart';
-import 'package:monthly_traq/widgets/edit_currency_dialog.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final repo = context.watch<TransactionsRepository>();
-    final themeController = context.watch<ThemeController>();
     final user = FirebaseAuth.instance.currentUser;
     final displayName = user?.displayName;
     final email = user?.email ?? '';
     final name = (displayName != null && displayName.trim().isNotEmpty)
         ? displayName
         : email;
-    final currency = NumberFormat.decimalPattern();
     final cardColor = Theme.of(context).cardColor;
     final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('Profile')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
         children: [
@@ -65,7 +58,10 @@ class SettingsScreen extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           email,
-                          style: TextStyle(fontSize: 12, color: onSurfaceVariant),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: onSurfaceVariant,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -73,43 +69,6 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          const Text(
-            'Appearance',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
-          Material(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SegmentedButton<ThemeMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: ThemeMode.system,
-                    label: Text('System'),
-                    icon: Icon(Icons.brightness_auto),
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.light,
-                    label: Text('Light'),
-                    icon: Icon(Icons.light_mode),
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.dark,
-                    label: Text('Dark'),
-                    icon: Icon(Icons.dark_mode),
-                  ),
-                ],
-                selected: {themeController.mode},
-                onSelectionChanged: (selection) =>
-                    themeController.setMode(selection.first),
-              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -126,21 +85,27 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.account_balance_wallet_outlined),
-                  title: const Text('Monthly budget'),
-                  subtitle: Text(
-                    '${repo.currencySymbol} ${currency.format(repo.monthlyBudget)}',
-                  ),
+                  leading: const Icon(Icons.palette_outlined),
+                  title: const Text('Appearance'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => showEditBudgetDialog(context, repo),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AppearanceScreen(),
+                    ),
+                  ),
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.attach_money),
-                  title: const Text('Currency symbol'),
-                  subtitle: Text(repo.currencySymbol),
+                  leading: const Icon(Icons.settings_outlined),
+                  title: const Text('Settings'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => showEditCurrencyDialog(context, repo),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PreferencesScreen(),
+                    ),
+                  ),
                 ),
               ],
             ),

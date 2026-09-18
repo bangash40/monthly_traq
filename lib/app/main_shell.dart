@@ -116,9 +116,9 @@ class _MainShellState extends State<MainShell> {
                 ),
                 Expanded(
                   child: _NavButton(
-                    icon: Icons.settings_outlined,
-                    selectedIcon: Icons.settings,
-                    label: 'Settings',
+                    icon: Icons.person_outline,
+                    selectedIcon: Icons.person,
+                    label: 'Profile',
                     isSelected: _selectedIndex == 3,
                     onTap: () => setState(() => _selectedIndex = 3),
                   ),
