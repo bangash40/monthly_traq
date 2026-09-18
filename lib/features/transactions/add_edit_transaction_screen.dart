@@ -5,7 +5,6 @@ import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
-import 'package:monthly_traq/widgets/add_category_dialog.dart';
 
 class AddEditTransactionScreen extends StatefulWidget {
   final TransactionModel? existing;
@@ -189,18 +188,6 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                 onSelect: (id) {
                   setState(() => _categoryId = id);
                   _openAmountSheet();
-                },
-                onAddCategory: () async {
-                  final repo = context.read<TransactionsRepository>();
-                  final created = await showAddCategoryDialog(
-                    context,
-                    repo,
-                    type: _type,
-                  );
-                  if (created != null) {
-                    setState(() => _categoryId = created.id);
-                    _openAmountSheet();
-                  }
                 },
               ),
             ],
@@ -649,13 +636,11 @@ class _CategoryGrid extends StatelessWidget {
   final List<CategoryModel> categories;
   final String? selectedId;
   final ValueChanged<String> onSelect;
-  final VoidCallback onAddCategory;
 
   const _CategoryGrid({
     required this.categories,
     required this.selectedId,
     required this.onSelect,
-    required this.onAddCategory,
   });
 
   @override
@@ -674,7 +659,6 @@ class _CategoryGrid extends StatelessWidget {
             isSelected: category.id == selectedId,
             onTap: () => onSelect(category.id),
           ),
-        _AddCategoryTile(onTap: onAddCategory),
       ],
     );
   }
@@ -725,43 +709,6 @@ class _CategoryTile extends StatelessWidget {
                   ? themeAccent(context)
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AddCategoryTile extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _AddCategoryTile({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.onSurfaceVariant;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: color),
-            ),
-            child: Icon(Icons.add, color: color, size: 28),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Add category',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: color),
           ),
         ],
       ),
