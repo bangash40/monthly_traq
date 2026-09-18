@@ -13,8 +13,7 @@ void main() async {
   // serverClientId on Android since this project doesn't apply the Google
   // Services Gradle plugin (which would otherwise supply it automatically).
   await GoogleSignIn.instance.initialize(
-    serverClientId:
-        '720765164093-v7o953fpvbc0d1ubptp3l24dg94pjqaa.apps.googleusercontent.com',
+    serverClientId: '720765164093-v7o953fpvbc0d1ubptp3l24dg94pjqaa.apps.googleusercontent.com',
   );
 
   runApp(const MonthlyTraqApp());

@@ -21,7 +21,9 @@ class TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isIncome = transaction.type == TransactionType.income;
-    final iconColor = isIncome ? AppPalette.good : (category?.color ?? Colors.grey);
+    final iconColor = isIncome
+        ? AppPalette.good
+        : (category?.color ?? Colors.grey);
     final icon = isIncome
         ? Icons.arrow_downward_rounded
         : (category?.icon ?? Icons.category);
@@ -31,6 +33,10 @@ class TransactionTile extends StatelessWidget {
 
     final amountText =
         '${isIncome ? '+' : '-'}$symbol ${NumberFormat.decimalPattern().format(transaction.amount)}';
+    final categoryLabel = isIncome
+        ? 'Income'
+        : (category?.name ?? 'Uncategorized');
+    final hasTitle = transaction.title.isNotEmpty;
 
     return ListTile(
       onTap: onTap,
@@ -40,13 +46,15 @@ class TransactionTile extends StatelessWidget {
         child: Icon(icon, color: iconColor, size: 20),
       ),
       title: Text(
-        transaction.title,
+        hasTitle ? transaction.title : categoryLabel,
         style: const TextStyle(fontWeight: FontWeight.w600),
       ),
-      subtitle: Text(
-        isIncome ? 'Income' : (category?.name ?? 'Uncategorized'),
-        style: TextStyle(color: onSurfaceVariant, fontSize: 13),
-      ),
+      subtitle: hasTitle
+          ? Text(
+              categoryLabel,
+              style: TextStyle(color: onSurfaceVariant, fontSize: 13),
+            )
+          : null,
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,

@@ -24,7 +24,7 @@ service cloud.firestore {
     function isValidTransaction(data) {
       return data.keys().hasOnly(['title', 'amount', 'type', 'categoryId', 'date', 'note'])
         && data.keys().hasAll(['title', 'amount', 'type', 'categoryId', 'date', 'note'])
-        && data.title is string && data.title.size() > 0 && data.title.size() <= 100
+        && data.title is string && data.title.size() <= 100
         && data.amount is number && data.amount > 0
         && data.type in ['income', 'expense']
         && (data.categoryId == null || data.categoryId is string)
