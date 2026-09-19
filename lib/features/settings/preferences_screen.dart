@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/palette.dart';
-import 'package:monthly_traq/features/settings/appearance_screen.dart';
+import 'package:monthly_traq/features/settings/themes_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/edit_budget_dialog.dart';
 import 'package:monthly_traq/widgets/edit_currency_dialog.dart';
@@ -80,7 +80,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const AppearanceScreen(),
+                      builder: (context) => const ThemesScreen(),
                     ),
                   ),
                 ),
