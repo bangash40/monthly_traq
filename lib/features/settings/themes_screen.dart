@@ -33,7 +33,10 @@ class ThemesScreen extends StatelessWidget {
             presets: kLightThemePresets,
             selectedId: themeController.lightPresetId,
             showSelection: effectiveBrightness == Brightness.light,
-            onSelect: themeController.setLightPreset,
+            onSelect: (id) {
+              themeController.setLightPreset(id);
+              themeController.setMode(ThemeMode.light);
+            },
           ),
           const SizedBox(height: 24),
 
@@ -46,7 +49,10 @@ class ThemesScreen extends StatelessWidget {
             presets: kDarkThemePresets,
             selectedId: themeController.darkPresetId,
             showSelection: effectiveBrightness == Brightness.dark,
-            onSelect: themeController.setDarkPreset,
+            onSelect: (id) {
+              themeController.setDarkPreset(id);
+              themeController.setMode(ThemeMode.dark);
+            },
           ),
         ],
       ),
@@ -108,7 +114,14 @@ class _ThemeCard extends StatelessWidget {
     final swatchDark = hsl
         .withLightness((hsl.lightness - 0.12).clamp(0.0, 1.0))
         .toColor();
-    final cardColor = Theme.of(context).cardColor;
+    // Each card always previews its own preset's surface/text colors, not
+    // whatever theme happens to be live right now — otherwise switching to
+    // dark makes the light-preset cards render with a dark (and illegible)
+    // label area.
+    final cardColor = preset.surface;
+    final labelColor = preset.brightness == Brightness.dark
+        ? Colors.white
+        : Colors.black87;
     final borderRadius = BorderRadius.circular(16);
 
     return Material(
@@ -157,9 +170,10 @@ class _ThemeCard extends StatelessWidget {
                 child: Text(
                   preset.name,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
+                    color: labelColor,
                   ),
                 ),
               ),
