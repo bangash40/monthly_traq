@@ -44,6 +44,16 @@ class AuthService {
     return _firebaseAuth.signInWithCredential(credential);
   }
 
+  Future<void> updateDisplayName(String name) async {
+    await _firebaseAuth.currentUser?.updateDisplayName(name);
+    await _firebaseAuth.currentUser?.reload();
+  }
+
+  Future<void> updatePhotoUrl(String? url) async {
+    await _firebaseAuth.currentUser?.updatePhotoURL(url);
+    await _firebaseAuth.currentUser?.reload();
+  }
+
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
     await GoogleSignIn.instance.signOut();

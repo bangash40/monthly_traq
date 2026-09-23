@@ -1,20 +1,19 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:monthly_traq/features/settings/appearance_screen.dart';
 import 'package:monthly_traq/features/settings/preferences_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
+import 'package:monthly_traq/services/transactions_repository.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final displayName = user?.displayName;
-    final email = user?.email ?? '';
-    final name = (displayName != null && displayName.trim().isNotEmpty)
-        ? displayName
-        : email;
+    final photoBase64 = context.watch<TransactionsRepository>().photoBase64;
     final cardColor = Theme.of(context).cardColor;
     final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
 
@@ -23,53 +22,78 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  child: const Icon(Icons.person, color: Colors.white),
+          StreamBuilder<User?>(
+            // userChanges() (not the one-off currentUser read) so this card
+            // reflects a name edit immediately, rather than only updating
+            // whenever something else happens to rebuild this screen.
+            stream: FirebaseAuth.instance.userChanges(),
+            initialData: FirebaseAuth.instance.currentUser,
+            builder: (context, snapshot) {
+              final user = snapshot.data;
+              final displayName = user?.displayName;
+              final email = user?.email ?? '';
+              final name =
+                  (displayName != null && displayName.trim().isNotEmpty)
+                  ? displayName
+                  : email;
+
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Signed in as',
-                        style: TextStyle(fontSize: 12, color: onSurfaceVariant),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (email.isNotEmpty && name != email) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          email,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: onSurfaceVariant,
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      backgroundImage: photoBase64 != null
+                          ? MemoryImage(base64Decode(photoBase64))
+                          : null,
+                      child: photoBase64 == null
+                          ? const Icon(Icons.person, color: Colors.white)
+                          : null,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Signed in as',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: onSurfaceVariant,
+                            ),
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
+                          const SizedBox(height: 2),
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (email.isNotEmpty && name != email) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              email,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: onSurfaceVariant,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
           const SizedBox(height: 24),
 

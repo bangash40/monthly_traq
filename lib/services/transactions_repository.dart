@@ -83,6 +83,10 @@ class TransactionsRepository extends ChangeNotifier {
   List<TransactionModel> _transactions = [];
   double monthlyBudget = 60000;
   String currencySymbol = 'Rs.';
+  // A small compressed profile photo, base64-encoded directly into the
+  // user doc rather than Firebase Storage — Storage requires the paid
+  // Blaze plan just to be enabled at all, even for zero-cost usage.
+  String? photoBase64;
   bool isLoading = true;
 
   /// True while the most recent categories snapshot was served from local
@@ -91,7 +95,10 @@ class TransactionsRepository extends ChangeNotifier {
   bool isOffline = false;
 
   Future<T> _withTimeout<T>(Future<T> future) {
-    return future.timeout(_writeTimeout, onTimeout: () => throw SyncTimeoutException());
+    return future.timeout(
+      _writeTimeout,
+      onTimeout: () => throw SyncTimeoutException(),
+    );
   }
 
   List<CategoryModel> get categories => List.unmodifiable(_categories);
@@ -129,6 +136,8 @@ class TransactionsRepository extends ChangeNotifier {
       if (budget is num) monthlyBudget = budget.toDouble();
       final currency = data?['currencySymbol'];
       if (currency is String && currency.isNotEmpty) currencySymbol = currency;
+      final photo = data?['photoBase64'];
+      photoBase64 = photo is String && photo.isNotEmpty ? photo : null;
       notifyListeners();
     });
 
@@ -267,17 +276,31 @@ class TransactionsRepository extends ChangeNotifier {
     );
   }
 
+  /// Pass null to remove the photo.
+  Future<void> updatePhotoBase64(String? base64) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    await _withTimeout(
+      userDoc.set({'photoBase64': base64}, SetOptions(merge: true)),
+    );
+  }
+
   Future<void> addTransaction(TransactionModel transaction) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(userDoc.collection('transactions').add(transaction.toMap()));
+    await _withTimeout(
+      userDoc.collection('transactions').add(transaction.toMap()),
+    );
   }
 
   Future<void> updateTransaction(TransactionModel transaction) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
     await _withTimeout(
-      userDoc.collection('transactions').doc(transaction.id).update(transaction.toMap()),
+      userDoc
+          .collection('transactions')
+          .doc(transaction.id)
+          .update(transaction.toMap()),
     );
   }
 
@@ -302,9 +325,15 @@ class TransactionsRepository extends ChangeNotifier {
     final userDoc = _userDoc;
     if (userDoc == null || !canAddCategory) return null;
 
-    final color =
-        AppPalette.categorical[_categories.length % AppPalette.categorical.length];
-    final category = CategoryModel(id: '', name: name, icon: icon, color: color, type: type);
+    final color = AppPalette
+        .categorical[_categories.length % AppPalette.categorical.length];
+    final category = CategoryModel(
+      id: '',
+      name: name,
+      icon: icon,
+      color: color,
+      type: type,
+    );
     final ref = await _withTimeout(
       userDoc.collection('categories').add({
         ...category.toMap(),
@@ -312,7 +341,13 @@ class TransactionsRepository extends ChangeNotifier {
       }),
     );
 
-    return CategoryModel(id: ref.id, name: name, icon: icon, color: color, type: type);
+    return CategoryModel(
+      id: ref.id,
+      name: name,
+      icon: icon,
+      color: color,
+      type: type,
+    );
   }
 
   Future<void> deleteCategory(String id) async {
@@ -320,7 +355,10 @@ class TransactionsRepository extends ChangeNotifier {
     if (userDoc == null) return;
 
     final affected = await _withTimeout(
-      userDoc.collection('transactions').where('categoryId', isEqualTo: id).get(),
+      userDoc
+          .collection('transactions')
+          .where('categoryId', isEqualTo: id)
+          .get(),
     );
 
     final batch = _firestore.batch();
@@ -355,7 +393,8 @@ class TransactionsRepository extends ChangeNotifier {
       batch.set(ref, {
         'name': seed.name,
         'iconKey': seed.iconKey,
-        'color': AppPalette.categorical[i % AppPalette.categorical.length].toARGB32(),
+        'color': AppPalette.categorical[i % AppPalette.categorical.length]
+            .toARGB32(),
         'type': 'expense',
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -366,7 +405,8 @@ class TransactionsRepository extends ChangeNotifier {
       batch.set(ref, {
         'name': seed.name,
         'iconKey': seed.iconKey,
-        'color': AppPalette.categorical[i % AppPalette.categorical.length].toARGB32(),
+        'color': AppPalette.categorical[i % AppPalette.categorical.length]
+            .toARGB32(),
         'type': 'income',
         'createdAt': FieldValue.serverTimestamp(),
       });

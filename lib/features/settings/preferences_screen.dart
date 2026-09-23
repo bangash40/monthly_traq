@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/features/settings/my_profile_screen.dart';
 import 'package:monthly_traq/features/settings/themes_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/edit_budget_dialog.dart';
@@ -36,9 +37,15 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
-                const _SettingsRow(
+                _SettingsRow(
                   icon: Icons.person_outline,
                   label: 'My Profile',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MyProfileScreen(),
+                    ),
+                  ),
                 ),
                 const Divider(height: 1),
                 const _SettingsRow(

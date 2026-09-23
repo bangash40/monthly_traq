@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.CAMERA"/>
     <application
         android:label="MonthlyTraq"
         android:name="${applicationName}"
@@ -30,6 +31,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Crop UI used by image_cropper after picking/taking a profile photo. -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Ucrop.CropTheme"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
@@ -42,4 +48,5 @@
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
 </manifest>
