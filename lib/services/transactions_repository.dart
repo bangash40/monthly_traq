@@ -146,7 +146,9 @@ class TransactionsRepository extends ChangeNotifier {
         .orderBy('createdAt')
         .snapshots(includeMetadataChanges: true)
         .listen((snap) {
-          _categories = snap.docs.map(CategoryModel.fromDoc).toList();
+          _categories = _sortCategories(
+            snap.docs.map(CategoryModel.fromDoc).toList(),
+          );
           isLoading = false;
           isOffline = snap.metadata.isFromCache;
           notifyListeners();
@@ -169,6 +171,23 @@ class TransactionsRepository extends ChangeNotifier {
     _transactionsSub?.cancel();
     _userDocSub?.cancel();
     super.dispose();
+  }
+
+  /// Categories with an explicit `sortOrder` (from a manual reorder or a
+  /// fresh add) come first, sorted by that value; categories from before
+  /// reordering existed keep their original (createdAt query) order,
+  /// placed after all the explicitly-ordered ones.
+  List<CategoryModel> _sortCategories(List<CategoryModel> categories) {
+    final indexed = categories.indexed.toList();
+    indexed.sort((a, b) {
+      final aOrder = a.$2.sortOrder;
+      final bOrder = b.$2.sortOrder;
+      if (aOrder != null && bOrder != null) return aOrder.compareTo(bOrder);
+      if (aOrder != null) return -1;
+      if (bOrder != null) return 1;
+      return a.$1.compareTo(b.$1);
+    });
+    return [for (final entry in indexed) entry.$2];
   }
 
   CategoryModel? categoryById(String? id) {
@@ -310,10 +329,10 @@ class TransactionsRepository extends ChangeNotifier {
     await _withTimeout(userDoc.collection('transactions').doc(id).delete());
   }
 
-  // Beyond a generous cap, further categories are still allowed — each one
-  // is told apart by its icon and name (not color alone), so palette colors
-  // simply cycle rather than blocking category creation.
-  static const _maxCategories = 30;
+  // A high ceiling mostly to stop runaway/accidental creation — the default
+  // seed alone is 32 categories (27 expense + 5 income), so this needs
+  // plenty of headroom above that.
+  static const _maxCategories = 100;
 
   bool get canAddCategory => _categories.length < _maxCategories;
 
@@ -327,12 +346,16 @@ class TransactionsRepository extends ChangeNotifier {
 
     final color = AppPalette
         .categorical[_categories.length % AppPalette.categorical.length];
+    // Always-increasing, so a freshly added category sorts after every
+    // existing one regardless of type.
+    final sortOrder = DateTime.now().millisecondsSinceEpoch;
     final category = CategoryModel(
       id: '',
       name: name,
       icon: icon,
       color: color,
       type: type,
+      sortOrder: sortOrder,
     );
     final ref = await _withTimeout(
       userDoc.collection('categories').add({
@@ -347,7 +370,35 @@ class TransactionsRepository extends ChangeNotifier {
       icon: icon,
       color: color,
       type: type,
+      sortOrder: sortOrder,
     );
+  }
+
+  Future<void> updateCategory(CategoryModel category) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    await _withTimeout(
+      userDoc
+          .collection('categories')
+          .doc(category.id)
+          .set(category.toMap(), SetOptions(merge: true)),
+    );
+  }
+
+  /// Persists a new manual order for exactly these categories (all of the
+  /// same type) as consecutive sortOrder values, so they render in this
+  /// exact sequence next time.
+  Future<void> reorderCategories(List<CategoryModel> orderedCategories) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    final batch = _firestore.batch();
+    for (var i = 0; i < orderedCategories.length; i++) {
+      batch.update(
+        userDoc.collection('categories').doc(orderedCategories[i].id),
+        {'sortOrder': i},
+      );
+    }
+    await _withTimeout(batch.commit());
   }
 
   Future<void> deleteCategory(String id) async {
@@ -396,6 +447,7 @@ class TransactionsRepository extends ChangeNotifier {
         'color': AppPalette.categorical[i % AppPalette.categorical.length]
             .toARGB32(),
         'type': 'expense',
+        'sortOrder': i,
         'createdAt': FieldValue.serverTimestamp(),
       });
       i++;
@@ -408,6 +460,7 @@ class TransactionsRepository extends ChangeNotifier {
         'color': AppPalette.categorical[i % AppPalette.categorical.length]
             .toARGB32(),
         'type': 'income',
+        'sortOrder': i,
         'createdAt': FieldValue.serverTimestamp(),
       });
       i++;

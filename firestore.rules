@@ -39,12 +39,15 @@ service cloud.firestore {
     }
 
     function isValidCategory(data) {
-      return data.keys().hasOnly(['name', 'iconKey', 'color', 'type', 'createdAt'])
+      // sortOrder is optional — categories created before manual reordering
+      // existed don't have it.
+      return data.keys().hasOnly(['name', 'iconKey', 'color', 'type', 'sortOrder', 'createdAt'])
         && data.keys().hasAll(['name', 'iconKey', 'color', 'type', 'createdAt'])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 40
         && data.iconKey is string && data.iconKey.size() > 0 && data.iconKey.size() <= 40
         && data.color is int
         && data.type in ['income', 'expense']
+        && (!('sortOrder' in data.keys()) || data.sortOrder is int)
         && data.createdAt is timestamp;
     }
 

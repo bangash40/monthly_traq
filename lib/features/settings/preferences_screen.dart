@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/features/settings/category_settings_screen.dart';
 import 'package:monthly_traq/features/settings/my_profile_screen.dart';
 import 'package:monthly_traq/features/settings/themes_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
@@ -48,14 +49,15 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   ),
                 ),
                 const Divider(height: 1),
-                const _SettingsRow(
-                  icon: Icons.share_outlined,
-                  label: 'Data Sharing',
-                ),
-                const Divider(height: 1),
-                const _SettingsRow(
+                _SettingsRow(
                   icon: Icons.grid_view_outlined,
                   label: 'Category settings',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CategorySettingsScreen(),
+                    ),
+                  ),
                 ),
                 const Divider(height: 1),
                 _SettingsRow(

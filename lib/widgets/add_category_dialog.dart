@@ -14,23 +14,25 @@ const _kCategoryIconChoices = [
   Icons.card_giftcard,
 ];
 
-/// Shows a dialog to create a new spending category with any name the user
-/// wants, picking a slot color automatically. Returns the created category,
-/// or null if the user cancelled or the category cap was already reached.
+/// Shows a dialog to create a new category, or — when [existing] is passed —
+/// to rename/re-icon that one instead. Returns the created/updated category,
+/// or null if the user cancelled (or, for a new category, the cap was
+/// already reached).
 Future<CategoryModel?> showAddCategoryDialog(
   BuildContext context,
   TransactionsRepository repo, {
   required TransactionType type,
+  CategoryModel? existing,
 }) async {
-  if (!repo.canAddCategory) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Category limit reached')));
+  if (existing == null && !repo.canAddCategory) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Category limit reached')));
     return null;
   }
 
-  final nameController = TextEditingController();
-  IconData selectedIcon = _kCategoryIconChoices.first;
+  final isEditing = existing != null;
+  final nameController = TextEditingController(text: existing?.name);
+  IconData selectedIcon = existing?.icon ?? _kCategoryIconChoices.first;
   bool isSaving = false;
 
   return showDialog<CategoryModel>(
@@ -39,7 +41,7 @@ Future<CategoryModel?> showAddCategoryDialog(
       return StatefulBuilder(
         builder: (dialogContext, setState) {
           return AlertDialog(
-            title: const Text('Add category'),
+            title: Text(isEditing ? 'Edit category' : 'Add category'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -62,14 +64,16 @@ Future<CategoryModel?> showAddCategoryDialog(
                         child: CircleAvatar(
                           backgroundColor: isSelected
                               ? Theme.of(dialogContext).colorScheme.primary
-                              : Theme.of(
-                                  dialogContext,
-                                ).colorScheme.surfaceContainerHighest,
+                              : Theme.of(dialogContext)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
                           child: Icon(
                             icon,
                             color: isSelected
                                 ? Colors.white
-                                : Theme.of(dialogContext).colorScheme.onSurfaceVariant,
+                                : Theme.of(dialogContext)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                           ),
                         ),
                       );
@@ -87,21 +91,40 @@ Future<CategoryModel?> showAddCategoryDialog(
                 onPressed: isSaving
                     ? null
                     : () async {
-                        if (nameController.text.trim().isEmpty) return;
+                        final name = nameController.text.trim();
+                        if (name.isEmpty) return;
                         setState(() => isSaving = true);
                         try {
-                          final created = await repo.addCategory(
-                            name: nameController.text.trim(),
-                            icon: selectedIcon,
-                            type: type,
-                          );
+                          final CategoryModel? result;
+                          if (isEditing) {
+                            final updated = CategoryModel(
+                              id: existing.id,
+                              name: name,
+                              icon: selectedIcon,
+                              color: existing.color,
+                              type: existing.type,
+                              sortOrder: existing.sortOrder,
+                            );
+                            await repo.updateCategory(updated);
+                            result = updated;
+                          } else {
+                            result = await repo.addCategory(
+                              name: name,
+                              icon: selectedIcon,
+                              type: type,
+                            );
+                          }
                           if (dialogContext.mounted) {
-                            Navigator.pop(dialogContext, created);
+                            Navigator.pop(dialogContext, result);
                           }
                         } catch (e) {
                           if (dialogContext.mounted) {
                             ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              SnackBar(content: Text('Could not add category: $e')),
+                              SnackBar(
+                                content: Text(
+                                  'Could not ${isEditing ? 'update' : 'add'} category: $e',
+                                ),
+                              ),
                             );
                             setState(() => isSaving = false);
                           }
@@ -113,7 +136,7 @@ Future<CategoryModel?> showAddCategoryDialog(
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Add'),
+                    : Text(isEditing ? 'Save' : 'Add'),
               ),
             ],
           );
