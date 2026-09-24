@@ -80,16 +80,6 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 ),
                 const Divider(height: 1),
                 const _SettingsRow(
-                  icon: Icons.alarm_outlined,
-                  label: 'Reminder',
-                ),
-                const Divider(height: 1),
-                const _SettingsRow(
-                  icon: Icons.event_repeat_outlined,
-                  label: 'Recurring Transactions',
-                ),
-                const Divider(height: 1),
-                const _SettingsRow(
                   icon: Icons.schedule_outlined,
                   label: 'Monthly Start Date',
                   showVipBadge: true,
