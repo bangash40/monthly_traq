@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:monthly_traq/app/currencies.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/models/category_model.dart';
@@ -83,6 +84,10 @@ class TransactionsRepository extends ChangeNotifier {
   List<CategoryModel> _categories = [];
   List<TransactionModel> _transactions = [];
   double monthlyBudget = 60000;
+  // Which day of the calendar month the budget cycle resets on — lets a
+  // user whose salary lands on, say, the 25th track "this month" against
+  // their own pay cycle instead of the 1st.
+  int monthStartDay = 1;
   String currencySymbol = 'Rs.';
   // Null for symbols set before the full currency picker existed, or a
   // custom symbol that doesn't match any listed currency — the Settings
@@ -139,6 +144,10 @@ class TransactionsRepository extends ChangeNotifier {
       final data = snap.data();
       final budget = data?['monthlyBudget'];
       if (budget is num) monthlyBudget = budget.toDouble();
+      final startDay = data?['monthStartDay'];
+      if (startDay is int && startDay >= 1 && startDay <= 31) {
+        monthStartDay = startDay;
+      }
       final currency = data?['currencySymbol'];
       if (currency is String && currency.isNotEmpty) currencySymbol = currency;
       final code = data?['currencyCode'];
@@ -216,9 +225,44 @@ class TransactionsRepository extends ChangeNotifier {
 
   double get balance => totalIncome - totalExpense;
 
-  bool _isThisMonth(DateTime date) {
+  /// [day] clamped to however many days [year]-[month] actually has (so a
+  /// start day of 31 falls back to the 28th/29th/30th in shorter months).
+  DateTime _cycleDate(int year, int month, int day) {
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    return DateTime(year, month, day.clamp(1, daysInMonth));
+  }
+
+  DateTime get _currentCycleStart {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month;
+    final startThisMonth = _cycleDate(now.year, now.month, monthStartDay);
+    if (!now.isBefore(startThisMonth)) return startThisMonth;
+    final prevMonth = now.month == 1 ? 12 : now.month - 1;
+    final prevYear = now.month == 1 ? now.year - 1 : now.year;
+    return _cycleDate(prevYear, prevMonth, monthStartDay);
+  }
+
+  DateTime get _nextCycleStart {
+    final start = _currentCycleStart;
+    final nextMonth = start.month == 12 ? 1 : start.month + 1;
+    final nextYear = start.month == 12 ? start.year + 1 : start.year;
+    return _cycleDate(nextYear, nextMonth, monthStartDay);
+  }
+
+  bool _isThisMonth(DateTime date) {
+    return !date.isBefore(_currentCycleStart) && date.isBefore(_nextCycleStart);
+  }
+
+  /// "September" when the cycle starts on the 1st (matching the calendar
+  /// month), or a "Sep 25 – Oct 24"-style range once the user has picked a
+  /// custom start day, so the label never implies a plain calendar month it
+  /// doesn't actually track.
+  String get cycleLabel {
+    if (monthStartDay == 1) {
+      return DateFormat('MMMM').format(_currentCycleStart);
+    }
+    final end = _nextCycleStart.subtract(const Duration(days: 1));
+    return '${DateFormat('MMM d').format(_currentCycleStart)} – '
+        '${DateFormat('MMM d').format(end)}';
   }
 
   // Current-month totals — what the budget meter, the Income/Expense tiles,
@@ -302,6 +346,14 @@ class TransactionsRepository extends ChangeNotifier {
     if (userDoc == null) return;
     await _withTimeout(
       userDoc.set({'monthlyBudget': budget}, SetOptions(merge: true)),
+    );
+  }
+
+  Future<void> updateMonthStartDay(int day) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    await _withTimeout(
+      userDoc.set({'monthStartDay': day}, SetOptions(merge: true)),
     );
   }
 

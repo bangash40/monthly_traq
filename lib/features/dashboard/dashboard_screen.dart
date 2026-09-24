@@ -39,7 +39,7 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           Text(
-            'This month · ${DateFormat('MMMM').format(DateTime.now())}',
+            'This month · ${repo.cycleLabel}',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,

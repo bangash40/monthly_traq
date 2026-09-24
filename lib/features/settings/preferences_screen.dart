@@ -9,6 +9,7 @@ import 'package:monthly_traq/features/settings/my_profile_screen.dart';
 import 'package:monthly_traq/features/settings/themes_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/edit_budget_dialog.dart';
+import 'package:monthly_traq/widgets/month_start_day_picker.dart';
 
 class PreferencesScreen extends StatefulWidget {
   const PreferencesScreen({super.key});
@@ -79,10 +80,11 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   ),
                 ),
                 const Divider(height: 1),
-                const _SettingsRow(
+                _SettingsRow(
                   icon: Icons.schedule_outlined,
                   label: 'Monthly Start Date',
-                  showVipBadge: true,
+                  trailingText: '${repo.monthStartDay}',
+                  onTap: () => showMonthStartDayPicker(context, repo),
                 ),
                 const Divider(height: 1),
                 _SettingsRow(
