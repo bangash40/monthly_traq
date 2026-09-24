@@ -174,6 +174,9 @@ class _NavButton extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      splashFactory: NoSplash.splashFactory,
+      highlightColor: Colors.transparent,
+      splashColor: Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         child: FittedBox(

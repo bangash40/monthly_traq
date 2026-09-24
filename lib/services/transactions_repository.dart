@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:monthly_traq/app/currencies.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/monthly_total.dart';
@@ -83,6 +84,10 @@ class TransactionsRepository extends ChangeNotifier {
   List<TransactionModel> _transactions = [];
   double monthlyBudget = 60000;
   String currencySymbol = 'Rs.';
+  // Null for symbols set before the full currency picker existed, or a
+  // custom symbol that doesn't match any listed currency — the Settings
+  // row falls back to showing just the symbol in that case.
+  String? currencyCode;
   // A small compressed profile photo, base64-encoded directly into the
   // user doc rather than Firebase Storage — Storage requires the paid
   // Blaze plan just to be enabled at all, even for zero-cost usage.
@@ -136,6 +141,8 @@ class TransactionsRepository extends ChangeNotifier {
       if (budget is num) monthlyBudget = budget.toDouble();
       final currency = data?['currencySymbol'];
       if (currency is String && currency.isNotEmpty) currencySymbol = currency;
+      final code = data?['currencyCode'];
+      currencyCode = code is String && code.isNotEmpty ? code : null;
       final photo = data?['photoBase64'];
       photoBase64 = photo is String && photo.isNotEmpty ? photo : null;
       notifyListeners();
@@ -279,11 +286,14 @@ class TransactionsRepository extends ChangeNotifier {
     return entries;
   }
 
-  Future<void> updateCurrencySymbol(String symbol) async {
+  Future<void> updateCurrency(CurrencyOption currency) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
     await _withTimeout(
-      userDoc.set({'currencySymbol': symbol}, SetOptions(merge: true)),
+      userDoc.set({
+        'currencySymbol': currency.symbol,
+        'currencyCode': currency.code,
+      }, SetOptions(merge: true)),
     );
   }
 
@@ -435,6 +445,7 @@ class TransactionsRepository extends ChangeNotifier {
     batch.set(userDoc, {
       'monthlyBudget': 60000,
       'currencySymbol': 'Rs.',
+      'currencyCode': 'PKR',
       'createdAt': FieldValue.serverTimestamp(),
     });
 

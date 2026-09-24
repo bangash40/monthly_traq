@@ -13,15 +13,17 @@ service cloud.firestore {
       // merge-writes just that one field, so requiring createdAt to
       // already be a certain shape on every write is fragile for no real
       // security benefit (this doc has a single owner and no other
-      // reader). currencySymbol and photoBase64 are optional (older
-      // accounts predate them). photoBase64's cap leaves headroom under
-      // Firestore's 1 MiB document size limit alongside the doc's other
-      // fields.
+      // reader). currencySymbol, currencyCode and photoBase64 are optional
+      // (older accounts predate them). photoBase64's cap leaves headroom
+      // under Firestore's 1 MiB document size limit alongside the doc's
+      // other fields.
       return data.monthlyBudget is number && data.monthlyBudget >= 0
         && (!('currencySymbol' in data.keys())
             || (data.currencySymbol is string
                 && data.currencySymbol.size() > 0
                 && data.currencySymbol.size() <= 10))
+        && (!('currencyCode' in data.keys())
+            || (data.currencyCode is string && data.currencyCode.size() <= 10))
         && (!('photoBase64' in data.keys())
             || data.photoBase64 == null
             || (data.photoBase64 is string && data.photoBase64.size() <= 900000));

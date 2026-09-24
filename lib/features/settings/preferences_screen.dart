@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/currencies.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/features/settings/category_settings_screen.dart';
+import 'package:monthly_traq/features/settings/currency_picker_screen.dart';
 import 'package:monthly_traq/features/settings/my_profile_screen.dart';
 import 'package:monthly_traq/features/settings/themes_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/edit_budget_dialog.dart';
-import 'package:monthly_traq/widgets/edit_currency_dialog.dart';
 
 class PreferencesScreen extends StatefulWidget {
   const PreferencesScreen({super.key});
@@ -26,6 +27,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     final repo = context.watch<TransactionsRepository>();
     final currency = NumberFormat.decimalPattern();
     final cardColor = Theme.of(context).cardColor;
+    final selectedCurrency = kCurrencyOptions
+        .cast<CurrencyOption?>()
+        .firstWhere((c) => c?.code == repo.currencyCode, orElse: () => null);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -63,8 +67,16 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 _SettingsRow(
                   icon: Icons.attach_money,
                   label: 'Default currency',
-                  trailingText: repo.currencySymbol,
-                  onTap: () => showEditCurrencyDialog(context, repo),
+                  trailingText: selectedCurrency != null
+                      ? '${selectedCurrency.code} ( ${selectedCurrency.symbol} )'
+                      : repo.currencySymbol,
+                  trailingSubtitle: selectedCurrency?.country,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CurrencyPickerScreen(),
+                    ),
+                  ),
                 ),
                 const Divider(height: 1),
                 const _SettingsRow(
@@ -220,6 +232,7 @@ class _SettingsRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String? trailingText;
+  final String? trailingSubtitle;
   final bool showVipBadge;
   final bool? toggleValue;
   final ValueChanged<bool>? onToggleChanged;
@@ -229,6 +242,7 @@ class _SettingsRow extends StatelessWidget {
     required this.icon,
     required this.label,
     this.trailingText,
+    this.trailingSubtitle,
     this.showVipBadge = false,
     this.toggleValue,
     this.onToggleChanged,
@@ -251,10 +265,37 @@ class _SettingsRow extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (trailingText != null) ...[
-                    Text(
-                      trailingText!,
-                      style: TextStyle(color: onSurfaceVariant, fontSize: 13),
-                    ),
+                    trailingSubtitle != null
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                trailingText!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  height: 1.1,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                trailingSubtitle!,
+                                textAlign: TextAlign.end,
+                                style: TextStyle(
+                                  color: onSurfaceVariant,
+                                  fontSize: 10,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            trailingText!,
+                            style: TextStyle(
+                              color: onSurfaceVariant,
+                              fontSize: 13,
+                            ),
+                          ),
                     const SizedBox(width: 8),
                   ],
                   if (showVipBadge) ...[
