@@ -23,6 +23,17 @@ class MonthlyTraqApp extends StatelessWidget {
             theme: themeController.lightPreset.toThemeData(),
             darkTheme: themeController.darkPreset.toThemeData(),
             themeMode: themeController.mode,
+            builder: (context, child) {
+              final mediaQuery = MediaQuery.of(context);
+              return MediaQuery(
+                data: mediaQuery.copyWith(
+                  textScaler: TextScaler.linear(
+                    mediaQuery.textScaler.scale(1) * themeController.fontScale,
+                  ),
+                ),
+                child: child!,
+              );
+            },
           );
         },
       ),

@@ -5,6 +5,11 @@ import 'package:monthly_traq/app/theme.dart';
 const _themeModeKey = 'theme_mode';
 const _lightPresetKey = 'theme_light_preset';
 const _darkPresetKey = 'theme_dark_preset';
+const _fontSizeStepKey = 'font_size_step';
+
+/// Text scale factors for the four Font Size slider stops, smallest first.
+const kFontScaleSteps = [0.85, 1.0, 1.15, 1.3];
+const kDefaultFontSizeStep = 1;
 
 /// Holds the user's chosen appearance (system/light/dark) and color palette
 /// preset for each brightness, persisting all of it locally — some devices
@@ -14,6 +19,9 @@ class ThemeController extends ChangeNotifier {
   ThemeMode mode = ThemeMode.system;
   String lightPresetId = kDefaultLightPresetId;
   String darkPresetId = kDefaultDarkPresetId;
+  int fontSizeStep = kDefaultFontSizeStep;
+
+  double get fontScale => kFontScaleSteps[fontSizeStep];
 
   AppThemePreset get lightPreset =>
       presetById(lightPresetId, kLightThemePresets);
@@ -33,7 +41,19 @@ class ThemeController extends ChangeNotifier {
     };
     lightPresetId = prefs.getString(_lightPresetKey) ?? kDefaultLightPresetId;
     darkPresetId = prefs.getString(_darkPresetKey) ?? kDefaultDarkPresetId;
+    final step = prefs.getInt(_fontSizeStepKey);
+    if (step != null && step >= 0 && step < kFontScaleSteps.length) {
+      fontSizeStep = step;
+    }
     notifyListeners();
+  }
+
+  Future<void> setFontSizeStep(int step) async {
+    fontSizeStep = step;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_fontSizeStepKey, step);
   }
 
   Future<void> setMode(ThemeMode newMode) async {

@@ -5,6 +5,7 @@ import 'package:monthly_traq/app/currencies.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/features/settings/category_settings_screen.dart';
 import 'package:monthly_traq/features/settings/currency_picker_screen.dart';
+import 'package:monthly_traq/features/settings/font_size_screen.dart';
 import 'package:monthly_traq/features/settings/my_profile_screen.dart';
 import 'package:monthly_traq/features/settings/themes_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
@@ -98,7 +99,16 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   ),
                 ),
                 const Divider(height: 1),
-                const _SettingsRow(icon: Icons.format_size, label: 'Font Size'),
+                _SettingsRow(
+                  icon: Icons.format_size,
+                  label: 'Font Size',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FontSizeScreen(),
+                    ),
+                  ),
+                ),
                 const Divider(height: 1),
                 const _SettingsRow(
                   icon: Icons.dashboard_customize_outlined,
