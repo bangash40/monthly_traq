@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/currencies.dart';
 import 'package:monthly_traq/app/text_styles.dart';
+import 'package:monthly_traq/dev/sample_data.dart';
 import 'package:monthly_traq/features/settings/category_settings_screen.dart';
 import 'package:monthly_traq/features/settings/currency_picker_screen.dart';
 import 'package:monthly_traq/features/settings/my_profile_screen.dart';
@@ -91,9 +93,47 @@ class PreferencesScreen extends StatelessWidget {
               ),
             ],
           ),
+          if (kDebugMode)
+            _SettingsSection(
+              title: 'Developer (debug builds only)',
+              rows: [
+                _SettingsRow(
+                  icon: Icons.dataset_outlined,
+                  label: 'Load sample data',
+                  onTap: () => _runSampleAction(
+                    context,
+                    () => loadSampleData(repo.categories),
+                    (count) => 'Added $count sample transactions',
+                  ),
+                ),
+                _SettingsRow(
+                  icon: Icons.delete_sweep_outlined,
+                  label: 'Remove sample data',
+                  onTap: () => _runSampleAction(
+                    context,
+                    removeSampleData,
+                    (count) => 'Removed $count sample transactions',
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
+  }
+}
+
+Future<void> _runSampleAction(
+  BuildContext context,
+  Future<int> Function() action,
+  String Function(int count) message,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    final count = await action();
+    messenger.showSnackBar(SnackBar(content: Text(message(count))));
+  } catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text('Failed: $e')));
   }
 }
 
