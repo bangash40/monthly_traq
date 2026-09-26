@@ -50,7 +50,7 @@ const _defaultSeedCategories = [
   (name: 'Snacks', iconKey: 'cookie'),
   (name: 'Kids', iconKey: 'child_care'),
   (name: 'Vegetables', iconKey: 'eco'),
-  (name: 'Fruits', iconKey: 'apple'),
+  (name: 'Fruits', iconKey: 'shopping_basket'),
 ];
 
 const _defaultIncomeSeedCategories = [
@@ -157,11 +157,15 @@ class TransactionsRepository extends ChangeNotifier {
       notifyListeners();
     });
 
+    _cycleOffset = 0;
+    _colorMigrationChecked = false;
+
     _categoriesSub = userDoc
         .collection('categories')
         .orderBy('createdAt')
         .snapshots(includeMetadataChanges: true)
         .listen((snap) {
+          if (!snap.metadata.isFromCache) _migrateCategoryColors(snap.docs);
           _categories = _sortCategories(
             snap.docs.map(CategoryModel.fromDoc).toList(),
           );
@@ -178,6 +182,39 @@ class TransactionsRepository extends ChangeNotifier {
           _transactions = snap.docs.map(TransactionModel.fromDoc).toList();
           notifyListeners();
         });
+  }
+
+  static Color _paletteSlot(int index) =>
+      AppPalette.categorical[index % AppPalette.categorical.length];
+
+  bool _colorMigrationChecked = false;
+
+  /// One-time recolor onto the current palette. Categories store their
+  /// color, so accounts created before the 12-color palette still carry the
+  /// old 8 (including the green and red slots that clashed with
+  /// income/expense). If any stored color isn't in today's palette, every
+  /// category is reassigned a slot by creation order, counted per type —
+  /// the same assignment a fresh account gets. Checked once per sign-in, on
+  /// the first server-confirmed snapshot (a cached one may be partial); a
+  /// failed write simply retries next session.
+  void _migrateCategoryColors(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
+    if (_colorMigrationChecked || docs.isEmpty) return;
+    _colorMigrationChecked = true;
+
+    final current = {for (final c in AppPalette.categorical) c.toARGB32()};
+    if (docs.every((d) => current.contains(d.data()['color']))) return;
+
+    final batch = _firestore.batch();
+    final perType = <String, int>{};
+    for (final doc in docs) {
+      final type = doc.data()['type'] == 'income' ? 'income' : 'expense';
+      final index = perType[type] ?? 0;
+      perType[type] = index + 1;
+      batch.update(doc.reference, {'color': _paletteSlot(index).toARGB32()});
+    }
+    unawaited(batch.commit().catchError((Object _) {}));
   }
 
   @override
@@ -241,41 +278,110 @@ class TransactionsRepository extends ChangeNotifier {
     return _cycleDate(prevYear, prevMonth, monthStartDay);
   }
 
-  DateTime get _nextCycleStart {
-    final start = _currentCycleStart;
-    final nextMonth = start.month == 12 ? 1 : start.month + 1;
-    final nextYear = start.month == 12 ? start.year + 1 : start.year;
-    return _cycleDate(nextYear, nextMonth, monthStartDay);
+  /// The start of the cycle [offset] cycles away from the current one
+  /// (0 = current, -1 = the one before, ...).
+  DateTime _cycleStartAt(int offset) {
+    final current = _currentCycleStart;
+    // DateTime normalizes an out-of-range month (e.g. 0 or 13) into the
+    // neighbouring year, so plain month arithmetic is safe here.
+    final target = DateTime(current.year, current.month + offset);
+    return _cycleDate(target.year, target.month, monthStartDay);
   }
 
-  bool _isThisMonth(DateTime date) {
-    return !date.isBefore(_currentCycleStart) && date.isBefore(_nextCycleStart);
+  // Which budget cycle Transactions and Analytics are showing, relative to
+  // the current one — shared here so both tabs always show the same month.
+  int _cycleOffset = 0;
+
+  bool get isCurrentCycle => _cycleOffset == 0;
+
+  void showPreviousCycle() {
+    _cycleOffset--;
+    notifyListeners();
+  }
+
+  void showNextCycle() {
+    if (_cycleOffset >= 0) return;
+    _cycleOffset++;
+    notifyListeners();
+  }
+
+  void showCurrentCycle() {
+    if (_cycleOffset == 0) return;
+    _cycleOffset = 0;
+    notifyListeners();
+  }
+
+  DateTime get _selectedCycleStart => _cycleStartAt(_cycleOffset);
+  DateTime get _selectedCycleEnd => _cycleStartAt(_cycleOffset + 1);
+
+  bool _isInSelectedCycle(DateTime date) {
+    return !date.isBefore(_selectedCycleStart) &&
+        date.isBefore(_selectedCycleEnd);
+  }
+
+  bool _isInCurrentCycle(DateTime date) {
+    return !date.isBefore(_cycleStartAt(0)) && date.isBefore(_cycleStartAt(1));
   }
 
   /// "September" when the cycle starts on the 1st (matching the calendar
   /// month), or a "Sep 25 – Oct 24"-style range once the user has picked a
   /// custom start day, so the label never implies a plain calendar month it
-  /// doesn't actually track.
-  String get cycleLabel {
+  /// doesn't actually track. Adds the year for cycles outside this year.
+  String _labelForCycle(int offset) {
+    final start = _cycleStartAt(offset);
+    final showYear = start.year != DateTime.now().year;
     if (monthStartDay == 1) {
-      return DateFormat('MMMM').format(_currentCycleStart);
+      return DateFormat(showYear ? 'MMMM y' : 'MMMM').format(start);
     }
-    final end = _nextCycleStart.subtract(const Duration(days: 1));
-    return '${DateFormat('MMM d').format(_currentCycleStart)} – '
-        '${DateFormat('MMM d').format(end)}';
+    final end = _cycleStartAt(offset + 1).subtract(const Duration(days: 1));
+    final format = DateFormat(showYear ? 'MMM d, y' : 'MMM d');
+    return '${format.format(start)} – ${format.format(end)}';
   }
 
-  // Current-month totals — what the budget meter, the Income/Expense tiles,
-  // and the category breakdown are actually scoped to, since a "monthly
-  // budget" should reset each month rather than compare against all-time
-  // spending.
+  /// Label of the cycle picked with the month switcher (Transactions and
+  /// Analytics).
+  String get cycleLabel => _labelForCycle(_cycleOffset);
+
+  /// Label of the current cycle — the dashboard always shows this one.
+  String get currentCycleLabel => _labelForCycle(0);
+
+  // Current-cycle totals — what the dashboard's budget meter and
+  // Income/Expense tiles are scoped to, since a "monthly budget" should
+  // reset each month rather than compare against all-time spending. These
+  // ignore the month switcher on purpose: the dashboard is always "now".
   double get monthlyIncome => _transactions
-      .where((t) => t.type == TransactionType.income && _isThisMonth(t.date))
+      .where(
+        (t) => t.type == TransactionType.income && _isInCurrentCycle(t.date),
+      )
       .fold(0, (total, t) => total + t.amount);
 
   double get monthlyExpense => _transactions
-      .where((t) => t.type == TransactionType.expense && _isThisMonth(t.date))
+      .where(
+        (t) => t.type == TransactionType.expense && _isInCurrentCycle(t.date),
+      )
       .fold(0, (total, t) => total + t.amount);
+
+  /// Total spent in the cycle picked with the month switcher (Analytics).
+  double get selectedCycleExpense => _transactions
+      .where(
+        (t) => t.type == TransactionType.expense && _isInSelectedCycle(t.date),
+      )
+      .fold(0, (total, t) => total + t.amount);
+
+  /// Every transaction in the cycle picked with the month switcher, newest
+  /// first — the Transactions tab's list.
+  List<TransactionModel> get selectedCycleTransactions =>
+      _transactions.where((t) => _isInSelectedCycle(t.date)).toList();
+
+  /// The selected cycle's expenses in one category, newest first.
+  List<TransactionModel> expensesInCategory(String categoryId) => _transactions
+      .where(
+        (t) =>
+            t.type == TransactionType.expense &&
+            t.categoryId == categoryId &&
+            _isInSelectedCycle(t.date),
+      )
+      .toList();
 
   double get budgetRemaining => monthlyBudget - monthlyExpense;
 
@@ -308,12 +414,12 @@ class TransactionsRepository extends ChangeNotifier {
     });
   }
 
-  /// This month's expense totals per category, highest first. Categories
-  /// with no expenses yet this month are omitted.
+  /// The selected cycle's expense totals per category, highest first.
+  /// Categories with no expenses in that cycle are omitted.
   List<MapEntry<CategoryModel, double>> get expenseByCategory {
     final totals = <String, double>{};
     for (final t in _transactions.where(
-      (t) => t.type == TransactionType.expense && _isThisMonth(t.date),
+      (t) => t.type == TransactionType.expense && _isInSelectedCycle(t.date),
     )) {
       if (t.categoryId == null) continue;
       totals[t.categoryId!] = (totals[t.categoryId!] ?? 0) + t.amount;
@@ -391,6 +497,19 @@ class TransactionsRepository extends ChangeNotifier {
     await _withTimeout(userDoc.collection('transactions').doc(id).delete());
   }
 
+  /// Puts a just-deleted transaction back under its original id — the
+  /// "Undo" behind a delete snackbar.
+  Future<void> restoreTransaction(TransactionModel transaction) async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    await _withTimeout(
+      userDoc
+          .collection('transactions')
+          .doc(transaction.id)
+          .set(transaction.toMap()),
+    );
+  }
+
   // A high ceiling mostly to stop runaway/accidental creation — the default
   // seed alone is 32 categories (27 expense + 5 income), so this needs
   // plenty of headroom above that.
@@ -406,8 +525,11 @@ class TransactionsRepository extends ChangeNotifier {
     final userDoc = _userDoc;
     if (userDoc == null || !canAddCategory) return null;
 
-    final color = AppPalette
-        .categorical[_categories.length % AppPalette.categorical.length];
+    // Slots are counted per type, so expense categories spread across the
+    // whole palette instead of sharing it with the income ones.
+    final sameType = _categories.where((c) => c.type == type).length;
+    final color =
+        AppPalette.categorical[sameType % AppPalette.categorical.length];
     // Always-increasing, so a freshly added category sorts after every
     // existing one regardless of type.
     final sortOrder = DateTime.now().millisecondsSinceEpoch;
@@ -502,26 +624,24 @@ class TransactionsRepository extends ChangeNotifier {
     });
 
     var i = 0;
-    for (final seed in _defaultSeedCategories) {
+    for (final (index, seed) in _defaultSeedCategories.indexed) {
       final ref = categoriesRef.doc();
       batch.set(ref, {
         'name': seed.name,
         'iconKey': seed.iconKey,
-        'color': AppPalette.categorical[i % AppPalette.categorical.length]
-            .toARGB32(),
+        'color': _paletteSlot(index).toARGB32(),
         'type': 'expense',
         'sortOrder': i,
         'createdAt': FieldValue.serverTimestamp(),
       });
       i++;
     }
-    for (final seed in _defaultIncomeSeedCategories) {
+    for (final (index, seed) in _defaultIncomeSeedCategories.indexed) {
       final ref = categoriesRef.doc();
       batch.set(ref, {
         'name': seed.name,
         'iconKey': seed.iconKey,
-        'color': AppPalette.categorical[i % AppPalette.categorical.length]
-            .toARGB32(),
+        'color': _paletteSlot(index).toARGB32(),
         'type': 'income',
         'sortOrder': i,
         'createdAt': FieldValue.serverTimestamp(),

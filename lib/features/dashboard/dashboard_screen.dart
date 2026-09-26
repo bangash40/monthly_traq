@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/budget_meter.dart';
 import 'package:monthly_traq/widgets/edit_budget_dialog.dart';
+import 'package:monthly_traq/widgets/empty_state.dart';
 import 'package:monthly_traq/widgets/stat_tile.dart';
 import 'package:monthly_traq/widgets/transaction_tile.dart';
 
@@ -25,26 +27,22 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('MonthlyTraq')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
         children: [
           Text(
             'Balance',
-            style: TextStyle(fontSize: 14, color: onSurfaceVariant),
+            style: AppText.label.copyWith(fontSize: 14, color: onSurfaceVariant),
           ),
           const SizedBox(height: 4),
           Text(
             '$symbol ${currency.format(repo.balance)}',
-            style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+            style: AppText.balance,
           ),
           const SizedBox(height: 24),
 
           Text(
-            'This month · ${repo.cycleLabel}',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: onSurfaceVariant,
-            ),
+            'This month · ${repo.currentCycleLabel}',
+            style: AppText.labelStrong.copyWith(color: onSurfaceVariant),
           ),
           const SizedBox(height: 12),
 
@@ -82,23 +80,26 @@ class DashboardScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Recent transactions',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-              TextButton(
-                onPressed: onSeeAllTransactions,
-                child: const Text('See all'),
-              ),
+              const Text('Recent transactions', style: AppText.sectionTitle),
+              if (recent.isNotEmpty)
+                TextButton(
+                  onPressed: onSeeAllTransactions,
+                  child: const Text('See all'),
+                ),
             ],
           ),
 
           if (recent.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Text(
-                'No transactions yet.',
-                style: TextStyle(color: onSurfaceVariant),
+            EmptyState(
+              icon: Icons.receipt_long,
+              title: 'No transactions yet',
+              message: 'Log what you spend and earn to see it here.',
+              actionLabel: 'Add your first transaction',
+              onAction: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddEditTransactionScreen(),
+                ),
               ),
             )
           else

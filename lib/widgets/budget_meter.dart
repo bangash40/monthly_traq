@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 
 /// A single ratio against a limit — a linear meter whose fill escalates
@@ -25,6 +26,13 @@ class BudgetMeter extends StatelessWidget {
     if (ratio >= 1) return AppPalette.critical;
     if (ratio >= 0.7) return AppPalette.warning;
     return themeAccent(context);
+  }
+
+  /// Same meaning as [_fillColor], but readable as text — the warning
+  /// yellow is a fill color only.
+  Color _labelColor(BuildContext context) {
+    if (ratio >= 1 || ratio < 0.7) return _fillColor(context);
+    return AppPalette.warningText(Theme.of(context).brightness);
   }
 
   @override
@@ -71,10 +79,8 @@ class BudgetMeter extends StatelessWidget {
               ),
               Text(
                 ratio >= 1 ? 'Over budget' : '${(clamped * 100).round()}% used',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: fillColor,
+                style: AppText.labelStrong.copyWith(
+                  color: _labelColor(context),
                 ),
               ),
             ],

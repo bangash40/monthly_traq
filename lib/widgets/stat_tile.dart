@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monthly_traq/app/text_styles.dart';
 
 class StatTile extends StatelessWidget {
   final String label;
@@ -36,16 +37,12 @@ class StatTile extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 13,
+            style: AppText.label.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          ),
+          Text(value, style: AppText.statValue),
         ],
       ),
     );

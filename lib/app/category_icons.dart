@@ -38,12 +38,17 @@ const categoryIconsByKey = <String, IconData>{
   'cookie': Icons.cookie,
   'child_care': Icons.child_care,
   'eco': Icons.eco,
-  'apple': Icons.apple,
+  'shopping_basket': Icons.shopping_basket,
   'work': Icons.work,
   'trending_up': Icons.trending_up,
   'handshake': Icons.handshake,
   'emoji_events': Icons.emoji_events,
   'paid': Icons.paid,
+  // Legacy key: Fruits was first seeded with Icons.apple, which is Apple's
+  // brand logo rather than a fruit. Kept so categories already stored under
+  // this key show the basket instead; listed last so [keyForIcon] resolves
+  // the basket to 'shopping_basket' when such a category is re-saved.
+  'apple': Icons.shopping_basket,
 };
 
 const defaultCategoryIconKey = 'category';

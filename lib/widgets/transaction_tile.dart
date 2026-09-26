@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
@@ -61,8 +62,9 @@ class TransactionTile extends StatelessWidget {
         children: [
           Text(
             amountText,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
+            // Explicit size — the ListTile trailing slot otherwise inherits
+            // Material 3's 11px labelSmall, smaller than the date below it.
+            style: AppText.amount.copyWith(
               color: isIncome
                   ? AppPalette.successText(Theme.of(context).brightness)
                   : onSurface,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/models/monthly_total.dart';
 
 /// Income vs expense, grouped by month — a compact bar-pair chart with no
@@ -29,10 +30,7 @@ class MonthlyTrendChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Monthly trend',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-          ),
+          const Text('Monthly trend', style: AppText.sectionTitle),
           const SizedBox(height: 8),
           const _Legend(),
           const SizedBox(height: 20),
@@ -59,11 +57,18 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return Row(
-      children: const [
-        _LegendDot(color: AppPalette.good, label: 'Income'),
-        SizedBox(width: 16),
-        _LegendDot(color: AppPalette.critical, label: 'Expense'),
+      children: [
+        _LegendDot(
+          color: AppPalette.incomeChart(brightness),
+          label: 'Income (left)',
+        ),
+        const SizedBox(width: 16),
+        _LegendDot(
+          color: AppPalette.expenseChart(brightness),
+          label: 'Expense (right)',
+        ),
       ],
     );
   }
@@ -128,13 +133,13 @@ class _MonthColumn extends StatelessWidget {
             _Bar(
               height: _heightFor(total.income),
               width: barWidth,
-              color: AppPalette.good,
+              color: AppPalette.incomeChart(Theme.of(context).brightness),
             ),
             const SizedBox(width: 3),
             _Bar(
               height: _heightFor(total.expense),
               width: barWidth,
-              color: AppPalette.critical,
+              color: AppPalette.expenseChart(Theme.of(context).brightness),
             ),
           ],
         ),

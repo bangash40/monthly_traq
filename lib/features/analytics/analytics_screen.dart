@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:monthly_traq/models/transaction_model.dart';
+import 'package:monthly_traq/app/text_styles.dart';
+import 'package:monthly_traq/features/analytics/category_transactions_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
-import 'package:monthly_traq/widgets/add_category_dialog.dart';
 import 'package:monthly_traq/widgets/category_bar_row.dart';
+import 'package:monthly_traq/widgets/category_donut.dart';
+import 'package:monthly_traq/widgets/empty_state.dart';
+import 'package:monthly_traq/widgets/month_switcher.dart';
 import 'package:monthly_traq/widgets/monthly_trend_chart.dart';
 
+/// Where the money went. Category management (add, edit, delete, reorder)
+/// lives only in Settings › Category settings, not here.
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
 
@@ -13,110 +19,93 @@ class AnalyticsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = context.watch<TransactionsRepository>();
     final breakdown = repo.expenseByCategory;
-    final totalExpense = repo.monthlyExpense;
+    final totalExpense = repo.selectedCycleExpense;
     final maxAmount = breakdown.isEmpty ? 0.0 : breakdown.first.value;
     final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
     final cardColor = Theme.of(context).cardColor;
+    final total =
+        '${repo.currencySymbol} ${NumberFormat.decimalPattern().format(totalExpense)}';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Analytics'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Add category',
-            onPressed: () => showAddCategoryDialog(
-              context,
-              repo,
-              type: TransactionType.expense,
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Analytics')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
         children: [
-          MonthlyTrendChart(months: repo.lastSixMonths),
-          const SizedBox(height: 28),
-
-          const Text(
-            'Spending by category',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-          ),
-          Text(
-            'This month',
-            style: TextStyle(fontSize: 13, color: onSurfaceVariant),
-          ),
+          const MonthSwitcher(),
           const SizedBox(height: 12),
-          if (breakdown.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'No expenses recorded this month yet.',
-                style: TextStyle(color: onSurfaceVariant),
-              ),
-            )
-          else
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: breakdown
-                    .map(
-                      (entry) => CategoryBarRow(
-                        category: entry.key,
-                        amount: entry.value,
-                        maxAmount: maxAmount,
-                        sharePercent: totalExpense <= 0
-                            ? 0
-                            : entry.value / totalExpense * 100,
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
 
-          const SizedBox(height: 28),
-          const Text(
-            'Categories',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
           Material(
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: repo.categories
-                  .map(
-                    (c) => ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: c.color.withValues(alpha: 0.12),
-                        child: Icon(c.icon, color: c.color, size: 20),
-                      ),
-                      title: Text(c.name),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: 'Delete category',
-                        onPressed: () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          try {
-                            await repo.deleteCategory(c.id);
-                          } catch (e) {
-                            messenger.showSnackBar(
-                              SnackBar(content: Text('Could not delete: $e')),
-                            );
-                          }
-                        },
-                      ),
-                    ),
+            child: breakdown.isEmpty
+                ? const EmptyState(
+                    icon: Icons.pie_chart_outline,
+                    title: 'No spending this month',
+                    message: 'Expenses you log will be broken down here.',
                   )
-                  .toList(),
-            ),
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Spending by category',
+                            style: AppText.sectionTitle,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Tap a category to see its transactions',
+                            style: AppText.caption.copyWith(
+                              color: onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Center(
+                          child: CategoryDonut(
+                            entries: breakdown,
+                            centerValue: total,
+                            centerLabel: 'spent',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        for (final entry in breakdown)
+                          InkWell(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    CategoryTransactionsScreen(
+                                      category: entry.key,
+                                    ),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: CategoryBarRow(
+                                category: entry.key,
+                                amount: entry.value,
+                                maxAmount: maxAmount,
+                                sharePercent: totalExpense <= 0
+                                    ? 0
+                                    : entry.value / totalExpense * 100,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
           ),
+          const SizedBox(height: 28),
+
+          MonthlyTrendChart(months: repo.lastSixMonths),
         ],
       ),
     );

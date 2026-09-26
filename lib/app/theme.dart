@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // Light mode default — "Sage Mint", chosen to pair with the forest-green
 // dark theme.
@@ -10,7 +11,7 @@ const kLightPrimary = Color(0xFF3F7A5C);
 const kDarkBackground = Color(0xFF091413);
 const kDarkSurface = Color(0xFF14241F);
 // Deep green derived from that palette's 408A71 — darkened enough to carry
-// white button/app bar text at proper contrast (408A71 itself falls just
+// white button text at proper contrast (408A71 itself falls just
 // short of the 4.5:1 body-text minimum).
 const kDarkPrimary = Color(0xFF2F7A61);
 const kDarkPrimaryTint = Color(0xFFB0E4CC);
@@ -18,7 +19,7 @@ const kDarkPrimaryTint = Color(0xFFB0E4CC);
 /// A selectable app color palette — a brightness (light or dark) plus the
 /// background/surface/primary/accent quartet [_buildTheme] needs. Every
 /// preset here has been checked by hand for WCAG contrast: `primary` carries
-/// white text (app bar, filled buttons) at >= 4.5:1, and `accent` carries
+/// white text (filled buttons, the add button) at >= 4.5:1, and `accent` carries
 /// bare text/icons directly on [background]/[surface] at >= 4.5:1 too.
 class AppThemePreset {
   final String id;
@@ -139,12 +140,25 @@ ThemeData _buildTheme({
   required Color accent,
 }) {
   final borderRadius = BorderRadius.circular(20);
-  final colorScheme = ColorScheme.fromSeed(
+  final isDark = brightness == Brightness.dark;
+  final baseScheme = ColorScheme.fromSeed(
     seedColor: primary,
     brightness: brightness,
     primary: primary,
     surface: surface,
-  ).copyWith(secondary: accent);
+  );
+  // Every role a visible widget actually paints with is pinned to this
+  // preset's own four colors, rather than left to Material's seed-derived
+  // tones — those drift slightly off-palette per preset (the bottom bar,
+  // add button and chip/segment highlights all used to).
+  final selectedTint = Color.alphaBlend(accent.withValues(alpha: 0.16), surface);
+  final colorScheme = baseScheme.copyWith(
+    secondary: accent,
+    secondaryContainer: selectedTint,
+    onSecondaryContainer: baseScheme.onSurface,
+    surfaceContainer: surface,
+    surfaceContainerHighest: Color.lerp(surface, accent, isDark ? 0.12 : 0.08),
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -154,11 +168,41 @@ ThemeData _buildTheme({
     cardColor: surface,
     dialogTheme: DialogThemeData(backgroundColor: surface),
 
+    // App bars sit flat on the page background with a bold title, keeping
+    // the saturated primary for the actions that matter (buttons, the add
+    // button) instead of spending it on every screen's header.
     appBarTheme: AppBarTheme(
+      backgroundColor: background,
+      foregroundColor: colorScheme.onSurface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: colorScheme.onSurface,
+      ),
+      // Transparent status bar so the app bar's color runs up behind the
+      // clock (Android otherwise lays a translucent black scrim over it),
+      // and the system navigation bar matches the bottom app bar.
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: brightness,
+        systemNavigationBarColor: surface,
+        systemNavigationBarDividerColor: surface,
+        systemNavigationBarIconBrightness: isDark
+            ? Brightness.light
+            : Brightness.dark,
+      ),
+    ),
+
+    bottomAppBarTheme: BottomAppBarThemeData(color: surface),
+
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: primary,
       foregroundColor: Colors.white,
-      elevation: 0,
-      centerTitle: false,
     ),
 
     navigationBarTheme: NavigationBarThemeData(

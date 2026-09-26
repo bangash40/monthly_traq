@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/add_category_dialog.dart';
+import 'package:monthly_traq/widgets/delete_transaction.dart';
 
 class AddEditTransactionScreen extends StatefulWidget {
   final TransactionModel? existing;
@@ -115,17 +117,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
   }
 
   Future<void> _delete() async {
-    try {
-      await context.read<TransactionsRepository>().deleteTransaction(
-        widget.existing!.id,
-      );
-      if (!mounted) return;
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not delete: $e')));
-    }
+    final navigator = Navigator.of(context);
+    final deleted = await deleteTransactionWithUndo(context, widget.existing!);
+    if (deleted && mounted) navigator.pop();
   }
 
   @override
@@ -296,6 +290,35 @@ class _AmountEntrySheetState extends State<_AmountEntrySheet> {
         : value.toString();
   }
 
+  /// [_amount] as shown on screen: thousands separators in each number,
+  /// spaced-out operators, and the currency symbol in front — "1200+250"
+  /// displays as "Rs. 1,200 + 250". Decimals are kept exactly as typed.
+  String _displayAmount(String symbol) {
+    final grouping = NumberFormat.decimalPattern();
+    String group(String number) {
+      if (number.isEmpty) return number;
+      final parts = number.split('.');
+      final whole = int.tryParse(parts[0]);
+      final grouped = whole == null ? parts[0] : grouping.format(whole);
+      return parts.length > 1 ? '$grouped.${parts[1]}' : grouped;
+    }
+
+    final buffer = StringBuffer();
+    var number = '';
+    for (final char in _amount.split('')) {
+      if (_kOperators.contains(char)) {
+        buffer
+          ..write(group(number))
+          ..write(' ${char == '-' ? '−' : char} ');
+        number = '';
+      } else {
+        number += char;
+      }
+    }
+    buffer.write(group(number));
+    return '$symbol $buffer';
+  }
+
   /// Evaluates a `+ - × ÷` expression left-to-right, giving `×`/`÷` the
   /// usual precedence over `+`/`-`. A dangling trailing operator (the user
   /// tapped an operator but never finished the second number) is dropped so
@@ -453,11 +476,10 @@ class _AmountEntrySheetState extends State<_AmountEntrySheet> {
                 alignment: Alignment.centerRight,
                 child: FittedBox(
                   child: Text(
-                    _amount,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
+                    _displayAmount(
+                      context.read<TransactionsRepository>().currencySymbol,
                     ),
+                    style: AppText.amountEntry,
                   ),
                 ),
               ),
@@ -482,6 +504,12 @@ class _AmountEntrySheetState extends State<_AmountEntrySheet> {
                     horizontal: 12,
                     vertical: 12,
                   ),
+                  // The theme fills fields with the surface color, which is
+                  // also this sheet's color — use the keypad keys' color so
+                  // the field stays visible.
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
                   hintText: 'Enter a title (optional)...',
                   prefixIcon: const Icon(Icons.edit_outlined, size: 18),
                   border: const OutlineInputBorder(),

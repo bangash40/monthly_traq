@@ -141,8 +141,16 @@ class SettingsScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Log out', style: TextStyle(color: Colors.red)),
+              // colorScheme.error rather than Colors.red — the latter falls
+              // below 4.5:1 contrast as text on a light surface.
+              leading: Icon(
+                Icons.logout,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(
+                'Log out',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
               onTap: () => AuthService().signOut(),
             ),
           ),
