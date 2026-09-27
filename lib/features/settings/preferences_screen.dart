@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/currencies.dart';
 import 'package:monthly_traq/app/palette.dart';
@@ -232,6 +233,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 ),
               ],
             ),
+          const _AppVersionLabel(),
         ],
       ),
     );
@@ -249,6 +251,34 @@ Future<void> _runSampleAction(
     messenger.showSnackBar(SnackBar(content: Text(message(count))));
   } catch (e) {
     messenger.showSnackBar(SnackBar(content: Text('Failed: $e')));
+  }
+}
+
+/// "MonthlyTraq 1.1.0 (2)" — read from the installed build itself, so it
+/// always matches what's actually on the device.
+class _AppVersionLabel extends StatelessWidget {
+  const _AppVersionLabel();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (context, snapshot) {
+        final info = snapshot.data;
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            info == null
+                ? ''
+                : 'MonthlyTraq ${info.version} (${info.buildNumber})',
+            textAlign: TextAlign.center,
+            style: AppText.caption.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
