@@ -40,7 +40,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           _SettingsSection(
             title: 'Account',
@@ -233,7 +233,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 ),
               ],
             ),
-          const _AppVersionLabel(),
+          const _AppVersionFooter(),
         ],
       ),
     );
@@ -254,10 +254,10 @@ Future<void> _runSampleAction(
   }
 }
 
-/// "MonthlyTraq 1.1.0 (2)" — read from the installed build itself, so it
-/// always matches what's actually on the device.
-class _AppVersionLabel extends StatelessWidget {
-  const _AppVersionLabel();
+/// "MonthlyTraq 1.1.0", the last line of the Settings list. Read from the
+/// installed build itself, so it always matches what's on the device.
+class _AppVersionFooter extends StatelessWidget {
+  const _AppVersionFooter();
 
   @override
   Widget build(BuildContext context) {
@@ -265,12 +265,10 @@ class _AppVersionLabel extends StatelessWidget {
       future: PackageInfo.fromPlatform(),
       builder: (context, snapshot) {
         final info = snapshot.data;
-        return Padding(
-          padding: const EdgeInsets.only(top: 8),
+        return SafeArea(
+          minimum: const EdgeInsets.only(top: 8),
           child: Text(
-            info == null
-                ? ''
-                : 'MonthlyTraq ${info.version} (${info.buildNumber})',
+            info == null ? '' : 'MonthlyTraq ${info.version}',
             textAlign: TextAlign.center,
             style: AppText.caption.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
