@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:monthly_traq/app/app_info.dart';
 import 'package:monthly_traq/app/app_settings.dart';
 import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/text_styles.dart';
@@ -12,7 +14,9 @@ import 'package:monthly_traq/dev/sample_data.dart';
 import 'package:monthly_traq/features/settings/appearance_screen.dart';
 import 'package:monthly_traq/features/settings/categories_screen.dart';
 import 'package:monthly_traq/features/settings/currency_picker_screen.dart';
+import 'package:monthly_traq/features/settings/delete_account.dart';
 import 'package:monthly_traq/features/settings/edit_profile_screen.dart';
+import 'package:monthly_traq/features/settings/privacy_policy_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/budget_cycle.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
@@ -26,8 +30,56 @@ import 'package:monthly_traq/widgets/ui.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  /// Rows for features that aren't built yet ("Soon", PRO, and switches
+  /// that don't do anything) only show in debug builds, so the released
+  /// app has nothing that looks unfinished.
+  static const _showUnfinished = kDebugMode;
+
   void _push(BuildContext context, Widget screen) {
     Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
+  }
+
+  Future<bool> _launch(Uri uri) async {
+    try {
+      return await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _contactSupport(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await _launch(AppInfo.supportEmailUri())) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('No email app found. Write to ${AppInfo.supportEmail}'),
+        ),
+      );
+    }
+  }
+
+  /// Opens the Play Store listing, or the web page if there's no store.
+  Future<void> _rateApp(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (await _launch(AppInfo.playStoreAppUri)) return;
+    if (await _launch(AppInfo.playStoreWebUri)) return;
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Couldn\'t open the Play Store')),
+    );
+  }
+
+  Future<void> _showLicenses(BuildContext context) async {
+    final info = await PackageInfo.fromPlatform();
+    if (!context.mounted) return;
+    showLicensePage(
+      context: context,
+      applicationName: AppInfo.name,
+      applicationVersion: info.version,
+      applicationIcon: const Padding(
+        padding: EdgeInsets.all(12),
+        child: AppLogoTile(),
+      ),
+    );
   }
 
   void _showPro(BuildContext context, String feature) {
@@ -146,14 +198,16 @@ class ProfileScreen extends StatelessWidget {
                 value: ordinal(repo.monthStartDay),
                 onTap: () => showMonthStartDayPicker(context),
               ),
-              const SettingsRow.soon(
-                icon: Icons.menu_book_outlined,
-                label: 'Cash books',
-              ),
-              const SettingsRow.soon(
-                icon: Icons.account_balance_outlined,
-                label: 'Accounts',
-              ),
+              if (_showUnfinished) ...const [
+                SettingsRow.soon(
+                  icon: Icons.menu_book_outlined,
+                  label: 'Cash books',
+                ),
+                SettingsRow.soon(
+                  icon: Icons.account_balance_outlined,
+                  label: 'Accounts',
+                ),
+              ],
             ],
           ),
           SettingsGroup(
@@ -172,11 +226,13 @@ class ProfileScreen extends StatelessWidget {
                 value: themeController.fontSizeLabel,
                 onTap: () => _push(context, const AppearanceScreen()),
               ),
-              const SettingsRow.soon(
-                icon: Icons.home_outlined,
-                label: 'Home screen layout',
-              ),
-              const SettingsRow.soon(icon: Icons.apps, label: 'App icon'),
+              if (_showUnfinished) ...const [
+                SettingsRow.soon(
+                  icon: Icons.home_outlined,
+                  label: 'Home screen layout',
+                ),
+                SettingsRow.soon(icon: Icons.apps, label: 'App icon'),
+              ],
             ],
           ),
           SettingsGroup(
@@ -196,7 +252,8 @@ class ProfileScreen extends StatelessWidget {
                 value: '${repo.categories.length}',
                 onTap: () => _push(context, const CategoriesScreen()),
               ),
-              const SettingsRow.soon(icon: Icons.language, label: 'Language'),
+              if (_showUnfinished)
+                const SettingsRow.soon(icon: Icons.language, label: 'Language'),
             ],
           ),
           SettingsGroup(
@@ -209,52 +266,58 @@ class ProfileScreen extends StatelessWidget {
                 toggleValue: settings.thousandsSeparator,
                 onToggle: settings.setThousandsSeparator,
               ),
-              const SettingsRow.soon(
-                icon: Icons.format_list_numbered,
-                label: 'Number format',
-              ),
-              const SettingsRow.soon(
-                icon: Icons.calculate_outlined,
-                label: 'Calculator',
-              ),
-              const SettingsRow.soon(
-                icon: Icons.calendar_month_outlined,
-                label: 'Calendar',
-              ),
+              if (_showUnfinished) ...const [
+                SettingsRow.soon(
+                  icon: Icons.format_list_numbered,
+                  label: 'Number format',
+                ),
+                SettingsRow.soon(
+                  icon: Icons.calculate_outlined,
+                  label: 'Calculator',
+                ),
+                SettingsRow.soon(
+                  icon: Icons.calendar_month_outlined,
+                  label: 'Calendar',
+                ),
+              ],
             ],
           ),
-          SettingsGroup(
-            title: 'Notifications & sound',
-            rows: [
-              SettingsRow(
-                icon: Icons.notifications_outlined,
-                label: 'Quick-add notification',
-                kind: SettingsRowKind.toggle,
-                toggleValue: settings.quickAddNotification,
-                onToggle: settings.setQuickAddNotification,
-              ),
-              SettingsRow(
-                icon: Icons.volume_up_outlined,
-                label: 'Sound effects',
-                kind: SettingsRowKind.toggle,
-                toggleValue: settings.soundEffects,
-                onToggle: settings.setSoundEffects,
-              ),
-            ],
-          ),
+          // These switches are remembered but don't do anything yet.
+          if (_showUnfinished)
+            SettingsGroup(
+              title: 'Notifications & sound',
+              rows: [
+                SettingsRow(
+                  icon: Icons.notifications_outlined,
+                  label: 'Quick-add notification',
+                  kind: SettingsRowKind.toggle,
+                  toggleValue: settings.quickAddNotification,
+                  onToggle: settings.setQuickAddNotification,
+                ),
+                SettingsRow(
+                  icon: Icons.volume_up_outlined,
+                  label: 'Sound effects',
+                  kind: SettingsRowKind.toggle,
+                  toggleValue: settings.soundEffects,
+                  onToggle: settings.setSoundEffects,
+                ),
+              ],
+            ),
           SettingsGroup(
             title: 'Data',
             rows: [
-              const SettingsRow.soon(
-                icon: Icons.download_outlined,
-                label: 'Export data',
-              ),
-              SettingsRow(
-                icon: Icons.upload_outlined,
-                label: 'Import transactions',
-                kind: SettingsRowKind.pro,
-                onTap: () => _showPro(context, 'Importing transactions'),
-              ),
+              if (_showUnfinished) ...[
+                const SettingsRow.soon(
+                  icon: Icons.download_outlined,
+                  label: 'Export data',
+                ),
+                SettingsRow(
+                  icon: Icons.upload_outlined,
+                  label: 'Import transactions',
+                  kind: SettingsRowKind.pro,
+                  onTap: () => _showPro(context, 'Importing transactions'),
+                ),
+              ],
               SettingsRow(
                 icon: Icons.cloud_done_outlined,
                 label: 'Backup',
@@ -272,26 +335,58 @@ class ProfileScreen extends StatelessWidget {
                 kind: SettingsRowKind.destructive,
                 onTap: () => _confirmDeleteAll(context),
               ),
+              SettingsRow(
+                icon: Icons.person_remove_outlined,
+                label: 'Delete account',
+                kind: SettingsRowKind.destructive,
+                onTap: () => deleteAccountFlow(context),
+              ),
             ],
           ),
+          if (_showUnfinished)
+            SettingsGroup(
+              title: 'Advanced',
+              rows: [
+                const SettingsRow.soon(
+                  icon: Icons.auto_awesome_outlined,
+                  label: 'AI settings',
+                ),
+                SettingsRow(
+                  icon: Icons.api,
+                  label: 'API access',
+                  kind: SettingsRowKind.pro,
+                  onTap: () => _showPro(context, 'API access'),
+                ),
+                SettingsRow(
+                  icon: Icons.lock_outline,
+                  label: 'Password',
+                  kind: SettingsRowKind.pro,
+                  onTap: () => _showPro(context, 'App password'),
+                ),
+              ],
+            ),
           SettingsGroup(
-            title: 'Advanced',
+            title: 'About',
             rows: [
-              const SettingsRow.soon(
-                icon: Icons.auto_awesome_outlined,
-                label: 'AI settings',
+              SettingsRow(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Privacy policy',
+                onTap: () => _push(context, const PrivacyPolicyScreen()),
               ),
               SettingsRow(
-                icon: Icons.api,
-                label: 'API access',
-                kind: SettingsRowKind.pro,
-                onTap: () => _showPro(context, 'API access'),
+                icon: Icons.mail_outline,
+                label: 'Contact support',
+                onTap: () => _contactSupport(context),
               ),
               SettingsRow(
-                icon: Icons.lock_outline,
-                label: 'Password',
-                kind: SettingsRowKind.pro,
-                onTap: () => _showPro(context, 'App password'),
+                icon: Icons.star_outline,
+                label: 'Rate ${AppInfo.name}',
+                onTap: () => _rateApp(context),
+              ),
+              SettingsRow(
+                icon: Icons.description_outlined,
+                label: 'Open-source licenses',
+                onTap: () => _showLicenses(context),
               ),
             ],
           ),

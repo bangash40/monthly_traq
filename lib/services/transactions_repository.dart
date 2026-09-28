@@ -422,8 +422,25 @@ class TransactionsRepository extends ChangeNotifier {
   Future<int> deleteAllTransactions() async {
     final userDoc = _userDoc;
     if (userDoc == null) return 0;
-    final snap = await _withTimeout(userDoc.collection('transactions').get());
+    return _deleteCollection(userDoc.collection('transactions'));
+  }
 
+  /// Deletes everything stored for the signed-in user — transactions,
+  /// categories and the user document itself. The first step of deleting
+  /// the account; the sign-in is deleted after this succeeds.
+  Future<void> deleteAllUserData() async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return;
+    await _deleteCollection(userDoc.collection('transactions'));
+    await _deleteCollection(userDoc.collection('categories'));
+    await _withTimeout(userDoc.delete());
+  }
+
+  /// Deletes every document in [collection], returning how many.
+  Future<int> _deleteCollection(
+    CollectionReference<Map<String, dynamic>> collection,
+  ) async {
+    final snap = await _withTimeout(collection.get());
     // Firestore batches cap at 500 writes.
     for (var i = 0; i < snap.docs.length; i += 450) {
       final batch = _firestore.batch();

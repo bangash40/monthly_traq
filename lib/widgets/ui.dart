@@ -655,3 +655,22 @@ class ButtonLabel extends StatelessWidget {
     );
   }
 }
+
+/// The app mark: a wallet on the brand color (login, licenses page).
+class AppLogoTile extends StatelessWidget {
+  const AppLogoTile({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      width: 68,
+      height: 68,
+      decoration: BoxDecoration(
+        color: c.primary,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      child: Icon(Icons.account_balance_wallet, color: c.onPrimary, size: 34),
+    );
+  }
+}

@@ -18,25 +18,6 @@ String? validateEmail(String? value) {
   return null;
 }
 
-/// The wallet mark shown on the login screen.
-class AppLogoTile extends StatelessWidget {
-  const AppLogoTile({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Container(
-      width: 68,
-      height: 68,
-      decoration: BoxDecoration(
-        color: c.primary,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-      ),
-      child: Icon(Icons.account_balance_wallet, color: c.onPrimary, size: 34),
-    );
-  }
-}
-
 class LoginScreen extends StatefulWidget {
   /// True right after a fresh install finishes onboarding — a new user has
   /// no account yet, so this pushes straight to sign-up on first frame

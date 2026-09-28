@@ -44,6 +44,46 @@ class AuthService {
     return _firebaseAuth.signInWithCredential(credential);
   }
 
+  bool _hasProvider(String id) =>
+      _firebaseAuth.currentUser?.providerData.any((p) => p.providerId == id) ??
+      false;
+
+  /// True when the account signs in with an email and password (it may
+  /// also be linked to Google).
+  bool get usesPassword => _hasProvider(EmailAuthProvider.PROVIDER_ID);
+
+  /// Re-checks the password just before a sensitive action like deleting
+  /// the account, which Firebase only allows right after signing in.
+  Future<void> reauthenticateWithPassword(String password) async {
+    final user = _firebaseAuth.currentUser!;
+    await user.reauthenticateWithCredential(
+      EmailAuthProvider.credential(email: user.email!, password: password),
+    );
+  }
+
+  /// Same as [reauthenticateWithPassword], via the Google account picker.
+  /// Returns false if the user cancels.
+  Future<bool> reauthenticateWithGoogle() async {
+    final GoogleSignInAccount account;
+    try {
+      account = await GoogleSignIn.instance.authenticate();
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) return false;
+      rethrow;
+    }
+    await _firebaseAuth.currentUser!.reauthenticateWithCredential(
+      GoogleAuthProvider.credential(idToken: account.authentication.idToken),
+    );
+    return true;
+  }
+
+  /// Permanently deletes the signed-in account. Delete the user's data
+  /// first — once this succeeds, the rules no longer let anyone reach it.
+  Future<void> deleteCurrentUser() async {
+    await _firebaseAuth.currentUser?.delete();
+    await GoogleSignIn.instance.signOut();
+  }
+
   /// Emails a link to reset the password for [email].
   Future<void> sendPasswordReset(String email) =>
       _firebaseAuth.sendPasswordResetEmail(email: email);

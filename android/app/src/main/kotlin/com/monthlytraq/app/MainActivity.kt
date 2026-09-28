@@ -1,4 +1,4 @@
-package com.example.monthly_traq
+package com.monthlytraq.app
 
 import io.flutter.embedding.android.FlutterActivity
 

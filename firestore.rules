@@ -60,9 +60,9 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId) && isValidUserDoc(request.resource.data);
-      // No account-deletion feature yet — nothing should be deleting this
-      // doc. Revisit if/when that's built.
-      allow delete: if false;
+      // Only the owner, when deleting their account (Profile → Delete
+      // account removes transactions, categories, then this doc).
+      allow delete: if isOwner(userId);
 
       match /transactions/{transactionId} {
         allow read: if isOwner(userId);
