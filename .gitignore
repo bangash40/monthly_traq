@@ -49,5 +49,35 @@ app.*.map.json
 
 # Release signing — never commit the keystore or its passwords
 android/key.properties
+key.properties
 *.jks
 *.keystore
+*.p12
+*.pem
+*.key
+
+# Firebase config with the project's API keys. Generate your own with
+# `flutterfire configure` (see README).
+lib/firebase_options.dart
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+firebase-debug.log
+.firebase/
+
+# Secrets and environment files
+.env
+.env.*
+*.env
+secrets.*
+*secret*.json
+*service-account*.json
+*serviceAccount*.json
+
+# Private design and planning documents — kept locally, never committed
+Docs/
+docs/
+PRD.md
+TRD.md
+**/PRD.md
+**/TRD.md
