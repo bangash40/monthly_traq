@@ -4,6 +4,29 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.3.0 (build 4) — 2026-09-28
+
+Getting ready for the Play Store.
+
+### Added
+- Delete account (Profile → Data). After you confirm and re-enter your
+  password (or pick your Google account), it permanently deletes your
+  transactions, categories, budget, profile photo and sign-in.
+- An About section in Profile: the privacy policy, Contact support (opens
+  your email app), Rate MonthlyTraq (opens the Play Store listing) and
+  Open-source licenses.
+- A hosted copy of the privacy policy for the Play Store listing
+  (`store/privacy-policy.html`, generated from the same text the app shows
+  by `dart run tool/build_privacy_policy.dart`).
+
+### Changed
+- The app's package name is now `com.monthlytraq.app` on every platform.
+  Android treats this as a new app, so the old version has to be
+  uninstalled and you sign in again once.
+- Release builds hide settings that don't do anything yet: rows marked
+  "Soon" or "Pro", Quick-add notification and Sound effects. Debug builds
+  still show them.
+
 ## 1.2.0 (build 3) — 2026-09-28
 
 A full redesign, following the MonthlyTraq design spec: numbers lead,
