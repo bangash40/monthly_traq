@@ -4,6 +4,60 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.2.0 (build 3) — 2026-09-28
+
+A full redesign, following the MonthlyTraq design spec: numbers lead,
+surfaces stay quiet, one brand color per theme marks what you can tap, and
+green always means income and red always means spending.
+
+### Added
+- Seven themes, each with a light and a dark version: Indigo (the new
+  default), Ocean, Sage, Plum, Rose, Saffron and Graphite. The Appearance
+  screen previews each one.
+- The Manrope typeface throughout, with amounts that line up in columns.
+- Home: a greeting, your balance with this month's income and spending, a
+  budget card showing what's left and how many days remain, and your top 3
+  spending categories.
+- Transactions: In / Out / Net totals for the month. Category filters only
+  list categories used that month, and search also matches category names.
+- Analytics: switch between Spending and Income, see how the month compares
+  with the one before, and see your daily average and biggest day.
+- Category detail: the category's share of the month, a by-day chart, and
+  the time of each transaction.
+- Add screen: everything on one screen. The calculation shows above a live
+  result, with chips for the date and a note, and More / New tiles for
+  categories.
+- A Monthly budget sheet with the reset day right beside it, and a day grid
+  for picking when your month starts.
+- A category editor with 38 icons to choose from.
+- "Forgot?" on the login screen now emails a password reset link.
+- "Delete all data" removes all your transactions, after asking first.
+- The Thousands separator setting now works. Quick-add notification and
+  Sound effects are remembered (the features themselves are coming later).
+
+### Changed
+- The Profile tab now holds every setting in one grouped list. Features that
+  aren't built yet are marked "Soon" and can't be tapped; paid-tier ones are
+  marked PRO.
+- New onboarding illustrations, a progress bar, and a "Log in" link for
+  people who already have an account.
+- Redesigned login and sign-up screens, with clearer error messages and a
+  live password-length check.
+- The app icon and splash screen are now Indigo.
+- Your theme choice resets to Indigo once, because the list of themes
+  changed.
+
+### Fixed
+- Typing "." right after + − × ÷ on the keypad no longer breaks the
+  calculation.
+- The "Undo" button on snackbars is now readable in every theme and mode.
+- Spending by category now includes transactions without a category (as
+  "Uncategorized"), so the rows always add up to the total.
+
+### Removed
+- VIP badges (replaced by "Soon" and PRO), and the separate Settings and
+  Font Size screens (merged into Profile and Appearance).
+
 ## 1.1.0 (build 2) — 2026-09-27
 
 ### Added
