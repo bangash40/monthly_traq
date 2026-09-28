@@ -32,12 +32,12 @@ class _OnboardingGateState extends State<OnboardingGate> {
     });
   }
 
-  Future<void> _completeOnboarding() async {
+  Future<void> _completeOnboarding({required bool signUp}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_seenOnboardingKey, true);
     setState(() {
       _hasSeenOnboarding = true;
-      _justFinishedOnboarding = true;
+      _justFinishedOnboarding = signUp;
     });
   }
 

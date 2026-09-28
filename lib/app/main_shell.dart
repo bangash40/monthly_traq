@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/features/analytics/analytics_screen.dart';
 import 'package:monthly_traq/features/dashboard/dashboard_screen.dart';
+import 'package:monthly_traq/features/settings/profile_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
-import 'package:monthly_traq/features/settings/settings_screen.dart';
 import 'package:monthly_traq/features/transactions/transactions_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 
@@ -19,10 +19,11 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
 
-  void _goToTransactions() => setState(() => _selectedIndex = 1);
+  void _select(int index) => setState(() => _selectedIndex = index);
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final isLoading = context.select<TransactionsRepository, bool>(
       (repo) => repo.isLoading,
     );
@@ -31,10 +32,13 @@ class _MainShellState extends State<MainShell> {
     );
 
     final screens = [
-      DashboardScreen(onSeeAllTransactions: _goToTransactions),
+      DashboardScreen(
+        onSeeAllTransactions: () => _select(1),
+        onSeeAllSpending: () => _select(2),
+      ),
       const TransactionsScreen(),
       const AnalyticsScreen(),
-      const SettingsScreen(),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
@@ -46,16 +50,17 @@ class _MainShellState extends State<MainShell> {
                 ? const SizedBox(width: double.infinity)
                 : Container(
                     width: double.infinity,
-                    color: AppPalette.warning,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: const Text(
-                      "You're offline — showing cached data",
+                    color: c.tint(c.warningFill),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      MediaQuery.paddingOf(context).top + 6,
+                      16,
+                      6,
+                    ),
+                    child: Text(
+                      "You're offline — showing saved data",
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppText.caption.copyWith(color: c.warning),
                     ),
                   ),
           ),
@@ -66,62 +71,59 @@ class _MainShellState extends State<MainShell> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        shape: const CircleBorder(),
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const AddEditTransactionScreen()),
+      floatingActionButton: SizedBox.square(
+        dimension: 64,
+        child: FloatingActionButton(
+          tooltip: 'Add transaction',
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddEditTransactionScreen(),
+            ),
+          ),
+          child: const Icon(Icons.add, size: 32),
         ),
-        child: const Icon(Icons.add),
       ),
-      floatingActionButtonLocation: const _SunkenCenterDockedFabLocation(),
-      bottomNavigationBar: BottomAppBar(
-        // No notch shape — the button sits flush on top of a flat bar,
-        // rather than being recessed into a cutout.
-        shape: null,
-        padding: EdgeInsets.zero,
+      floatingActionButtonLocation: const _RaisedCenterDockedFabLocation(),
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          color: c.surface,
+          border: Border(top: BorderSide(color: c.hairline)),
+        ),
         child: SafeArea(
           top: false,
           child: SizedBox(
-            height: 64,
+            height: 72,
             child: Row(
               children: [
-                Expanded(
-                  child: _NavButton(
-                    icon: Icons.dashboard_outlined,
-                    selectedIcon: Icons.dashboard,
-                    label: 'Dashboard',
-                    isSelected: _selectedIndex == 0,
-                    onTap: () => setState(() => _selectedIndex = 0),
-                  ),
+                _NavItem(
+                  icon: Icons.home_outlined,
+                  selectedIcon: Icons.home_rounded,
+                  label: 'Home',
+                  isSelected: _selectedIndex == 0,
+                  onTap: () => _select(0),
                 ),
-                Expanded(
-                  child: _NavButton(
-                    icon: Icons.receipt_long_outlined,
-                    selectedIcon: Icons.receipt_long,
-                    label: 'Transactions',
-                    isSelected: _selectedIndex == 1,
-                    onTap: () => setState(() => _selectedIndex = 1),
-                  ),
+                _NavItem(
+                  icon: Icons.receipt_long_outlined,
+                  selectedIcon: Icons.receipt_long,
+                  label: 'Transactions',
+                  isSelected: _selectedIndex == 1,
+                  onTap: () => _select(1),
                 ),
-                const SizedBox(width: 56),
-                Expanded(
-                  child: _NavButton(
-                    icon: Icons.pie_chart_outline,
-                    selectedIcon: Icons.pie_chart,
-                    label: 'Analytics',
-                    isSelected: _selectedIndex == 2,
-                    onTap: () => setState(() => _selectedIndex = 2),
-                  ),
+                const SizedBox(width: 72),
+                _NavItem(
+                  icon: Icons.donut_large,
+                  selectedIcon: Icons.donut_large,
+                  label: 'Analytics',
+                  isSelected: _selectedIndex == 2,
+                  onTap: () => _select(2),
                 ),
-                Expanded(
-                  child: _NavButton(
-                    icon: Icons.person_outline,
-                    selectedIcon: Icons.person,
-                    label: 'Profile',
-                    isSelected: _selectedIndex == 3,
-                    onTap: () => setState(() => _selectedIndex = 3),
-                  ),
+                _NavItem(
+                  icon: Icons.person_outline,
+                  selectedIcon: Icons.person,
+                  label: 'Profile',
+                  isSelected: _selectedIndex == 3,
+                  onTap: () => _select(3),
                 ),
               ],
             ),
@@ -132,33 +134,32 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-/// Like [FloatingActionButtonLocation.centerDocked], but sinks the button
-/// further down so most of it sits within the bottom bar rather than the
-/// standard 50/50 split above/below the bar's top edge.
-class _SunkenCenterDockedFabLocation extends FloatingActionButtonLocation {
-  const _SunkenCenterDockedFabLocation();
+/// Centers the add button on the bar's top edge, lifted so most of it sits
+/// above the bar.
+class _RaisedCenterDockedFabLocation extends FloatingActionButtonLocation {
+  const _RaisedCenterDockedFabLocation();
 
   @override
-  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
-    final fabX =
-        (scaffoldGeometry.scaffoldSize.width -
-            scaffoldGeometry.floatingActionButtonSize.width) /
-        2.0;
-    final fabHeight = scaffoldGeometry.floatingActionButtonSize.height;
-    // Only a small cap of the button's height peeks above the bar's top edge.
-    final fabY = scaffoldGeometry.contentBottom - fabHeight * 0.12;
-    return Offset(fabX, fabY);
+  Offset getOffset(ScaffoldPrelayoutGeometry geometry) {
+    final x =
+        (geometry.scaffoldSize.width -
+            geometry.floatingActionButtonSize.width) /
+        2;
+    final y =
+        geometry.contentBottom -
+        geometry.floatingActionButtonSize.height * 0.62;
+    return Offset(x, y);
   }
 }
 
-class _NavButton extends StatelessWidget {
+class _NavItem extends StatelessWidget {
   final IconData icon;
   final IconData selectedIcon;
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _NavButton({
+  const _NavItem({
     required this.icon,
     required this.selectedIcon,
     required this.label,
@@ -168,26 +169,49 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected
-        ? themeAccent(context)
-        : Theme.of(context).colorScheme.onSurfaceVariant;
+    final c = context.colors;
+    final color = isSelected ? c.accent : c.muted;
 
-    return InkWell(
-      onTap: onTap,
-      splashFactory: NoSplash.splashFactory,
-      highlightColor: Colors.transparent,
-      splashColor: Colors.transparent,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        label: label,
+        excludeSemantics: true,
+        child: InkWell(
+          onTap: onTap,
+          splashFactory: NoSplash.splashFactory,
+          highlightColor: Colors.transparent,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(isSelected ? selectedIcon : icon, color: color, size: 22),
-              const SizedBox(height: 2),
-              Text(label, style: TextStyle(fontSize: 11, color: color)),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 60,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isSelected ? c.primarySoft : Colors.transparent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Icon(
+                  isSelected ? selectedIcon : icon,
+                  color: color,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: AppText.tiny.copyWith(
+                    fontSize: 12,
+                    color: color,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

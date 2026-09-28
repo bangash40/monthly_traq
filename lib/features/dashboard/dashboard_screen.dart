@@ -1,99 +1,86 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/text_styles.dart';
+import 'package:monthly_traq/app/theme.dart';
+import 'package:monthly_traq/features/analytics/category_detail_screen.dart';
+import 'package:monthly_traq/features/settings/edit_profile_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
+import 'package:monthly_traq/models/transaction_model.dart';
+import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
-import 'package:monthly_traq/widgets/budget_meter.dart';
-import 'package:monthly_traq/widgets/edit_budget_dialog.dart';
-import 'package:monthly_traq/widgets/empty_state.dart';
-import 'package:monthly_traq/widgets/stat_tile.dart';
-import 'package:monthly_traq/widgets/transaction_tile.dart';
+import 'package:monthly_traq/widgets/budget_sheet.dart';
+import 'package:monthly_traq/widgets/transaction_rows.dart';
+import 'package:monthly_traq/widgets/ui.dart';
 
+/// Home: this cycle at a glance. Always shows the current cycle, whatever
+/// month the Transactions and Analytics tabs are looking at.
 class DashboardScreen extends StatelessWidget {
   final VoidCallback? onSeeAllTransactions;
+  final VoidCallback? onSeeAllSpending;
 
-  const DashboardScreen({super.key, this.onSeeAllTransactions});
+  const DashboardScreen({
+    super.key,
+    this.onSeeAllTransactions,
+    this.onSeeAllSpending,
+  });
+
+  static String greeting(DateTime now) {
+    if (now.hour < 12) return 'Good morning';
+    if (now.hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  void _openTransaction(BuildContext context, TransactionModel t) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddEditTransactionScreen(existing: t),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final repo = context.watch<TransactionsRepository>();
-    final currency = NumberFormat.decimalPattern();
-    final symbol = repo.currencySymbol;
     final recent = repo.transactions.take(5).toList();
-    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
+    final top = repo.topSpending;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MonthlyTraq')),
+      appBar: AppBar(toolbarHeight: 0),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
         children: [
-          Text(
-            'Balance',
-            style: AppText.label.copyWith(fontSize: 14, color: onSurfaceVariant),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$symbol ${currency.format(repo.balance)}',
-            style: AppText.balance,
-          ),
+          const _Greeting(),
+          const SizedBox(height: 20),
+          const _BalanceCard(),
+          const SizedBox(height: 16),
+          const _BudgetCard(),
+          if (top.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            SectionHeader(
+              'Top spending',
+              actionLabel: 'See all',
+              onAction: onSeeAllSpending,
+            ),
+            const SizedBox(height: 10),
+            _TopSpending(totals: top),
+          ],
           const SizedBox(height: 24),
-
-          Text(
-            'This month · ${repo.currentCycleLabel}',
-            style: AppText.labelStrong.copyWith(color: onSurfaceVariant),
+          SectionHeader(
+            'Recent',
+            actionLabel: recent.isEmpty ? null : 'See all',
+            onAction: onSeeAllTransactions,
           ),
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: StatTile(
-                  label: 'Income',
-                  value: '$symbol ${currency.format(repo.monthlyIncome)}',
-                  icon: Icons.arrow_downward_rounded,
-                  accentColor: AppPalette.good,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatTile(
-                  label: 'Expense',
-                  value: '$symbol ${currency.format(repo.monthlyExpense)}',
-                  icon: Icons.arrow_upward_rounded,
-                  accentColor: AppPalette.critical,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          BudgetMeter(
-            ratio: repo.budgetUsedRatio,
-            spentLabel: '$symbol ${currency.format(repo.monthlyExpense)} spent',
-            budgetLabel: 'of $symbol ${currency.format(repo.monthlyBudget)}',
-            onEdit: () => showEditBudgetDialog(context, repo),
-          ),
-          const SizedBox(height: 24),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Recent transactions', style: AppText.sectionTitle),
-              if (recent.isNotEmpty)
-                TextButton(
-                  onPressed: onSeeAllTransactions,
-                  child: const Text('See all'),
-                ),
-            ],
-          ),
-
+          const SizedBox(height: 10),
           if (recent.isEmpty)
             EmptyState(
               icon: Icons.receipt_long,
               title: 'No transactions yet',
-              message: 'Log what you spend and earn to see it here.',
+              message:
+                  'Log what you spend and earn and it shows up here, grouped '
+                  'by day.',
               actionLabel: 'Add your first transaction',
               onAction: () => Navigator.push(
                 context,
@@ -103,20 +90,400 @@ class DashboardScreen extends StatelessWidget {
               ),
             )
           else
-            ...recent.map(
-              (t) => TransactionTile(
-                transaction: t,
-                category: repo.categoryById(t.categoryId),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddEditTransactionScreen(existing: t),
+            GroupCard(
+              children: [
+                for (final t in recent)
+                  TransactionRow(
+                    transaction: t,
+                    category: repo.categoryById(t.categoryId),
+                    subtitle:
+                        '${repo.categoryById(t.categoryId)?.name ?? 'Uncategorized'}'
+                        ' · ${shortDate(t.date)}',
+                    onTap: () => _openTransaction(context, t),
                   ),
-                ),
-              ),
+              ],
             ),
         ],
       ),
+    );
+  }
+}
+
+class _Greeting extends StatelessWidget {
+  const _Greeting();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final photo = context.select<TransactionsRepository, String?>(
+      (r) => r.photoBase64,
+    );
+
+    return StreamBuilder<User?>(
+      // userChanges() so a name edit shows up here right away.
+      stream: FirebaseAuth.instance.userChanges(),
+      initialData: FirebaseAuth.instance.currentUser,
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        final name = user?.displayName?.trim() ?? '';
+        final firstName = name.isNotEmpty
+            ? name.split(RegExp(r'\s+')).first
+            : (user?.email ?? '').split('@').first;
+
+        return Row(
+          children: [
+            Semantics(
+              button: true,
+              label: 'Edit profile',
+              child: GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const EditProfileScreen(),
+                  ),
+                ),
+                child: ProfileAvatar(
+                  photoBase64: photo,
+                  initials: initialsFor(user?.displayName, user?.email),
+                  size: 52,
+                  filled: false,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    DashboardScreen.greeting(DateTime.now()),
+                    style: AppText.body.copyWith(color: c.muted),
+                  ),
+                  Text(
+                    firstName,
+                    style: AppText.section.copyWith(fontSize: 22),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _BalanceCard extends StatelessWidget {
+  const _BalanceCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final repo = context.watch<TransactionsRepository>();
+    final money = context.money;
+    final onPrimary = c.onPrimary;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+      decoration: BoxDecoration(
+        color: c.primary,
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Total balance',
+                  style: AppText.body.copyWith(
+                    color: onPrimary.withValues(alpha: 0.78),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: onPrimary.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  repo.currentCycle.shortTitle,
+                  style: AppText.caption.copyWith(
+                    fontSize: 13,
+                    color: onPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              money.format(
+                repo.balance,
+                sign: repo.balance < 0 ? MoneySign.expense : MoneySign.none,
+              ),
+              style: AppText.balance.copyWith(fontSize: 42, color: onPrimary),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _Flow(
+                  icon: Icons.south_west,
+                  label: 'Income',
+                  value: money.format(repo.monthlyIncome),
+                  color: onPrimary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _Flow(
+                  icon: Icons.north_east,
+                  label: 'Spent',
+                  value: money.format(repo.monthlyExpense),
+                  color: onPrimary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Flow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _Flow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.16),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppText.label.copyWith(
+                  color: color.withValues(alpha: 0.78),
+                ),
+              ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: AppText.statValue.copyWith(color: color),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BudgetCard extends StatelessWidget {
+  const _BudgetCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final repo = context.watch<TransactionsRepository>();
+    final money = context.money;
+    final budget = repo.monthlyBudget;
+    final ratio = repo.budgetUsedRatio;
+    final daysLeft = repo.daysLeftInCycle;
+
+    final (fill, statusColor, status) = ratio >= 1
+        ? (c.spendingFill, c.spending, 'Over budget')
+        : ratio >= 0.7
+        ? (c.warningFill, c.warning, '${(ratio * 100).round()}% used')
+        : (c.accent, c.muted, '${(ratio * 100).round()}% used');
+
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(20, 14, 12, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Monthly budget', style: AppText.section),
+              ),
+              TextButton(
+                onPressed: () => showBudgetSheet(context),
+                child: Text(budget > 0 ? 'Edit' : 'Set budget'),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: budget <= 0
+                ? Text(
+                    'Set a budget to see how much is left this month.',
+                    style: AppText.body.copyWith(color: c.muted),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: ratio >= 1
+                                  ? '${money.format(-repo.budgetRemaining)} over'
+                                  : money.format(repo.budgetRemaining),
+                              style: AppText.amountLarge.copyWith(
+                                color: ratio >= 1 ? c.spending : c.ink,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ratio >= 1
+                                  ? '  your ${money.format(budget)} budget'
+                                  : '  left of ${money.format(budget)}',
+                              style: AppText.label.copyWith(
+                                fontSize: 15,
+                                color: c.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Semantics(
+                        label: 'Budget used',
+                        value: '${(ratio * 100).round()} percent',
+                        child: MeterBar(value: ratio, color: fill),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Text(
+                            status,
+                            style: AppText.caption.copyWith(
+                              fontSize: 13,
+                              color: statusColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            daysLeft <= 1
+                                ? 'Last day of this cycle'
+                                : '$daysLeft days left in cycle',
+                            style: AppText.caption.copyWith(
+                              fontSize: 13,
+                              color: c.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopSpending extends StatelessWidget {
+  final List<CategoryTotal> totals;
+
+  const _TopSpending({required this.totals});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final money = context.money;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < 3; i++) ...[
+          if (i > 0) const SizedBox(width: 10),
+          Expanded(
+            child: i >= totals.length
+                ? const SizedBox.shrink()
+                : AppCard(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+                    onTap: () {
+                      context.read<TransactionsRepository>().showCurrentCycle();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CategoryDetailScreen(
+                            category: totals[i].category,
+                            type: TransactionType.expense,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        IconTile(
+                          icon: totals[i].category.icon,
+                          color: totals[i].category.color,
+                          size: 40,
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          totals[i].category.name,
+                          style: AppText.label.copyWith(color: c.muted),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            money.format(totals[i].amount),
+                            style: AppText.statValue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ],
     );
   }
 }

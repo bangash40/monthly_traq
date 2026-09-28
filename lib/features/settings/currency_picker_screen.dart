@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/currencies.dart';
+import 'package:monthly_traq/app/text_styles.dart';
+import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/widgets/ui.dart';
 
 class CurrencyPickerScreen extends StatefulWidget {
   const CurrencyPickerScreen({super.key});
@@ -20,80 +23,149 @@ class _CurrencyPickerScreenState extends State<CurrencyPickerScreen> {
     super.dispose();
   }
 
-  Future<void> _select(BuildContext context, CurrencyOption currency) async {
+  Future<void> _select(CurrencyOption currency) async {
     final repo = context.read<TransactionsRepository>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     try {
       await repo.updateCurrency(currency);
-      if (context.mounted) Navigator.pop(context);
+      navigator.pop();
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
-      }
+      messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final query = _query.trim().toLowerCase();
+    final c = context.colors;
+    final selectedCode = context.select<TransactionsRepository, String?>(
+      (r) => r.currencyCode,
+    );
+    final query = _query.toLowerCase();
     final results = query.isEmpty
         ? kCurrencyOptions
         : kCurrencyOptions
               .where(
-                (c) =>
-                    c.name.toLowerCase().contains(query) ||
-                    c.code.toLowerCase().contains(query) ||
-                    c.country.toLowerCase().contains(query),
+                (o) =>
+                    o.name.toLowerCase().contains(query) ||
+                    o.code.toLowerCase().contains(query) ||
+                    o.country.toLowerCase().contains(query),
               )
               .toList();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Select')),
+    return SubPageScaffold(
+      title: 'Currency',
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search currency',
+                hintText: 'Search by name, code or country',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.close),
+                        tooltip: 'Clear search',
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _query = '');
                         },
                       ),
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
-              onChanged: (value) => setState(() => _query = value),
+              onChanged: (value) => setState(() => _query = value.trim()),
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              itemCount: results.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final currency = results[index];
-                return ListTile(
-                  title: Text('${currency.name} ( ${currency.symbol} )'),
-                  trailing: Text(
-                    currency.code,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+            child: results.isEmpty
+                ? ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    children: const [
+                      EmptyState(
+                        icon: Icons.search_off,
+                        title: 'No matching currency',
+                      ),
+                    ],
+                  )
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    children: [
+                      GroupCard(
+                        children: [
+                          for (final option in results)
+                            InkWell(
+                              onTap: () => _select(option),
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  14,
+                                  12,
+                                  16,
+                                  12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 54,
+                                      height: 40,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: option.code == selectedCode
+                                            ? c.primarySoft
+                                            : c.surfaceHigh,
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.iconTile,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        option.code,
+                                        style: AppText.caption.copyWith(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                          color: option.code == selectedCode
+                                              ? c.accent
+                                              : c.ink,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            option.name,
+                                            style: AppText.rowTitle,
+                                          ),
+                                          Text(
+                                            option.country,
+                                            style: AppText.label.copyWith(
+                                              color: c.muted,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Text(
+                                      option.symbol,
+                                      style: AppText.rowTitle.copyWith(
+                                        color: c.muted,
+                                      ),
+                                    ),
+                                    if (option.code == selectedCode) ...[
+                                      const SizedBox(width: 10),
+                                      Icon(Icons.check_circle, color: c.accent),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
-                  onTap: () => _select(context, currency),
-                );
-              },
-            ),
           ),
         ],
       ),

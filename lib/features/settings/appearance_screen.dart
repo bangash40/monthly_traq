@@ -1,98 +1,115 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/app/theme_controller.dart';
-import 'package:monthly_traq/features/settings/font_size_screen.dart';
+import 'package:monthly_traq/widgets/ui.dart';
 
-/// Everything about how the app looks, in one place: light/dark mode, the
-/// color preset for each, and font size.
+/// Mode (System / Light / Dark), theme and text size, all in one place.
 class AppearanceScreen extends StatelessWidget {
   const AppearanceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final themeController = context.watch<ThemeController>();
-    final cardColor = Theme.of(context).cardColor;
-    // Only one theme is ever actually rendering at a time — whichever
-    // brightness is currently resolved — so only that section shows a
-    // checkmark. The other brightness's pick is still remembered, it just
-    // isn't "active" right now.
-    final effectiveBrightness = switch (themeController.mode) {
-      ThemeMode.light => Brightness.light,
-      ThemeMode.dark => Brightness.dark,
-      ThemeMode.system => MediaQuery.platformBrightnessOf(context),
-    };
+    final c = context.colors;
+    // Previews show each theme in whichever mode is on screen right now.
+    final brightness = Theme.of(context).brightness;
+    final steps = kFontScaleSteps.length;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Appearance')),
+    return SubPageScaffold(
+      title: 'Appearance',
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
-          const Text('Mode', style: AppText.sectionTitle),
-          const SizedBox(height: 12),
-          SegmentedButton<ThemeMode>(
+          const OverlineLabel('Mode'),
+          AppSegmented<ThemeMode>(
+            value: themeController.mode,
+            height: 52,
             segments: const [
-              ButtonSegment(
-                value: ThemeMode.system,
-                label: Text('System'),
-                icon: Icon(Icons.brightness_auto),
+              AppSegment(
+                ThemeMode.system,
+                'System',
+                icon: Icons.brightness_auto_outlined,
               ),
-              ButtonSegment(
-                value: ThemeMode.light,
-                label: Text('Light'),
-                icon: Icon(Icons.light_mode),
+              AppSegment(
+                ThemeMode.light,
+                'Light',
+                icon: Icons.light_mode_outlined,
               ),
-              ButtonSegment(
-                value: ThemeMode.dark,
-                label: Text('Dark'),
-                icon: Icon(Icons.dark_mode),
+              AppSegment(
+                ThemeMode.dark,
+                'Dark',
+                icon: Icons.dark_mode_outlined,
               ),
             ],
-            selected: {themeController.mode},
-            onSelectionChanged: (selection) =>
-                themeController.setMode(selection.first),
+            onChanged: themeController.setMode,
           ),
-          const SizedBox(height: 24),
-
-          const Text('Light theme', style: AppText.sectionTitle),
-          const SizedBox(height: 12),
-          _ThemeGrid(
-            presets: kLightThemePresets,
-            selectedId: themeController.lightPresetId,
-            showSelection: effectiveBrightness == Brightness.light,
-            onSelect: (id) {
-              themeController.setLightPreset(id);
-              themeController.setMode(ThemeMode.light);
-            },
+          const SizedBox(height: 28),
+          const OverlineLabel('Theme'),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 14,
+            childAspectRatio: 1.12,
+            children: [
+              for (final theme in kAppThemes)
+                _ThemeCard(
+                  theme: theme,
+                  palette: theme.palette(brightness),
+                  selected: theme.id == themeController.themeId,
+                  onTap: () => themeController.setTheme(theme.id),
+                ),
+            ],
           ),
-          const SizedBox(height: 24),
-
-          const Text('Dark theme', style: AppText.sectionTitle),
-          const SizedBox(height: 12),
-          _ThemeGrid(
-            presets: kDarkThemePresets,
-            selectedId: themeController.darkPresetId,
-            showSelection: effectiveBrightness == Brightness.dark,
-            onSelect: (id) {
-              themeController.setDarkPreset(id);
-              themeController.setMode(ThemeMode.dark);
-            },
-          ),
-          const SizedBox(height: 24),
-
-          Material(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
-            child: ListTile(
-              leading: const Icon(Icons.format_size),
-              title: const Text('Font size'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const FontSizeScreen()),
-              ),
+          const SizedBox(height: 28),
+          const OverlineLabel('Text size'),
+          AppCard(
+            radius: AppRadius.largeCard,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'A',
+                      textScaler: TextScaler.noScaling,
+                      style: AppText.rowTitle.copyWith(color: c.muted),
+                    ),
+                    Expanded(
+                      child: Slider(
+                        value: themeController.fontSizeStep.toDouble(),
+                        min: 0,
+                        max: (steps - 1).toDouble(),
+                        divisions: steps - 1,
+                        label: themeController.fontSizeLabel,
+                        semanticFormatterCallback: (value) =>
+                            kFontSizeLabels[value.round()],
+                        onChanged: (value) =>
+                            themeController.setFontSizeStep(value.round()),
+                      ),
+                    ),
+                    Text(
+                      'A',
+                      textScaler: TextScaler.noScaling,
+                      style: AppText.section.copyWith(
+                        fontSize: 26,
+                        color: c.muted,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Groceries · ${context.money.format(3450)} — this is how '
+                  'text will look.',
+                  style: AppText.body.copyWith(fontSize: 16, color: c.muted),
+                ),
+              ],
             ),
           ),
         ],
@@ -101,120 +118,148 @@ class AppearanceScreen extends StatelessWidget {
   }
 }
 
-class _ThemeGrid extends StatelessWidget {
-  final List<AppThemePreset> presets;
-  final String selectedId;
-  final bool showSelection;
-  final ValueChanged<String> onSelect;
-
-  const _ThemeGrid({
-    required this.presets,
-    required this.selectedId,
-    required this.showSelection,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 14,
-      crossAxisSpacing: 14,
-      childAspectRatio: 1.5,
-      children: [
-        for (final preset in presets)
-          _ThemeCard(
-            preset: preset,
-            isSelected: showSelection && preset.id == selectedId,
-            onTap: () => onSelect(preset.id),
-          ),
-      ],
-    );
-  }
-}
-
+/// A miniature of the theme: its page color, a balance card in its primary
+/// color, and a row on its surface.
 class _ThemeCard extends StatelessWidget {
-  final AppThemePreset preset;
-  final bool isSelected;
+  final AppTheme theme;
+  final ThemePalette palette;
+  final bool selected;
   final VoidCallback onTap;
 
   const _ThemeCard({
-    required this.preset,
-    required this.isSelected,
+    required this.theme,
+    required this.palette,
+    required this.selected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hsl = HSLColor.fromColor(preset.primary);
-    final swatchLight = hsl
-        .withLightness((hsl.lightness + 0.16).clamp(0.0, 1.0))
-        .toColor();
-    final swatchDark = hsl
-        .withLightness((hsl.lightness - 0.12).clamp(0.0, 1.0))
-        .toColor();
-    // Each card always previews its own preset's surface/text colors, not
-    // whatever theme happens to be live right now — otherwise switching to
-    // dark makes the light-preset cards render with a dark (and illegible)
-    // label area.
-    final cardColor = preset.surface;
-    final labelColor = preset.brightness == Brightness.dark
-        ? Colors.white
-        : Colors.black87;
-    final borderRadius = BorderRadius.circular(16);
+    final c = context.colors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final line = isDark ? const Color(0x33FFFFFF) : const Color(0x1F141726);
+    final radius = BorderRadius.circular(AppRadius.card);
 
-    return Material(
-      color: cardColor,
-      borderRadius: borderRadius,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: borderRadius,
-            border: isSelected
-                ? Border.all(color: preset.primary, width: 3)
-                : null,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '${theme.name} theme',
+      excludeSemantics: true,
+      child: Material(
+        color: c.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(
+            color: selected ? c.accent : c.hairline,
+            width: selected ? 2 : 1,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: Stack(
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: palette.background,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: palette.primary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: palette.onPrimary.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (selected)
+                                  Icon(
+                                    Icons.check_circle,
+                                    size: 20,
+                                    color: palette.onPrimary,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: palette.surface,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    color: palette.accent,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Container(
+                                    height: 5,
+                                    decoration: BoxDecoration(
+                                      color: line,
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
                   children: [
                     Container(
+                      width: 12,
+                      height: 12,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [swatchLight, swatchDark],
-                        ),
+                        color: palette.accent,
+                        shape: BoxShape.circle,
                       ),
                     ),
-                    if (isSelected)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: CircleAvatar(
-                          radius: 11,
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.check, size: 14, color: swatchDark),
-                        ),
+                    const SizedBox(width: 8),
+                    Text(
+                      theme.name,
+                      style: AppText.rowTitle.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
                       ),
+                    ),
                   ],
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Text(
-                  preset.name,
-                  textAlign: TextAlign.center,
-                  style: AppText.labelStrong.copyWith(color: labelColor),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

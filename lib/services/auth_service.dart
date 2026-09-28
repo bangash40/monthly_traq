@@ -44,6 +44,10 @@ class AuthService {
     return _firebaseAuth.signInWithCredential(credential);
   }
 
+  /// Emails a link to reset the password for [email].
+  Future<void> sendPasswordReset(String email) =>
+      _firebaseAuth.sendPasswordResetEmail(email: email);
+
   Future<void> updateDisplayName(String name) async {
     await _firebaseAuth.currentUser?.updateDisplayName(name);
     await _firebaseAuth.currentUser?.reload();

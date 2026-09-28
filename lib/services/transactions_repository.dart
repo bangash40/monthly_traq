@@ -3,12 +3,13 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:monthly_traq/app/currencies.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/monthly_total.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
+import 'package:monthly_traq/services/budget_cycle.dart';
+import 'package:monthly_traq/services/cycle_stats.dart';
 
 /// Thrown when a Firestore write doesn't get an ack within [_writeTimeout] —
 /// almost always because the device is offline. The write itself is NOT
@@ -262,35 +263,17 @@ class TransactionsRepository extends ChangeNotifier {
 
   double get balance => totalIncome - totalExpense;
 
-  /// [day] clamped to however many days [year]-[month] actually has (so a
-  /// start day of 31 falls back to the 28th/29th/30th in shorter months).
-  DateTime _cycleDate(int year, int month, int day) {
-    final daysInMonth = DateTime(year, month + 1, 0).day;
-    return DateTime(year, month, day.clamp(1, daysInMonth));
-  }
+  CycleStats get _stats => CycleStats(_transactions);
 
-  DateTime get _currentCycleStart {
-    final now = DateTime.now();
-    final startThisMonth = _cycleDate(now.year, now.month, monthStartDay);
-    if (!now.isBefore(startThisMonth)) return startThisMonth;
-    final prevMonth = now.month == 1 ? 12 : now.month - 1;
-    final prevYear = now.month == 1 ? now.year - 1 : now.year;
-    return _cycleDate(prevYear, prevMonth, monthStartDay);
-  }
+  /// The budget cycle happening now.
+  BudgetCycle get currentCycle =>
+      BudgetCycle.containing(DateTime.now(), monthStartDay);
 
-  /// The start of the cycle [offset] cycles away from the current one
-  /// (0 = current, -1 = the one before, ...).
-  DateTime _cycleStartAt(int offset) {
-    final current = _currentCycleStart;
-    // DateTime normalizes an out-of-range month (e.g. 0 or 13) into the
-    // neighbouring year, so plain month arithmetic is safe here.
-    final target = DateTime(current.year, current.month + offset);
-    return _cycleDate(target.year, target.month, monthStartDay);
-  }
-
-  // Which budget cycle Transactions and Analytics are showing, relative to
-  // the current one — shared here so both tabs always show the same month.
+  // Which cycle Transactions and Analytics are showing, relative to the
+  // current one — shared here so both tabs always show the same month.
   int _cycleOffset = 0;
+
+  BudgetCycle get selectedCycle => currentCycle.shift(_cycleOffset);
 
   bool get isCurrentCycle => _cycleOffset == 0;
 
@@ -311,130 +294,67 @@ class TransactionsRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  DateTime get _selectedCycleStart => _cycleStartAt(_cycleOffset);
-  DateTime get _selectedCycleEnd => _cycleStartAt(_cycleOffset + 1);
+  // Home is always about the current cycle and ignores the month switcher.
+  double get monthlyIncome =>
+      _stats.total(TransactionType.income, currentCycle);
 
-  bool _isInSelectedCycle(DateTime date) {
-    return !date.isBefore(_selectedCycleStart) &&
-        date.isBefore(_selectedCycleEnd);
-  }
-
-  bool _isInCurrentCycle(DateTime date) {
-    return !date.isBefore(_cycleStartAt(0)) && date.isBefore(_cycleStartAt(1));
-  }
-
-  /// "September" when the cycle starts on the 1st (matching the calendar
-  /// month), or a "Sep 25 – Oct 24"-style range once the user has picked a
-  /// custom start day, so the label never implies a plain calendar month it
-  /// doesn't actually track. Adds the year for cycles outside this year.
-  String _labelForCycle(int offset) {
-    final start = _cycleStartAt(offset);
-    final showYear = start.year != DateTime.now().year;
-    if (monthStartDay == 1) {
-      return DateFormat(showYear ? 'MMMM y' : 'MMMM').format(start);
-    }
-    final end = _cycleStartAt(offset + 1).subtract(const Duration(days: 1));
-    final format = DateFormat(showYear ? 'MMM d, y' : 'MMM d');
-    return '${format.format(start)} – ${format.format(end)}';
-  }
-
-  /// Label of the cycle picked with the month switcher (Transactions and
-  /// Analytics).
-  String get cycleLabel => _labelForCycle(_cycleOffset);
-
-  /// Label of the current cycle — the dashboard always shows this one.
-  String get currentCycleLabel => _labelForCycle(0);
-
-  // Current-cycle totals — what the dashboard's budget meter and
-  // Income/Expense tiles are scoped to, since a "monthly budget" should
-  // reset each month rather than compare against all-time spending. These
-  // ignore the month switcher on purpose: the dashboard is always "now".
-  double get monthlyIncome => _transactions
-      .where(
-        (t) => t.type == TransactionType.income && _isInCurrentCycle(t.date),
-      )
-      .fold(0, (total, t) => total + t.amount);
-
-  double get monthlyExpense => _transactions
-      .where(
-        (t) => t.type == TransactionType.expense && _isInCurrentCycle(t.date),
-      )
-      .fold(0, (total, t) => total + t.amount);
-
-  /// Total spent in the cycle picked with the month switcher (Analytics).
-  double get selectedCycleExpense => _transactions
-      .where(
-        (t) => t.type == TransactionType.expense && _isInSelectedCycle(t.date),
-      )
-      .fold(0, (total, t) => total + t.amount);
-
-  /// Every transaction in the cycle picked with the month switcher, newest
-  /// first — the Transactions tab's list.
-  List<TransactionModel> get selectedCycleTransactions =>
-      _transactions.where((t) => _isInSelectedCycle(t.date)).toList();
-
-  /// The selected cycle's expenses in one category, newest first.
-  List<TransactionModel> expensesInCategory(String categoryId) => _transactions
-      .where(
-        (t) =>
-            t.type == TransactionType.expense &&
-            t.categoryId == categoryId &&
-            _isInSelectedCycle(t.date),
-      )
-      .toList();
+  double get monthlyExpense =>
+      _stats.total(TransactionType.expense, currentCycle);
 
   double get budgetRemaining => monthlyBudget - monthlyExpense;
 
   double get budgetUsedRatio =>
       monthlyBudget <= 0 ? 0 : (monthlyExpense / monthlyBudget).clamp(0, 2);
 
-  /// Income and expense totals for each of the last 6 calendar months
-  /// (oldest first, current month last) — the data behind the trend chart.
-  List<MonthlyTotal> get lastSixMonths {
-    final now = DateTime.now();
-    return List.generate(6, (i) {
-      final month = DateTime(now.year, now.month - (5 - i), 1);
-      final income = _transactions
-          .where(
-            (t) =>
-                t.type == TransactionType.income &&
-                t.date.year == month.year &&
-                t.date.month == month.month,
-          )
-          .fold(0.0, (total, t) => total + t.amount);
-      final expense = _transactions
-          .where(
-            (t) =>
-                t.type == TransactionType.expense &&
-                t.date.year == month.year &&
-                t.date.month == month.month,
-          )
-          .fold(0.0, (total, t) => total + t.amount);
-      return MonthlyTotal(month: month, income: income, expense: expense);
-    });
-  }
+  int get daysLeftInCycle => currentCycle.daysLeft(DateTime.now());
 
-  /// The selected cycle's expense totals per category, highest first.
-  /// Categories with no expenses in that cycle are omitted.
-  List<MapEntry<CategoryModel, double>> get expenseByCategory {
-    final totals = <String, double>{};
-    for (final t in _transactions.where(
-      (t) => t.type == TransactionType.expense && _isInSelectedCycle(t.date),
-    )) {
-      if (t.categoryId == null) continue;
-      totals[t.categoryId!] = (totals[t.categoryId!] ?? 0) + t.amount;
-    }
+  /// The current cycle's three biggest spending categories.
+  List<CategoryTotal> get topSpending => _stats
+      .byCategory(TransactionType.expense, currentCycle, _categories)
+      .take(3)
+      .toList();
 
-    final entries = <MapEntry<CategoryModel, double>>[];
-    for (final e in totals.entries) {
-      final category = categoryById(e.key);
-      if (category == null) continue;
-      entries.add(MapEntry(category, e.value));
-    }
-    entries.sort((a, b) => b.value.compareTo(a.value));
+  // Everything below follows the month switcher (Transactions, Analytics).
 
-    return entries;
-  }
+  /// Every transaction in the selected cycle, newest first.
+  List<TransactionModel> get selectedCycleTransactions =>
+      _transactions.where((t) => selectedCycle.contains(t.date)).toList();
+
+  double selectedTotal(TransactionType type) =>
+      _stats.total(type, selectedCycle);
+
+  /// The same total for the cycle before the selected one.
+  double previousTotal(TransactionType type) =>
+      _stats.total(type, selectedCycle.previous);
+
+  List<CategoryTotal> breakdown(TransactionType type) =>
+      _stats.byCategory(type, selectedCycle, _categories);
+
+  /// One category's transactions in the selected cycle, newest first. Pass
+  /// [kUncategorizedId] for the ones without a category.
+  List<TransactionModel> transactionsInCategory(
+    String categoryId,
+    TransactionType type,
+  ) => _transactions
+      .where(
+        (t) =>
+            t.type == type &&
+            (t.categoryId ?? kUncategorizedId) == categoryId &&
+            selectedCycle.contains(t.date),
+      )
+      .toList();
+
+  List<DayTotal> dailyTotals(TransactionType type, {String? categoryId}) =>
+      _stats.daily(type, selectedCycle, categoryId: categoryId);
+
+  DayTotal? biggestDay(TransactionType type) =>
+      _stats.biggestDay(type, selectedCycle);
+
+  double dailyAverage(TransactionType type) =>
+      _stats.dailyAverage(type, selectedCycle, DateTime.now());
+
+  /// Income and spending for the six cycles ending with the selected one.
+  List<MonthlyTotal> get trend => _stats.trend(selectedCycle);
 
   Future<void> updateCurrency(CurrencyOption currency) async {
     final userDoc = _userDoc;
@@ -495,6 +415,24 @@ class TransactionsRepository extends ChangeNotifier {
     final userDoc = _userDoc;
     if (userDoc == null) return;
     await _withTimeout(userDoc.collection('transactions').doc(id).delete());
+  }
+
+  /// Permanently deletes every transaction on the account (categories and
+  /// settings stay). Returns how many were deleted.
+  Future<int> deleteAllTransactions() async {
+    final userDoc = _userDoc;
+    if (userDoc == null) return 0;
+    final snap = await _withTimeout(userDoc.collection('transactions').get());
+
+    // Firestore batches cap at 500 writes.
+    for (var i = 0; i < snap.docs.length; i += 450) {
+      final batch = _firestore.batch();
+      for (final doc in snap.docs.skip(i).take(450)) {
+        batch.delete(doc.reference);
+      }
+      await _withTimeout(batch.commit());
+    }
+    return snap.docs.length;
   }
 
   /// Puts a just-deleted transaction back under its original id — the

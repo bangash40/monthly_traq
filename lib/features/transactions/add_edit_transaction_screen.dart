@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/app_settings.dart';
+import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
+import 'package:monthly_traq/features/settings/categories_screen.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
+import 'package:monthly_traq/services/calculator.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
-import 'package:monthly_traq/widgets/add_category_dialog.dart';
+import 'package:monthly_traq/widgets/category_editor_sheet.dart';
 import 'package:monthly_traq/widgets/delete_transaction.dart';
+import 'package:monthly_traq/widgets/ui.dart';
 
+/// Adds a transaction, or edits [existing]: amount on a calculator keypad,
+/// a category, a date and an optional note, all on one screen.
 class AddEditTransactionScreen extends StatefulWidget {
   final TransactionModel? existing;
 
@@ -20,100 +27,136 @@ class AddEditTransactionScreen extends StatefulWidget {
 }
 
 class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
-  late final _titleController = TextEditingController(
-    text: widget.existing?.title,
-  );
+  /// Categories shown before "More" collapses the rest.
+  static const _collapsedCount = 9;
 
   late TransactionType _type = widget.existing?.type ?? TransactionType.expense;
   late String? _categoryId = widget.existing?.categoryId;
+  late final Calculator _calc = widget.existing != null
+      ? Calculator.fromAmount(widget.existing!.amount)
+      : Calculator();
+  late DateTime _date = widget.existing?.date ?? DateTime.now();
+  late String _note = widget.existing?.title ?? '';
+  bool _showAllCategories = false;
+  bool _isSaving = false;
+  String? _error;
 
   bool get _isEditing => widget.existing != null;
 
   @override
   void initState() {
     super.initState();
-    if (_isEditing) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _openAmountSheet());
-    }
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    super.dispose();
-  }
-
-  String _formatAmountForInput(double amount) {
-    if (amount == amount.roundToDouble()) return amount.toInt().toString();
-    return amount.toString();
-  }
-
-  Future<void> _openAmountSheet() async {
+    // When editing into a category past the first row or two, show them
+    // all so the selection is visible.
     final repo = context.read<TransactionsRepository>();
-    final category = repo.categories.firstWhere(
-      (c) => c.id == _categoryId,
-      orElse: () => const CategoryModel(
-        id: '',
-        name: '',
-        icon: Icons.category,
-        color: Colors.grey,
-      ),
-    );
-    if (category.id.isEmpty) return;
+    final index = _categoriesFor(repo).indexWhere((c) => c.id == _categoryId);
+    _showAllCategories = index >= _collapsedCount;
+  }
 
-    await showModalBottomSheet<void>(
+  List<CategoryModel> _categoriesFor(TransactionsRepository repo) =>
+      repo.categories.where((c) => c.type == _type).toList();
+
+  void _press(void Function() edit) {
+    setState(() {
+      edit();
+      _error = null;
+    });
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date.isAfter(now) ? now : _date,
+      firstDate: DateTime(now.year - 2),
+      lastDate: now,
+    );
+    if (picked == null) return;
+    // Keep the time of day so the order within a day stays meaningful.
+    setState(() {
+      _date = DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        _date.hour,
+        _date.minute,
+      );
+    });
+  }
+
+  Future<void> _editNote() async {
+    final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return _AmountEntrySheet(
-          category: category,
-          titleController: _titleController,
-          initialAmount: widget.existing != null
-              ? _formatAmountForInput(widget.existing!.amount)
-              : '0',
-          initialDate: widget.existing?.date ?? DateTime.now(),
-          isEditing: _isEditing,
-          onSave: (amount, date) => _performSave(amount: amount, date: date),
-        );
-      },
+      useSafeArea: true,
+      builder: (context) => _NoteSheet(initial: _note),
+    );
+    if (result != null) setState(() => _note = result);
+  }
+
+  Future<void> _newCategory() async {
+    final created = await showCategoryEditor(context, type: _type);
+    if (created != null && mounted) {
+      setState(() {
+        _categoryId = created.id;
+        _showAllCategories = true;
+      });
+    }
+  }
+
+  void _editCategories() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CategoriesScreen(initialType: _type),
+      ),
     );
   }
 
-  Future<void> _performSave({
-    required String amount,
-    required DateTime date,
-  }) async {
-    final amountValue = double.parse(amount);
-    final repo = context.read<TransactionsRepository>();
-    final title = _titleController.text.trim();
-
-    if (_isEditing) {
-      await repo.updateTransaction(
-        widget.existing!.copyWith(
-          title: title,
-          amount: amountValue,
-          type: _type,
-          categoryId: _categoryId,
-          date: date,
-        ),
-      );
-    } else {
-      await repo.addTransaction(
-        TransactionModel(
-          id: DateTime.now().microsecondsSinceEpoch.toString(),
-          title: title,
-          amount: amountValue,
-          type: _type,
-          categoryId: _categoryId,
-          date: date,
-        ),
-      );
+  Future<void> _save() async {
+    final amount = _calc.value;
+    if (amount <= 0) {
+      setState(() => _error = 'Enter an amount above zero');
+      return;
+    }
+    if (_categoryId == null) {
+      setState(() => _error = 'Pick a category');
+      return;
     }
 
-    if (!mounted) return;
-    Navigator.pop(context); // close the amount sheet
-    Navigator.pop(context); // close this screen
+    setState(() => _isSaving = true);
+    final repo = context.read<TransactionsRepository>();
+    try {
+      final existing = widget.existing;
+      if (existing != null) {
+        await repo.updateTransaction(
+          existing.copyWith(
+            title: _note.trim(),
+            amount: amount,
+            type: _type,
+            categoryId: _categoryId,
+            date: _date,
+          ),
+        );
+      } else {
+        await repo.addTransaction(
+          TransactionModel(
+            id: '',
+            title: _note.trim(),
+            amount: amount,
+            type: _type,
+            categoryId: _categoryId,
+            date: _date,
+          ),
+        );
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not save: $e')));
+    }
   }
 
   Future<void> _delete() async {
@@ -122,548 +165,227 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     if (deleted && mounted) navigator.pop();
   }
 
+  String get _dateLabel {
+    final now = DateTime.now();
+    if (DateUtils.isSameDay(_date, now)) return 'Today';
+    if (DateUtils.isSameDay(_date, now.subtract(const Duration(days: 1)))) {
+      return 'Yesterday';
+    }
+    return DateFormat(_date.year == now.year ? 'MMM d' : 'MMM d, y')
+        .format(_date);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final repo = context.watch<TransactionsRepository>();
-    final categories = repo.categories.where((c) => c.type == _type).toList();
+    final money = context.money;
+    final grouping = context.select<AppSettings, bool>(
+      (s) => s.thousandsSeparator,
+    );
+    final value = _calc.value;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _isEditing ? 'Edit' : 'Add',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        actions: [
-          if (_isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Delete',
-              onPressed: _delete,
-            ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: SegmentedButton<TransactionType>(
-                  showSelectedIcon: false,
-                  segments: const [
-                    ButtonSegment(
-                      value: TransactionType.expense,
-                      label: Text('Expense'),
-                      icon: Icon(Icons.arrow_upward_rounded),
-                    ),
-                    ButtonSegment(
-                      value: TransactionType.income,
-                      label: Text('Income'),
-                      icon: Icon(Icons.arrow_downward_rounded),
-                    ),
-                  ],
-                  selected: {_type},
-                  onSelectionChanged: (selection) {
-                    setState(() {
-                      _type = selection.first;
+      appBar: AppBar(toolbarHeight: 0),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Row(
+              children: [
+                const BackCircleButton(icon: Icons.close, tooltip: 'Close'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppSegmented<TransactionType>(
+                    value: _type,
+                    segments: const [
+                      AppSegment(TransactionType.expense, 'Expense'),
+                      AppSegment(TransactionType.income, 'Income'),
+                    ],
+                    onChanged: (type) => setState(() {
+                      if (type == _type) return;
+                      _type = type;
                       _categoryId = null;
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              Text('Category', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
-              _CategoryGrid(
-                categories: categories,
-                selectedId: _categoryId,
-                onSelect: (id) {
-                  setState(() => _categoryId = id);
-                  _openAmountSheet();
-                },
-                onAddCategory: () async {
-                  final created = await showAddCategoryDialog(
-                    context,
-                    repo,
-                    type: _type,
-                  );
-                  if (created == null || !mounted) return;
-                  setState(() => _categoryId = created.id);
-                  _openAmountSheet();
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AmountEntrySheet extends StatefulWidget {
-  final CategoryModel category;
-  final TextEditingController titleController;
-  final String initialAmount;
-  final DateTime initialDate;
-  final bool isEditing;
-  final Future<void> Function(String amount, DateTime date) onSave;
-
-  const _AmountEntrySheet({
-    required this.category,
-    required this.titleController,
-    required this.initialAmount,
-    required this.initialDate,
-    required this.isEditing,
-    required this.onSave,
-  });
-
-  @override
-  State<_AmountEntrySheet> createState() => _AmountEntrySheetState();
-}
-
-const _kOperators = '+-×÷';
-
-class _AmountEntrySheetState extends State<_AmountEntrySheet> {
-  late String _amount = widget.initialAmount;
-  late DateTime _date = widget.initialDate;
-  String? _amountError;
-  bool _isSaving = false;
-
-  static const _maxDigits = 12;
-
-  int _lastOperatorIndex() {
-    for (var i = _amount.length - 1; i >= 0; i--) {
-      if (_kOperators.contains(_amount[i])) return i;
-    }
-    return -1;
-  }
-
-  String get _lastSegment {
-    final index = _lastOperatorIndex();
-    return index == -1 ? _amount : _amount.substring(index + 1);
-  }
-
-  void _appendDigit(String digit) {
-    setState(() {
-      final last = _lastSegment;
-      if (last == '0') {
-        _amount = _amount.substring(0, _amount.length - 1) + digit;
-      } else if (last.replaceAll('.', '').length < _maxDigits) {
-        _amount += digit;
-      }
-    });
-  }
-
-  void _appendOperator(String op) {
-    setState(() {
-      if (_amount.isEmpty) return;
-      final lastChar = _amount[_amount.length - 1];
-      if (_kOperators.contains(lastChar)) {
-        _amount = _amount.substring(0, _amount.length - 1) + op;
-      } else {
-        _amount += op;
-      }
-    });
-  }
-
-  void _appendDecimal() {
-    if (_lastSegment.contains('.')) return;
-    setState(() => _amount += '.');
-  }
-
-  void _backspace() {
-    setState(() {
-      if (_amount.length <= 1) {
-        _amount = '0';
-      } else {
-        _amount = _amount.substring(0, _amount.length - 1);
-      }
-    });
-  }
-
-  String _formatNumber(double value) {
-    return value == value.roundToDouble()
-        ? value.toInt().toString()
-        : value.toString();
-  }
-
-  /// [_amount] as shown on screen: thousands separators in each number,
-  /// spaced-out operators, and the currency symbol in front — "1200+250"
-  /// displays as "Rs. 1,200 + 250". Decimals are kept exactly as typed.
-  String _displayAmount(String symbol) {
-    final grouping = NumberFormat.decimalPattern();
-    String group(String number) {
-      if (number.isEmpty) return number;
-      final parts = number.split('.');
-      final whole = int.tryParse(parts[0]);
-      final grouped = whole == null ? parts[0] : grouping.format(whole);
-      return parts.length > 1 ? '$grouped.${parts[1]}' : grouped;
-    }
-
-    final buffer = StringBuffer();
-    var number = '';
-    for (final char in _amount.split('')) {
-      if (_kOperators.contains(char)) {
-        buffer
-          ..write(group(number))
-          ..write(' ${char == '-' ? '−' : char} ');
-        number = '';
-      } else {
-        number += char;
-      }
-    }
-    buffer.write(group(number));
-    return '$symbol $buffer';
-  }
-
-  /// Evaluates a `+ - × ÷` expression left-to-right, giving `×`/`÷` the
-  /// usual precedence over `+`/`-`. A dangling trailing operator (the user
-  /// tapped an operator but never finished the second number) is dropped so
-  /// "evaluate whatever's valid so far" never throws.
-  double _evaluateExpression(String expression) {
-    var expr = expression;
-    while (expr.isNotEmpty && _kOperators.contains(expr[expr.length - 1])) {
-      expr = expr.substring(0, expr.length - 1);
-    }
-    if (expr.isEmpty) return 0;
-
-    final tokens = <String>[];
-    var current = '';
-    for (final char in expr.split('')) {
-      if (_kOperators.contains(char)) {
-        tokens.add(current);
-        tokens.add(char);
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    tokens.add(current);
-
-    final pass1 = <String>[tokens[0]];
-    for (var i = 1; i < tokens.length; i += 2) {
-      final op = tokens[i];
-      final rhs = double.parse(tokens[i + 1]);
-      if (op == '×' || op == '÷') {
-        final lhs = double.parse(pass1.removeLast());
-        final result = op == '×' ? lhs * rhs : (rhs == 0 ? 0.0 : lhs / rhs);
-        pass1.add(_formatNumber(result));
-      } else {
-        pass1.add(op);
-        pass1.add(tokens[i + 1]);
-      }
-    }
-
-    var result = double.parse(pass1[0]);
-    for (var i = 1; i < pass1.length; i += 2) {
-      final op = pass1[i];
-      final rhs = double.parse(pass1[i + 1]);
-      result = op == '+' ? result + rhs : result - rhs;
-    }
-    return result;
-  }
-
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _date,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) setState(() => _date = picked);
-  }
-
-  /// The tick button is double-duty: with a pending `+ - × ÷` operator in
-  /// the expression, the first tap evaluates it (like a calculator's "=");
-  /// only once the expression is a plain number does a tap actually save.
-  Future<void> _handleTick() async {
-    if (_lastOperatorIndex() != -1) {
-      setState(() {
-        _amount = _formatNumber(_evaluateExpression(_amount));
-        _amountError = null;
-      });
-      return;
-    }
-    await _handleSave();
-  }
-
-  Future<void> _handleSave() async {
-    final amountValue = double.tryParse(_amount);
-
-    setState(() {
-      _amountError = (amountValue == null || amountValue <= 0)
-          ? 'Enter a valid amount'
-          : null;
-    });
-    if (_amountError != null) return;
-
-    setState(() => _isSaving = true);
-    try {
-      await widget.onSave(_amount, _date);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not save: $e')));
-      setState(() => _isSaving = false);
-    }
-  }
-
-  String get _dateLabel {
-    final today = DateTime.now();
-    final isToday =
-        _date.year == today.year &&
-        _date.month == today.month &&
-        _date.day == today.day;
-    return isToday ? 'Today' : DateFormat('MMM d').format(_date);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cardColor = Theme.of(context).cardColor;
-
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant
-                        .withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
+                      _showAllCategories = false;
+                      _error = null;
+                    }),
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: widget.category.color.withValues(
-                      alpha: 0.18,
-                    ),
-                    foregroundColor: widget.category.color,
-                    child: Icon(widget.category.icon, size: 16),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    widget.category.name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FittedBox(
-                  child: Text(
-                    _displayAmount(
-                      context.read<TransactionsRepository>().currencySymbol,
-                    ),
-                    style: AppText.amountEntry,
-                  ),
-                ),
-              ),
-              if (_amountError != null)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    _amountError!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: widget.titleController,
-                style: const TextStyle(fontSize: 14),
-                decoration: InputDecoration(
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  // The theme fills fields with the surface color, which is
-                  // also this sheet's color — use the keypad keys' color so
-                  // the field stays visible.
-                  fillColor: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerHighest,
-                  hintText: 'Enter a title (optional)...',
-                  prefixIcon: const Icon(Icons.edit_outlined, size: 18),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _KeypadRow(
-                children: [
-                  _KeyButton(label: '7', onTap: () => _appendDigit('7')),
-                  _KeyButton(label: '8', onTap: () => _appendDigit('8')),
-                  _KeyButton(label: '9', onTap: () => _appendDigit('9')),
-                  _KeyButton(label: _dateLabel, onTap: _pickDate),
-                ],
-              ),
-              _KeypadRow(
-                children: [
-                  _KeyButton(label: '4', onTap: () => _appendDigit('4')),
-                  _KeyButton(label: '5', onTap: () => _appendDigit('5')),
-                  _KeyButton(label: '6', onTap: () => _appendDigit('6')),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _KeyButton(
-                          label: '+',
-                          onTap: () => _appendOperator('+'),
+                const SizedBox(width: 12),
+                if (_isEditing)
+                  Tooltip(
+                    message: 'Delete',
+                    child: Material(
+                      color: c.tint(c.spendingFill),
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: _delete,
+                        child: SizedBox.square(
+                          dimension: 48,
+                          child: Icon(Icons.delete_outline, color: c.spending),
                         ),
                       ),
-                      Expanded(
-                        child: _KeyButton(
-                          label: '−',
-                          onTap: () => _appendOperator('-'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              _KeypadRow(
-                children: [
-                  _KeyButton(label: '1', onTap: () => _appendDigit('1')),
-                  _KeyButton(label: '2', onTap: () => _appendDigit('2')),
-                  _KeyButton(label: '3', onTap: () => _appendDigit('3')),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _KeyButton(
-                          label: '×',
-                          onTap: () => _appendOperator('×'),
-                        ),
-                      ),
-                      Expanded(
-                        child: _KeyButton(
-                          label: '÷',
-                          onTap: () => _appendOperator('÷'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              _KeypadRow(
-                children: [
-                  _KeyButton(label: '.', onTap: _appendDecimal),
-                  _KeyButton(label: '0', onTap: () => _appendDigit('0')),
-                  _KeyButton(icon: Icons.backspace_outlined, onTap: _backspace),
-                  _KeyButton(
-                    label: _lastOperatorIndex() != -1 ? '=' : null,
-                    icon: _lastOperatorIndex() != -1 ? null : Icons.check,
-                    isPrimary: true,
-                    isLoading: _isSaving,
-                    onTap: _isSaving ? null : _handleTick,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-const _kKeyRowHeight = 56.0;
-
-class _KeypadRow extends StatelessWidget {
-  final List<Widget> children;
-
-  const _KeypadRow({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: _kKeyRowHeight,
-      child: Row(
-        children: [for (final child in children) Expanded(child: child)],
-      ),
-    );
-  }
-}
-
-class _KeyButton extends StatelessWidget {
-  final String? label;
-  final IconData? icon;
-  final bool isPrimary;
-  final bool isLoading;
-  final VoidCallback? onTap;
-
-  const _KeyButton({
-    this.label,
-    this.icon,
-    this.isPrimary = false,
-    this.isLoading = false,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = themeAccent(context);
-    final foreground = isPrimary
-        ? Colors.black
-        : Theme.of(context).colorScheme.onSurface;
-
-    return Padding(
-      padding: const EdgeInsets.all(3),
-      child: Material(
-        color: isPrimary
-            ? accent
-            : Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Center(
-            child: isLoading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
                     ),
                   )
-                : icon != null
-                ? Icon(icon, color: foreground, size: 20)
-                : FittedBox(
+                else
+                  const SizedBox(width: 48),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              children: [
+                SizedBox(
+                  height: 22,
+                  child: _calc.hasOperator
+                      ? Text(
+                          _calc.display(grouping: grouping),
+                          textAlign: TextAlign.center,
+                          style: AppText.tabular(
+                            AppText.rowTitle.copyWith(
+                              color: c.muted,
+                              fontSize: 17,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(height: 4),
+                Semantics(
+                  liveRegion: true,
+                  label: 'Amount',
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
                     child: Text(
-                      label ?? '',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: foreground,
+                      money.format(
+                        value,
+                        sign: value < 0 ? MoneySign.expense : MoneySign.none,
+                      ),
+                      style: AppText.display.copyWith(
+                        color: value < 0 ? c.spending : c.ink,
                       ),
                     ),
                   ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _Chip(
+                      icon: Icons.calendar_today_outlined,
+                      label: _dateLabel,
+                      onTap: _pickDate,
+                    ),
+                    _Chip(
+                      icon: Icons.edit_note,
+                      label: _note.trim().isEmpty ? 'Add a note' : _note.trim(),
+                      muted: _note.trim().isEmpty,
+                      onTap: _editNote,
+                    ),
+                  ],
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: AppText.rowTitle.copyWith(color: c.spending),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Category',
+                        style: AppText.section.copyWith(color: c.muted),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _editCategories,
+                      child: const Text('Edit'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                _CategoryGrid(
+                  categories: _categoriesFor(repo),
+                  selectedId: _categoryId,
+                  collapsed: !_showAllCategories,
+                  collapsedCount: _collapsedCount,
+                  onSelect: (id) => setState(() {
+                    _categoryId = id;
+                    _error = null;
+                  }),
+                  onMore: () => setState(() => _showAllCategories = true),
+                  onNew: _newCategory,
+                ),
+              ],
+            ),
+          ),
+          _Keypad(
+            calc: _calc,
+            onPress: _press,
+            isSaving: _isSaving,
+            saveLabel: _isEditing
+                ? 'Save changes'
+                : _type == TransactionType.income
+                ? 'Save income'
+                : 'Save expense',
+            onSave: _save,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool muted;
+  final VoidCallback onTap;
+
+  const _Chip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.muted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Material(
+      color: c.surface,
+      shape: StadiumBorder(side: BorderSide(color: c.hairline)),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 20, color: muted ? c.muted : c.ink),
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 200),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.rowTitle.copyWith(
+                    fontSize: 16,
+                    color: muted ? c.muted : c.ink,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -674,121 +396,344 @@ class _KeyButton extends StatelessWidget {
 class _CategoryGrid extends StatelessWidget {
   final List<CategoryModel> categories;
   final String? selectedId;
+  final bool collapsed;
+  final int collapsedCount;
   final ValueChanged<String> onSelect;
-  final VoidCallback onAddCategory;
+  final VoidCallback onMore;
+  final VoidCallback onNew;
 
   const _CategoryGrid({
     required this.categories,
     required this.selectedId,
+    required this.collapsed,
+    required this.collapsedCount,
     required this.onSelect,
-    required this.onAddCategory,
+    required this.onMore,
+    required this.onNew,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 4,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 4,
-      childAspectRatio: 0.82,
-      children: [
-        for (final category in categories)
-          _CategoryTile(
-            category: category,
-            isSelected: category.id == selectedId,
-            onTap: () => onSelect(category.id),
-          ),
-        _AddCategoryTile(onTap: onAddCategory),
-      ],
-    );
-  }
-}
+    final c = context.colors;
+    final showMore = collapsed && categories.length > collapsedCount + 1;
+    final shown = showMore ? categories.take(collapsedCount) : categories;
 
-class _AddCategoryTile extends StatelessWidget {
-  final VoidCallback onTap;
+    // Five columns whose height follows their content, so a larger text
+    // size grows the rows instead of overflowing them.
+    const columns = 5;
+    const spacing = 10.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width =
+            (constraints.maxWidth - spacing * (columns - 1)) / columns;
+        Widget tile(Widget child) => SizedBox(width: width, child: child);
 
-  const _AddCategoryTile({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: onSurfaceVariant.withValues(alpha: 0.4)),
+        return Wrap(
+          spacing: spacing,
+          runSpacing: 14,
+          children: [
+            for (final category in shown)
+              tile(
+                _CategoryTile(
+                  icon: category.icon,
+                  label: category.name,
+                  color: category.color,
+                  background: c.tint(category.color),
+                  selected: category.id == selectedId,
+                  onTap: () => onSelect(category.id),
+                ),
+              ),
+            tile(
+              showMore
+                  ? _CategoryTile(
+                      icon: Icons.more_horiz,
+                      label: 'More',
+                      color: c.muted,
+                      background: c.surfaceHigh,
+                      onTap: onMore,
+                    )
+                  : _CategoryTile(
+                      icon: Icons.add,
+                      label: 'New',
+                      color: c.accent,
+                      background: c.primarySoft,
+                      onTap: onNew,
+                    ),
             ),
-            child: Icon(Icons.add, color: onSurfaceVariant, size: 28),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Add',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: onSurfaceVariant),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 }
 
 class _CategoryTile extends StatelessWidget {
-  final CategoryModel category;
-  final bool isSelected;
+  final IconData icon;
+  final String label;
+  final Color color;
+  final Color background;
+  final bool selected;
   final VoidCallback onTap;
 
   const _CategoryTile({
-    required this.category,
-    required this.isSelected,
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.background,
     required this.onTap,
+    this.selected = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(32),
+    final c = context.colors;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                decoration: BoxDecoration(
+                  color: background,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: selected ? color : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: Icon(icon, color: color, size: 26),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: AppText.label.copyWith(
+                color: selected ? c.ink : c.muted,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Keypad extends StatelessWidget {
+  final Calculator calc;
+  final void Function(void Function() edit) onPress;
+  final bool isSaving;
+  final String saveLabel;
+  final VoidCallback onSave;
+
+  const _Keypad({
+    required this.calc,
+    required this.onPress,
+    required this.isSaving,
+    required this.saveLabel,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+
+    Widget digit(String d) =>
+        _Key(label: d, onTap: () => onPress(() => calc.digit(d)));
+    Widget op(String o, String shown, String name) => _Key(
+      label: shown,
+      semanticLabel: name,
+      isOperator: true,
+      onTap: () => onPress(() => calc.operator(o)),
+    );
+
+    final rows = [
+      [digit('1'), digit('2'), digit('3'), op('÷', '÷', 'Divide')],
+      [digit('4'), digit('5'), digit('6'), op('×', '×', 'Multiply')],
+      [digit('7'), digit('8'), digit('9'), op('-', '−', 'Minus')],
+      [
+        _Key(
+          label: '.',
+          semanticLabel: 'Decimal point',
+          onTap: () => onPress(calc.decimal),
+        ),
+        digit('0'),
+        _Key(
+          icon: Icons.backspace_outlined,
+          semanticLabel: 'Delete digit',
+          onTap: () => onPress(calc.backspace),
+          onLongPress: () => onPress(calc.clear),
+        ),
+        op('+', '+', 'Plus'),
+      ],
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
+        border: Border(top: BorderSide(color: c.hairline)),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final row in rows)
+              Row(children: [for (final key in row) Expanded(child: key)]),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: isSaving ? null : onSave,
+                  child: ButtonLabel(
+                    saveLabel,
+                    loading: isSaving,
+                    icon: Icons.check,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Key extends StatelessWidget {
+  final String? label;
+  final IconData? icon;
+  final String? semanticLabel;
+  final bool isOperator;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+
+  const _Key({
+    this.label,
+    this.icon,
+    this.semanticLabel,
+    this.isOperator = false,
+    required this.onTap,
+    this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final color = isOperator ? c.accent : c.ink;
+
+    return Padding(
+      padding: const EdgeInsets.all(3.5),
+      child: Semantics(
+        button: true,
+        label: semanticLabel ?? label,
+        excludeSemantics: true,
+        child: Material(
+          color: isOperator ? c.primarySoft : c.surfaceHigh,
+          borderRadius: BorderRadius.circular(AppRadius.button),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.button),
+            onTap: onTap,
+            onLongPress: onLongPress,
+            child: SizedBox(
+              height: 50,
+              child: Center(
+                child: icon != null
+                    ? Icon(icon, color: color, size: 24)
+                    : Text(
+                        label!,
+                        style: AppText.section.copyWith(
+                          fontSize: isOperator ? 24 : 22,
+                          color: color,
+                          fontWeight: isOperator
+                              ? FontWeight.w700
+                              : FontWeight.w800,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Edits the note shown on the transaction ("Groceries at Imtiaz").
+class _NoteSheet extends StatefulWidget {
+  final String initial;
+
+  const _NoteSheet({required this.initial});
+
+  @override
+  State<_NoteSheet> createState() => _NoteSheetState();
+}
+
+class _NoteSheetState extends State<_NoteSheet> {
+  late final _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        20 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: category.color.withValues(alpha: 0.18),
-              border: isSelected
-                  ? Border.all(color: category.color, width: 2.5)
-                  : null,
-            ),
-            child: Icon(category.icon, color: category.color, size: 28),
-          ),
+          Text('Note', style: AppText.section.copyWith(fontSize: 24)),
           const SizedBox(height: 6),
           Text(
-            category.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected
-                  ? themeAccent(context)
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            'Shown as the transaction\'s name. Leave it empty to use the '
+            'category name.',
+            style: AppText.body.copyWith(color: c.muted),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            maxLength: 100,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              hintText: 'e.g. Groceries at Imtiaz',
+              counterText: '',
             ),
+            onSubmitted: (value) => Navigator.pop(context, value.trim()),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, _controller.text.trim()),
+            child: const Text('Done'),
           ),
         ],
       ),

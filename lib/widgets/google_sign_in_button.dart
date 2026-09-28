@@ -1,46 +1,64 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:monthly_traq/app/text_styles.dart';
+import 'package:monthly_traq/app/theme.dart';
 
-/// A "Continue with Google" button with a divider above it, matching the
-/// standard OAuth-button placement below an email/password form.
+/// "Continue with Google" — an outlined button with the Google "G".
 class GoogleSignInButton extends StatelessWidget {
+  final String label;
   final VoidCallback? onPressed;
+  final bool loading;
 
-  const GoogleSignInButton({super.key, this.onPressed});
+  const GoogleSignInButton({
+    super.key,
+    this.label = 'Continue with Google',
+    this.onPressed,
+    this.loading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final dividerColor = Theme.of(context).colorScheme.outlineVariant;
-    final textColor = Theme.of(context).colorScheme.onSurfaceVariant;
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(child: Divider(color: dividerColor)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text('OR', style: TextStyle(color: textColor, fontSize: 12)),
-            ),
-            Expanded(child: Divider(color: dividerColor)),
-          ],
-        ),
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: OutlinedButton.icon(
-            onPressed: onPressed,
-            icon: const SizedBox(width: 20, height: 20, child: _GoogleLogo()),
-            label: const Text('Continue with Google'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.onSurface,
-              side: BorderSide(color: dividerColor),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: loading ? null : onPressed,
+        child: loading
+            ? const SizedBox.square(
+                dimension: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.4),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox.square(dimension: 22, child: _GoogleLogo()),
+                  const SizedBox(width: 12),
+                  Text(
+                    label,
+                    style: AppText.button.copyWith(color: context.colors.ink),
+                  ),
+                ],
               ),
-            ),
-          ),
+      ),
+    );
+  }
+}
+
+/// "or" between the email form and the Google button.
+class OrDivider extends StatelessWidget {
+  const OrDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Row(
+      children: [
+        const Expanded(child: Divider()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text('or', style: AppText.rowTitle.copyWith(color: c.muted)),
         ),
+        const Expanded(child: Divider()),
       ],
     );
   }
@@ -50,48 +68,43 @@ class _GoogleLogo extends StatelessWidget {
   const _GoogleLogo();
 
   @override
-  Widget build(BuildContext context) {
-    return CustomPaint(painter: _GoogleLogoPainter());
-  }
+  Widget build(BuildContext context) =>
+      CustomPaint(painter: _GoogleLogoPainter());
 }
 
 class _GoogleLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final center = rect.center;
+    final center = (Offset.zero & size).center;
     final radius = size.width / 2;
-    const strokeWidth = 3.2;
+    const stroke = 3.4;
+    final arcRect = Rect.fromCircle(
+      center: center,
+      radius: radius - stroke / 2,
+    );
 
-    final blue = Paint()
-      ..color = const Color(0xFF4285F4)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.butt;
-    final green = Paint()..color = const Color(0xFF34A853);
-    final yellow = Paint()..color = const Color(0xFFFBBC05);
-    final red = Paint()..color = const Color(0xFFEA4335);
-
-    void arc(Paint paint, double startDeg, double sweepDeg) {
+    void arc(Color color, double startDeg, double sweepDeg) {
       canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
-        startDeg * 3.1415926535 / 180,
-        sweepDeg * 3.1415926535 / 180,
+        arcRect,
+        startDeg * math.pi / 180,
+        sweepDeg * math.pi / 180,
         false,
-        paint..style = PaintingStyle.stroke..strokeWidth = strokeWidth,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke,
       );
     }
 
-    arc(blue, -20, 110);
-    arc(red, -70, 50);
-    arc(yellow, 130, 60);
-    arc(green, 190, 100);
+    arc(const Color(0xFF4285F4), -20, 110);
+    arc(const Color(0xFFEA4335), -70, 50);
+    arc(const Color(0xFFFBBC05), 130, 60);
+    arc(const Color(0xFF34A853), 190, 100);
 
-    // The horizontal bar of the "G".
-    final barPaint = Paint()..color = const Color(0xFF4285F4);
+    // The G's crossbar.
     canvas.drawRect(
-      Rect.fromLTWH(center.dx, center.dy - strokeWidth / 2, radius, strokeWidth),
-      barPaint,
+      Rect.fromLTWH(center.dx, center.dy - stroke / 2, radius, stroke),
+      Paint()..color = const Color(0xFF4285F4),
     );
   }
 

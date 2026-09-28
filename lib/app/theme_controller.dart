@@ -3,44 +3,44 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:monthly_traq/app/theme.dart';
 
 const _themeModeKey = 'theme_mode';
-const _lightPresetKey = 'theme_light_preset';
-const _darkPresetKey = 'theme_dark_preset';
+const _themeIdKey = 'theme_id';
 const _fontSizeStepKey = 'font_size_step';
 
-/// Text scale factors for the four Font Size slider stops, smallest first.
-const kFontScaleSteps = [0.85, 1.0, 1.15, 1.3];
+/// Text scale factors for the Text size slider's stops, smallest first.
+const kFontScaleSteps = [0.9, 1.0, 1.12, 1.25];
+const kFontSizeLabels = ['Small', 'Default', 'Large', 'Largest'];
 const kDefaultFontSizeStep = 1;
 
-/// Holds the user's chosen appearance (system/light/dark) and color palette
-/// preset for each brightness, persisting all of it locally — some devices
-/// make the OS dark-mode setting hard to find or don't expose it
-/// consistently, and the palette pick has no OS equivalent at all.
+/// The user's appearance choices, saved on this device: one theme (each
+/// has a light and a dark palette), System / Light / Dark mode, and text
+/// size.
 class ThemeController extends ChangeNotifier {
   ThemeMode mode = ThemeMode.system;
-  String lightPresetId = kDefaultLightPresetId;
-  String darkPresetId = kDefaultDarkPresetId;
+  String themeId = kDefaultThemeId;
   int fontSizeStep = kDefaultFontSizeStep;
 
-  double get fontScale => kFontScaleSteps[fontSizeStep];
-
-  AppThemePreset get lightPreset =>
-      presetById(lightPresetId, kLightThemePresets);
-  AppThemePreset get darkPreset => presetById(darkPresetId, kDarkThemePresets);
-
-  ThemeController() {
-    _load();
+  ThemeController({bool load = true}) {
+    if (load) _load();
   }
+
+  AppTheme get theme => themeById(themeId);
+  double get fontScale => kFontScaleSteps[fontSizeStep];
+  String get fontSizeLabel => kFontSizeLabels[fontSizeStep];
+
+  String get modeLabel => switch (mode) {
+    ThemeMode.system => 'System',
+    ThemeMode.light => 'Light',
+    ThemeMode.dark => 'Dark',
+  };
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getString(_themeModeKey);
-    mode = switch (stored) {
+    mode = switch (prefs.getString(_themeModeKey)) {
       'light' => ThemeMode.light,
       'dark' => ThemeMode.dark,
       _ => ThemeMode.system,
     };
-    lightPresetId = prefs.getString(_lightPresetKey) ?? kDefaultLightPresetId;
-    darkPresetId = prefs.getString(_darkPresetKey) ?? kDefaultDarkPresetId;
+    themeId = themeById(prefs.getString(_themeIdKey) ?? kDefaultThemeId).id;
     final step = prefs.getInt(_fontSizeStepKey);
     if (step != null && step >= 0 && step < kFontScaleSteps.length) {
       fontSizeStep = step;
@@ -48,35 +48,24 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setFontSizeStep(int step) async {
-    fontSizeStep = step;
-    notifyListeners();
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_fontSizeStepKey, step);
-  }
-
   Future<void> setMode(ThemeMode newMode) async {
     mode = newMode;
     notifyListeners();
-
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_themeModeKey, newMode.name);
   }
 
-  Future<void> setLightPreset(String id) async {
-    lightPresetId = id;
+  Future<void> setTheme(String id) async {
+    themeId = themeById(id).id;
     notifyListeners();
-
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lightPresetKey, id);
+    await prefs.setString(_themeIdKey, themeId);
   }
 
-  Future<void> setDarkPreset(String id) async {
-    darkPresetId = id;
+  Future<void> setFontSizeStep(int step) async {
+    fontSizeStep = step.clamp(0, kFontScaleSteps.length - 1);
     notifyListeners();
-
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_darkPresetKey, id);
+    await prefs.setInt(_fontSizeStepKey, fontSizeStep);
   }
 }

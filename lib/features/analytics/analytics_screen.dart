@@ -1,113 +1,349 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/text_styles.dart';
-import 'package:monthly_traq/features/analytics/category_transactions_screen.dart';
+import 'package:monthly_traq/app/theme.dart';
+import 'package:monthly_traq/features/analytics/category_detail_screen.dart';
+import 'package:monthly_traq/models/transaction_model.dart';
+import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
-import 'package:monthly_traq/widgets/category_bar_row.dart';
-import 'package:monthly_traq/widgets/category_donut.dart';
-import 'package:monthly_traq/widgets/empty_state.dart';
+import 'package:monthly_traq/widgets/charts.dart';
 import 'package:monthly_traq/widgets/month_switcher.dart';
-import 'package:monthly_traq/widgets/monthly_trend_chart.dart';
+import 'package:monthly_traq/widgets/ui.dart';
 
-/// Where the money went. Category management (add, edit, delete, reorder)
-/// lives only in Settings › Category settings, not here.
-class AnalyticsScreen extends StatelessWidget {
+/// Where the money went (or came from) in the month picked with the month
+/// switcher.
+class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
+
+  @override
+  State<AnalyticsScreen> createState() => _AnalyticsScreenState();
+}
+
+class _AnalyticsScreenState extends State<AnalyticsScreen> {
+  TransactionType _type = TransactionType.expense;
+
+  bool get _isSpending => _type == TransactionType.expense;
 
   @override
   Widget build(BuildContext context) {
     final repo = context.watch<TransactionsRepository>();
-    final breakdown = repo.expenseByCategory;
-    final totalExpense = repo.selectedCycleExpense;
-    final maxAmount = breakdown.isEmpty ? 0.0 : breakdown.first.value;
-    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
-    final cardColor = Theme.of(context).cardColor;
-    final total =
-        '${repo.currencySymbol} ${NumberFormat.decimalPattern().format(totalExpense)}';
+    final c = context.colors;
+    final money = context.money;
+    final breakdown = repo.breakdown(_type);
+    final total = repo.selectedTotal(_type);
+    final change = percentChange(total, repo.previousTotal(_type));
+    final biggest = repo.biggestDay(_type);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Analytics')),
+      appBar: AppBar(toolbarHeight: 0),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
         children: [
+          const Text('Analytics', style: AppText.screenTitle),
+          const SizedBox(height: 16),
           const MonthSwitcher(),
           const SizedBox(height: 12),
-
-          Material(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
+          AppSegmented<TransactionType>(
+            value: _type,
+            segments: const [
+              AppSegment(TransactionType.expense, 'Spending'),
+              AppSegment(TransactionType.income, 'Income'),
+            ],
+            onChanged: (type) => setState(() => _type = type),
+          ),
+          const SizedBox(height: 12),
+          AppCard(
+            radius: AppRadius.largeCard,
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
             child: breakdown.isEmpty
-                ? const EmptyState(
-                    icon: Icons.pie_chart_outline,
-                    title: 'No spending this month',
-                    message: 'Expenses you log will be broken down here.',
+                ? EmptyState(
+                    card: false,
+                    icon: Icons.donut_large,
+                    title: _isSpending
+                        ? 'No spending in ${repo.selectedCycle.shortTitle}'
+                        : 'No income in ${repo.selectedCycle.shortTitle}',
+                    message: _isSpending
+                        ? 'Expenses you log are broken down by category here.'
+                        : 'Income you log is broken down by category here.',
                   )
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'Spending by category',
-                            style: AppText.sectionTitle,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'Tap a category to see its transactions',
-                            style: AppText.caption.copyWith(
-                              color: onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Center(
-                          child: CategoryDonut(
-                            entries: breakdown,
-                            centerValue: total,
-                            centerLabel: 'spent',
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        for (final entry in breakdown)
-                          InkWell(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    CategoryTransactionsScreen(
-                                      category: entry.key,
-                                    ),
+                : Column(
+                    children: [
+                      CategoryDonut(
+                        totals: breakdown,
+                        center: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _isSpending ? 'Spent' : 'Earned',
+                              style: AppText.label.copyWith(
+                                fontSize: 15,
+                                color: c.muted,
                               ),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
+                            FittedBox(
+                              child: Text(
+                                money.format(total),
+                                style: AppText.amountLarge,
                               ),
-                              child: CategoryBarRow(
-                                category: entry.key,
-                                amount: entry.value,
-                                maxAmount: maxAmount,
-                                sharePercent: totalExpense <= 0
-                                    ? 0
-                                    : entry.value / totalExpense * 100,
+                            ),
+                            if (change != null) ...[
+                              const SizedBox(height: 6),
+                              _ChangeBadge(
+                                change: change,
+                                higherIsGood: !_isSpending,
+                                versus: repo
+                                    .selectedCycle
+                                    .previous
+                                    .monthAbbreviation,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      for (final (index, row) in breakdown.indexed) ...[
+                        if (index > 0) const Divider(height: 1),
+                        _BreakdownRow(
+                          total: row,
+                          share: total <= 0 ? 0 : row.amount / total,
+                          barFill: row.amount / breakdown.first.amount,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CategoryDetailScreen(
+                                category: row.category,
+                                type: _type,
                               ),
                             ),
                           ),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
           ),
-          const SizedBox(height: 28),
-
-          MonthlyTrendChart(months: repo.lastSixMonths),
+          const SizedBox(height: 12),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    label: 'Daily average',
+                    value: money.format(
+                      repo.dailyAverage(_type).roundToDouble(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _StatCard(
+                    label: 'Biggest day',
+                    value: biggest == null ? '—' : money.format(biggest.amount),
+                    detail: biggest == null
+                        ? null
+                        : DateFormat('EEE, MMM d').format(biggest.day),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          AppCard(
+            radius: AppRadius.largeCard,
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text('Last 6 months', style: AppText.section),
+                    ),
+                    _LegendDot(color: c.incomeFill, label: 'In'),
+                    const SizedBox(width: 14),
+                    _LegendDot(color: c.spendingFill, label: 'Out'),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                MonthlyTrendChart(months: repo.trend),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// "↓ 12% vs Aug" — green when the change is good news, red when it isn't.
+class _ChangeBadge extends StatelessWidget {
+  final double change;
+  final bool higherIsGood;
+  final String versus;
+
+  const _ChangeBadge({
+    required this.change,
+    required this.higherIsGood,
+    required this.versus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = change.abs().round();
+    if (percent == 0) {
+      return TagBadge('Same as $versus');
+    }
+    final isUp = change > 0;
+    final isGood = isUp == higherIsGood;
+    return TagBadge(
+      '$percent% vs $versus',
+      icon: isUp ? Icons.arrow_upward : Icons.arrow_downward,
+      tone: isGood ? BadgeTone.income : BadgeTone.spending,
+    );
+  }
+}
+
+class _BreakdownRow extends StatelessWidget {
+  final CategoryTotal total;
+  final double share;
+
+  /// Bar length relative to the biggest category, so the top row fills.
+  final double barFill;
+  final VoidCallback onTap;
+
+  const _BreakdownRow({
+    required this.total,
+    required this.share,
+    required this.barFill,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final category = total.category;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.button),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Row(
+          children: [
+            IconTile(icon: category.icon, color: category.color, size: 46),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          category.name,
+                          style: AppText.rowTitle.copyWith(fontSize: 16),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        context.money.format(total.amount),
+                        style: AppText.amount.copyWith(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: MeterBar(
+                          value: barFill,
+                          color: category.color,
+                          height: 7,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 48,
+                        child: Text(
+                          '${(share * 100).round()}%',
+                          textAlign: TextAlign.right,
+                          style: AppText.tabular(
+                            AppText.caption.copyWith(
+                              fontSize: 13,
+                              color: c.muted,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(Icons.chevron_right, color: c.faint),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String? detail;
+
+  const _StatCard({required this.label, required this.value, this.detail});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppText.label.copyWith(color: c.muted)),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value, style: AppText.statValue.copyWith(fontSize: 20)),
+          ),
+          if (detail != null) ...[
+            const SizedBox(height: 2),
+            Text(detail!, style: AppText.label.copyWith(color: c.muted)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: AppText.label.copyWith(color: context.colors.muted)),
+      ],
     );
   }
 }

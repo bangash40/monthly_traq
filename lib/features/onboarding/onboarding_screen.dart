@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:monthly_traq/app/money.dart';
+import 'package:monthly_traq/app/palette.dart';
+import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
+import 'package:monthly_traq/models/category_model.dart';
+import 'package:monthly_traq/models/monthly_total.dart';
 import 'package:monthly_traq/models/onboarding_slide.dart';
+import 'package:monthly_traq/services/cycle_stats.dart';
+import 'package:monthly_traq/widgets/charts.dart';
+import 'package:monthly_traq/widgets/ui.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  final VoidCallback onDone;
+  /// Called when onboarding ends: [signUp] is true for Continue/Skip (a new
+  /// user), false for "Already have an account? Log in".
+  final void Function({required bool signUp}) onDone;
 
   const OnboardingScreen({super.key, required this.onDone});
 
@@ -25,75 +35,108 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _next() {
     if (_isLast) {
-      widget.onDone();
+      widget.onDone(signUp: true);
     } else {
       _controller.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final accent = themeAccent(context);
-    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
-    final trackColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final c = context.colors;
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: TextButton(
-                  onPressed: _isLast ? null : widget.onDone,
-                  child: Text(
-                    _isLast ? '' : 'Skip',
-                    style: TextStyle(color: onSurfaceVariant),
+      appBar: AppBar(toolbarHeight: 0),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 12, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    label: 'Step ${_index + 1} of ${onboardingSlides.length}',
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < onboardingSlides.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 6),
+                          Expanded(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              height: 5,
+                              decoration: BoxDecoration(
+                                color: i <= _index ? c.accent : c.surfaceHigh,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _controller,
-                itemCount: onboardingSlides.length,
-                onPageChanged: (i) => setState(() => _index = i),
-                itemBuilder: (context, i) => _SlideView(slide: onboardingSlides[i]),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(onboardingSlides.length, (i) {
-                final isActive = i == _index;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: isActive ? 22 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: isActive ? accent : trackColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                );
-              }),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _next,
-                  child: Text(_isLast ? 'Get Started' : 'Next'),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: () => widget.onDone(signUp: true),
+                  style: TextButton.styleFrom(foregroundColor: c.muted),
+                  child: const Text('Skip'),
                 ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: onboardingSlides.length,
+              onPageChanged: (i) => setState(() => _index = i),
+              itemBuilder: (context, i) =>
+                  _SlideView(slide: onboardingSlides[i]),
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _next,
+                      child: Text(_isLast ? 'Get started' : 'Continue'),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Already have an account?',
+                        style: AppText.body.copyWith(
+                          fontSize: 16,
+                          color: c.muted,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => widget.onDone(signUp: false),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                        ),
+                        child: const Text(
+                          'Log in',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -106,65 +149,337 @@ class _SlideView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
+    final c = context.colors;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: 280,
-            child: Stack(
+          Expanded(
+            flex: 6,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: c.primarySoft,
+                borderRadius: BorderRadius.circular(32),
+              ),
               alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 260,
-                  height: 260,
-                  decoration: BoxDecoration(
-                    color: primary.withValues(alpha: 0.10),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: primary.withValues(alpha: 0.16),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
-                  child: Icon(slide.icon, color: Colors.white, size: 68),
-                ),
-              ],
+              padding: const EdgeInsets.all(28),
+              child: ExcludeSemantics(child: _Art(slide.art)),
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 32),
+          Text(slide.title, style: AppText.titleLarge.copyWith(fontSize: 32)),
+          const SizedBox(height: 10),
           Text(
-            slide.title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            slide.subtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            slide.body,
+            style: AppText.body.copyWith(
+              fontSize: 18,
               height: 1.4,
+              color: c.muted,
+            ),
+          ),
+          const Spacer(flex: 2),
+        ],
+      ),
+    );
+  }
+}
+
+/// A small, real-looking piece of the app for each slide.
+class _Art extends StatelessWidget {
+  final OnboardingArt art;
+
+  const _Art(this.art);
+
+  static const _food = CategoryModel(
+    id: 'food',
+    name: 'Food',
+    icon: Icons.restaurant,
+    color: Color(0xFFEB6834),
+  );
+  static const _shopping = CategoryModel(
+    id: 'shopping',
+    name: 'Shopping',
+    icon: Icons.shopping_bag,
+    color: Color(0xFF2A78D6),
+  );
+  static const _fun = CategoryModel(
+    id: 'fun',
+    name: 'Entertainment',
+    icon: Icons.movie,
+    color: Color(0xFFEDA100),
+  );
+  static const _transport = CategoryModel(
+    id: 'transport',
+    name: 'Transport',
+    icon: Icons.directions_bus,
+    color: Color(0xFF9B4DCA),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final card = BoxDecoration(
+      color: c.surface,
+      borderRadius: BorderRadius.circular(AppRadius.largeCard),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x1A141726),
+          blurRadius: 30,
+          offset: Offset(0, 12),
+        ),
+      ],
+    );
+
+    Widget row(
+      IconData icon,
+      Color color,
+      String name,
+      String amount, {
+      bool income = false,
+    }) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          IconTile(icon: icon, color: color, size: 40),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(name, style: AppText.rowTitle.copyWith(fontSize: 16)),
+          ),
+          Text(
+            amount,
+            style: AppText.amount.copyWith(
+              fontSize: 16,
+              color: income ? c.income : c.ink,
             ),
           ),
         ],
       ),
     );
+
+    switch (art) {
+      case OnboardingArt.transactions:
+        return Container(
+          decoration: card,
+          constraints: const BoxConstraints(maxWidth: 320),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              row(
+                Icons.restaurant,
+                AppPalette.categorical[1],
+                'Groceries',
+                '${kMinus}3,450',
+              ),
+              const Divider(height: 1),
+              row(
+                Icons.work,
+                const Color(0xFF16A05E),
+                'Salary',
+                '+120,000',
+                income: true,
+              ),
+              const Divider(height: 1),
+              row(
+                Icons.directions_bus,
+                AppPalette.categorical[0],
+                'Bus pass',
+                '${kMinus}850',
+              ),
+            ],
+          ),
+        );
+      case OnboardingArt.breakdown:
+        return Container(
+          decoration: card,
+          constraints: const BoxConstraints(maxWidth: 320),
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              CategoryDonut(
+                size: 120,
+                totals: const [
+                  CategoryTotal(_shopping, 12400, 1),
+                  CategoryTotal(_food, 9850, 1),
+                  CategoryTotal(_fun, 5200, 1),
+                  CategoryTotal(_transport, 4300, 1),
+                ],
+                center: const SizedBox.shrink(),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final (cat, pct) in [
+                      (_shopping, 39),
+                      (_food, 31),
+                      (_fun, 16),
+                      (_transport, 14),
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: cat.color,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                cat.name,
+                                style: AppText.label.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              '$pct%',
+                              style: AppText.tabular(
+                                AppText.label.copyWith(color: c.muted),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      case OnboardingArt.budget:
+        return Container(
+          decoration: card,
+          constraints: const BoxConstraints(maxWidth: 320),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Monthly budget', style: AppText.section),
+              const SizedBox(height: 8),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Rs. 21,400',
+                      style: AppText.amountLarge,
+                    ),
+                    TextSpan(
+                      text: '  left',
+                      style: AppText.label.copyWith(
+                        fontSize: 15,
+                        color: c.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: 0.64,
+                  minHeight: 10,
+                  color: c.accent,
+                  backgroundColor: c.surfaceHigh,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Text(
+                    '64% used',
+                    style: AppText.caption.copyWith(
+                      fontSize: 13,
+                      color: c.muted,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '4 days left',
+                    style: AppText.caption.copyWith(
+                      fontSize: 13,
+                      color: c.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      case OnboardingArt.trends:
+        final now = DateTime.now();
+        const values = [
+          (110, 48),
+          (108, 58),
+          (112, 44),
+          (111, 67),
+          (118, 52),
+          (118, 36),
+        ];
+        return Container(
+          decoration: card,
+          constraints: const BoxConstraints(maxWidth: 340),
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
+          child: MonthlyTrendChart(
+            months: [
+              for (final (i, v) in values.indexed)
+                MonthlyTotal(
+                  month: DateTime(now.year, now.month - 5 + i),
+                  income: v.$1 * 1000.0,
+                  expense: v.$2 * 1000.0,
+                ),
+            ],
+          ),
+        );
+      case OnboardingArt.sync:
+        return Container(
+          decoration: card,
+          constraints: const BoxConstraints(maxWidth: 300),
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: c.tint(c.incomeFill),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.cloud_done, color: c.income, size: 38),
+              ),
+              const SizedBox(height: 14),
+              const Text('Backed up', style: AppText.section),
+              Text('Just now', style: AppText.label.copyWith(color: c.muted)),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (final icon in [
+                    Icons.smartphone,
+                    Icons.tablet_android,
+                    Icons.laptop,
+                  ])
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: IconTile(icon: icon, color: c.accent, size: 44),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        );
+    }
   }
 }

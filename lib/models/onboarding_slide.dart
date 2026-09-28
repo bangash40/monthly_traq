@@ -1,42 +1,42 @@
-import 'package:flutter/material.dart';
+/// Which illustration a slide shows.
+enum OnboardingArt { transactions, breakdown, budget, trends, sync }
 
 class OnboardingSlide {
-  final IconData icon;
+  final OnboardingArt art;
   final String title;
-  final String subtitle;
+  final String body;
 
   const OnboardingSlide({
-    required this.icon,
+    required this.art,
     required this.title,
-    required this.subtitle,
+    required this.body,
   });
 }
 
 const onboardingSlides = [
   OnboardingSlide(
-    icon: Icons.receipt_long,
-    title: 'Track Every Transaction',
-    subtitle: 'Log income and expenses in seconds, organized by category.',
+    art: OnboardingArt.transactions,
+    title: 'Every rupee, in one place',
+    body: 'Log income and expenses in seconds, sorted by category.',
   ),
   OnboardingSlide(
-    icon: Icons.pie_chart,
-    title: 'See Where It Goes',
-    subtitle:
-        'Visual breakdowns show exactly how much you\'re spending, and where.',
+    art: OnboardingArt.breakdown,
+    title: 'See where it goes',
+    body: 'A clear breakdown shows what you spend on, and how much.',
   ),
   OnboardingSlide(
-    icon: Icons.account_balance_wallet,
-    title: 'Set a Monthly Budget',
-    subtitle: 'Set a spending limit and get a live meter as you go.',
+    art: OnboardingArt.budget,
+    title: 'A budget that keeps up',
+    body: 'Set a monthly limit and watch the meter fill as you spend.',
   ),
   OnboardingSlide(
-    icon: Icons.show_chart,
-    title: 'Watch Your Trends',
-    subtitle: 'Compare income and expenses month over month at a glance.',
+    art: OnboardingArt.trends,
+    title: 'Spot your trends',
+    body: 'Compare what comes in and goes out, month by month.',
   ),
   OnboardingSlide(
-    icon: Icons.cloud_done,
-    title: 'Always Synced',
-    subtitle: 'Your data is securely backed up and available on any device.',
+    art: OnboardingArt.sync,
+    title: 'Safe in your account',
+    body: 'Everything syncs to your account, so it\'s there on any device.',
   ),
 ];
