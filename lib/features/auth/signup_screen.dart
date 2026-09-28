@@ -100,146 +100,128 @@ class _SignupScreenState extends State<SignupScreen> {
 
     return Scaffold(
       appBar: AppBar(toolbarHeight: 0),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-              child: Form(
-                key: _formKey,
-                autovalidateMode: _autovalidate,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Form(
+            key: _formKey,
+            autovalidateMode: _autovalidate,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: BackCircleButton(),
+                ),
+                const SizedBox(height: 28),
+                const Text('Create your account', style: AppText.titleLarge),
+                const SizedBox(height: 8),
+                Text(
+                  'It takes less than a minute.',
+                  style: AppText.body.copyWith(fontSize: 17, color: c.muted),
+                ),
+                const SizedBox(height: 30),
+                LabeledField(
+                  label: 'Full name',
+                  field: TextFormField(
+                    controller: _nameController,
+                    keyboardType: TextInputType.name,
+                    textCapitalization: TextCapitalization.words,
+                    autofillHints: const [AutofillHints.name],
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(hintText: 'Your name'),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? 'Enter your name'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                LabeledField(
+                  label: 'Email',
+                  field: TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      hintText: 'you@example.com',
+                    ),
+                    validator: validateEmail,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                LabeledField(
+                  label: 'Password',
+                  field: TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                    textInputAction: TextInputAction.done,
+                    onChanged: (_) => setState(() {}),
+                    onFieldSubmitted: (_) => _signUp(),
+                    decoration: InputDecoration(
+                      hintText: 'Create a password',
+                      suffixIcon: IconButton(
+                        tooltip: _obscurePassword
+                            ? 'Show password'
+                            : 'Hide password',
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                      ),
+                    ),
+                    validator: (value) =>
+                        (value ?? '').length < _minPasswordLength
+                        ? 'Use at least $_minPasswordLength characters'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
                   children: [
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: BackCircleButton(),
+                    Icon(
+                      ok ? Icons.check_circle_outline : Icons.circle_outlined,
+                      size: 20,
+                      color: ok ? c.income : c.faint,
                     ),
-                    const SizedBox(height: 28),
-                    const Text(
-                      'Create your account',
-                      style: AppText.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
+                    const SizedBox(width: 8),
                     Text(
-                      'It takes less than a minute.',
-                      style: AppText.body.copyWith(
-                        fontSize: 17,
-                        color: c.muted,
+                      'At least $_minPasswordLength characters',
+                      style: AppText.rowTitle.copyWith(
+                        fontSize: 14,
+                        color: ok ? c.income : c.muted,
                       ),
-                    ),
-                    const SizedBox(height: 30),
-                    LabeledField(
-                      label: 'Full name',
-                      field: TextFormField(
-                        controller: _nameController,
-                        keyboardType: TextInputType.name,
-                        textCapitalization: TextCapitalization.words,
-                        autofillHints: const [AutofillHints.name],
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          hintText: 'Your name',
-                        ),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                            ? 'Enter your name'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    LabeledField(
-                      label: 'Email',
-                      field: TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          hintText: 'you@example.com',
-                        ),
-                        validator: validateEmail,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    LabeledField(
-                      label: 'Password',
-                      field: TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        autofillHints: const [AutofillHints.newPassword],
-                        textInputAction: TextInputAction.done,
-                        onChanged: (_) => setState(() {}),
-                        onFieldSubmitted: (_) => _signUp(),
-                        decoration: InputDecoration(
-                          hintText: 'Create a password',
-                          suffixIcon: IconButton(
-                            tooltip: _obscurePassword
-                                ? 'Show password'
-                                : 'Hide password',
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                          ),
-                        ),
-                        validator: (value) =>
-                            (value ?? '').length < _minPasswordLength
-                            ? 'Use at least $_minPasswordLength characters'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Icon(
-                          ok
-                              ? Icons.check_circle_outline
-                              : Icons.circle_outlined,
-                          size: 20,
-                          color: ok ? c.income : c.faint,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'At least $_minPasswordLength characters',
-                          style: AppText.rowTitle.copyWith(
-                            fontSize: 14,
-                            color: ok ? c.income : c.muted,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 28),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _signUp,
-                      child: ButtonLabel('Create account', loading: _isLoading),
-                    ),
-                    const SizedBox(height: 14),
-                    GoogleSignInButton(
-                      label: 'Sign up with Google',
-                      loading: _isGoogleLoading,
-                      onPressed: _signInWithGoogle,
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 28),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _signUp,
+                  child: ButtonLabel('Create account', loading: _isLoading),
+                ),
+                const SizedBox(height: 14),
+                GoogleSignInButton(
+                  label: 'Sign up with Google',
+                  loading: _isGoogleLoading,
+                  onPressed: _signInWithGoogle,
+                ),
+                const SizedBox(height: 28),
+                AuthFooterLink(
+                  prompt: 'Already have an account?',
+                  action: 'Log in',
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
             ),
           ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: AuthFooterLink(
-                prompt: 'Already have an account?',
-                action: 'Log in',
-                onTap: () => Navigator.pop(context),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

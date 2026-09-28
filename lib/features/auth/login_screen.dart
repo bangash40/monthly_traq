@@ -132,121 +132,112 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       appBar: AppBar(toolbarHeight: 0),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 36, 24, 24),
-              child: Form(
-                key: _formKey,
-                autovalidateMode: _autovalidate,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: AppLogoTile(),
-                    ),
-                    const SizedBox(height: 32),
-                    const Text('Welcome back', style: AppText.titleLarge),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Log in to keep tracking your month.',
-                      style: AppText.body.copyWith(
-                        fontSize: 17,
-                        color: c.muted,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    LabeledField(
-                      label: 'Email',
-                      field: TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          hintText: 'you@example.com',
-                          prefixIcon: Icon(Icons.mail_outline),
-                        ),
-                        validator: validateEmail,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    LabeledField(
-                      label: 'Password',
-                      trailing: TextButton(
-                        onPressed: _forgotPassword,
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          minimumSize: const Size(0, 28),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text('Forgot?'),
-                      ),
-                      field: TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        autofillHints: const [AutofillHints.password],
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _login(),
-                        decoration: InputDecoration(
-                          hintText: 'Your password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            tooltip: _obscurePassword
-                                ? 'Show password'
-                                : 'Hide password',
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                          ),
-                        ),
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? 'Enter your password'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      child: ButtonLabel('Log in', loading: _isLoading),
-                    ),
-                    const SizedBox(height: 24),
-                    const OrDivider(),
-                    const SizedBox(height: 24),
-                    GoogleSignInButton(
-                      loading: _isGoogleLoading,
-                      onPressed: _signInWithGoogle,
-                    ),
-                  ],
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 36, 24, 24),
+          child: Form(
+            key: _formKey,
+            autovalidateMode: _autovalidate,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: AppLogoTile(),
                 ),
-              ),
+                const SizedBox(height: 32),
+                const Text('Welcome back', style: AppText.titleLarge),
+                const SizedBox(height: 8),
+                Text(
+                  'Log in to keep tracking your month.',
+                  style: AppText.body.copyWith(fontSize: 17, color: c.muted),
+                ),
+                const SizedBox(height: 32),
+                LabeledField(
+                  label: 'Email',
+                  field: TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      hintText: 'you@example.com',
+                      prefixIcon: Icon(Icons.mail_outline),
+                    ),
+                    validator: validateEmail,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                LabeledField(
+                  label: 'Password',
+                  trailing: TextButton(
+                    onPressed: _forgotPassword,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      minimumSize: const Size(0, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text('Forgot?'),
+                  ),
+                  field: TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    autofillHints: const [AutofillHints.password],
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _login(),
+                    decoration: InputDecoration(
+                      hintText: 'Your password',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        tooltip: _obscurePassword
+                            ? 'Show password'
+                            : 'Hide password',
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                      ),
+                    ),
+                    validator: (value) => (value == null || value.isEmpty)
+                        ? 'Enter your password'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  child: ButtonLabel('Log in', loading: _isLoading),
+                ),
+                const SizedBox(height: 24),
+                const OrDivider(),
+                const SizedBox(height: 24),
+                GoogleSignInButton(
+                  loading: _isGoogleLoading,
+                  onPressed: _signInWithGoogle,
+                ),
+                const SizedBox(height: 28),
+                AuthFooterLink(
+                  prompt: 'New to MonthlyTraq?',
+                  action: 'Create account',
+                  onTap: _openSignup,
+                ),
+              ],
             ),
           ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: AuthFooterLink(
-                prompt: 'New to MonthlyTraq?',
-                action: 'Create account',
-                onTap: _openSignup,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// "New to MonthlyTraq? Create account" at the foot of the auth screens.
+/// "New to MonthlyTraq? Create account" below the buttons on the auth
+/// screens. It scrolls with the form rather than being pinned to the bottom,
+/// so it stays next to the buttons and doesn't ride up on the keyboard.
 class AuthFooterLink extends StatelessWidget {
   final String prompt;
   final String action;
