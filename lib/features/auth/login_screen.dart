@@ -3,20 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
+import 'package:monthly_traq/features/auth/auth_validation.dart';
+import 'package:monthly_traq/features/auth/email_field.dart';
 import 'package:monthly_traq/features/auth/signup_screen.dart';
+import 'package:monthly_traq/services/auth_errors.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/google_sign_in_button.dart';
 import 'package:monthly_traq/widgets/ui.dart';
-
-final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-
-String? validateEmail(String? value) {
-  final email = value?.trim() ?? '';
-  if (email.isEmpty) return 'Enter your email address';
-  if (!_emailPattern.hasMatch(email)) return 'Enter a valid email address';
-  return null;
-}
 
 class LoginScreen extends StatefulWidget {
   /// True right after a fresh install finishes onboarding — a new user has
@@ -82,15 +76,8 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
       // AuthGate swaps to the app when the auth state changes.
-    } on FirebaseAuthException catch (e) {
-      _toast(switch (e.code) {
-        'invalid-credential' ||
-        'wrong-password' ||
-        'user-not-found' => 'That email and password don\'t match an account.',
-        'too-many-requests' => 'Too many attempts. Try again in a few minutes.',
-        'network-request-failed' => 'No internet connection.',
-        _ => e.message ?? 'Log in failed',
-      });
+    } catch (e) {
+      _toast(authErrorMessage(e, AuthAction.logIn));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -102,11 +89,16 @@ class _LoginScreenState extends State<LoginScreen> {
       _toast('Enter your email above, then tap Forgot? again.');
       return;
     }
+    final sent = 'If $email has an account, a reset link is on its way.';
     try {
       await _authService.sendPasswordReset(email);
-      _toast('If $email has an account, a reset link is on its way.');
-    } on FirebaseAuthException catch (e) {
-      _toast(e.message ?? 'Could not send the reset email');
+      _toast(sent);
+    } catch (e) {
+      // "No such account" gets the same message as success, so the form
+      // doesn't reveal which emails have accounts.
+      final noAccount =
+          e is FirebaseAuthException && e.code == 'user-not-found';
+      _toast(noAccount ? sent : authErrorMessage(e, AuthAction.resetPassword));
     }
   }
 
@@ -120,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await context.read<TransactionsRepository>().seedDefaultsForNewUser();
       }
     } catch (e) {
-      _toast('Google sign-in failed: $e');
+      _toast(authErrorMessage(e, AuthAction.google));
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }
@@ -156,16 +148,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 32),
                 LabeledField(
                   label: 'Email',
-                  field: TextFormField(
+                  field: EmailField(
                     controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      hintText: 'you@example.com',
-                      prefixIcon: Icon(Icons.mail_outline),
-                    ),
-                    validator: validateEmail,
+                    showIcon: true,
                   ),
                 ),
                 const SizedBox(height: 18),

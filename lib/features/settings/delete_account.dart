@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/theme.dart';
+import 'package:monthly_traq/services/auth_errors.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 
@@ -53,17 +53,8 @@ Future<void> deleteAccountFlow(BuildContext context) async {
     } else if (!await auth.reauthenticateWithGoogle()) {
       return; // cancelled the account picker
     }
-  } on FirebaseAuthException catch (e) {
-    toast(switch (e.code) {
-      'wrong-password' || 'invalid-credential' => 'That password isn\'t right.',
-      'user-mismatch' => 'Choose the Google account you signed up with.',
-      'too-many-requests' => 'Too many attempts. Try again in a few minutes.',
-      'network-request-failed' => 'No internet connection.',
-      _ => e.message ?? 'Couldn\'t confirm it\'s you.',
-    });
-    return;
   } catch (e) {
-    toast('Couldn\'t confirm it\'s you: $e');
+    toast(authErrorMessage(e, AuthAction.confirmIdentity));
     return;
   }
 
@@ -92,15 +83,42 @@ Future<void> deleteAccountFlow(BuildContext context) async {
     toast('Your account has been deleted.');
   } catch (e) {
     navigator.pop();
-    toast('Could not delete your account: $e');
+    toast(authErrorMessage(e, AuthAction.deleteAccount));
   }
 }
 
 Future<String?> _askForPassword(BuildContext context) async {
-  final controller = TextEditingController();
   final password = await showDialog<String>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
+    builder: (_) => const _PasswordDialog(),
+  );
+  return (password == null || password.isEmpty) ? null : password;
+}
+
+/// Owns its text controller so it's disposed only after the dialog's
+/// closing animation — disposing it as soon as showDialog returns crashes
+/// the TextField that is still animating out.
+class _PasswordDialog extends StatefulWidget {
+  const _PasswordDialog();
+
+  @override
+  State<_PasswordDialog> createState() => _PasswordDialogState();
+}
+
+class _PasswordDialogState extends State<_PasswordDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.pop(context, _controller.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
       title: const Text('Confirm it\'s you'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -109,27 +127,22 @@ Future<String?> _askForPassword(BuildContext context) async {
           const Text('Enter your password to delete your account.'),
           const SizedBox(height: 16),
           TextField(
-            controller: controller,
+            controller: _controller,
             obscureText: true,
             autofocus: true,
             autofillHints: const [AutofillHints.password],
             decoration: const InputDecoration(hintText: 'Password'),
-            onSubmitted: (value) => Navigator.pop(dialogContext, value),
+            onSubmitted: (_) => _submit(),
           ),
         ],
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
+          onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, controller.text),
-          child: const Text('Continue'),
-        ),
+        TextButton(onPressed: _submit, child: const Text('Continue')),
       ],
-    ),
-  );
-  controller.dispose();
-  return (password == null || password.isEmpty) ? null : password;
+    );
+  }
 }

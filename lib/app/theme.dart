@@ -474,6 +474,9 @@ ThemeData buildTheme(AppTheme theme, Brightness brightness) {
       fillColor: p.surface,
       hintStyle: AppText.body.copyWith(color: c.faint),
       labelStyle: AppText.body.copyWith(color: c.muted),
+      // Wrap long messages ("Password needs an uppercase letter and a
+      // symbol") instead of cutting them off with an ellipsis.
+      errorMaxLines: 3,
       prefixIconColor: c.muted,
       suffixIconColor: c.muted,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),

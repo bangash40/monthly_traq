@@ -1,15 +1,15 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
+import 'package:monthly_traq/features/auth/auth_validation.dart';
+import 'package:monthly_traq/features/auth/email_field.dart';
 import 'package:monthly_traq/features/auth/login_screen.dart';
+import 'package:monthly_traq/services/auth_errors.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/google_sign_in_button.dart';
 import 'package:monthly_traq/widgets/ui.dart';
-
-const _minPasswordLength = 6;
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -24,20 +24,19 @@ class _SignupScreenState extends State<SignupScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   AutovalidateMode _autovalidate = AutovalidateMode.disabled;
 
-  bool get _passwordLongEnough =>
-      _passwordController.text.length >= _minPasswordLength;
-
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmController.dispose();
     super.dispose();
   }
 
@@ -61,16 +60,8 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!mounted) return;
       await context.read<TransactionsRepository>().seedDefaultsForNewUser();
       if (mounted) Navigator.pop(context);
-    } on FirebaseAuthException catch (e) {
-      _toast(switch (e.code) {
-        'email-already-in-use' =>
-          'That email already has an account. Log in instead.',
-        'weak-password' => 'Choose a longer password.',
-        'network-request-failed' => 'No internet connection.',
-        _ => e.message ?? 'Sign up failed',
-      });
     } catch (e) {
-      _toast('Sign up failed: $e');
+      _toast(authErrorMessage(e, AuthAction.signUp));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -87,16 +78,25 @@ class _SignupScreenState extends State<SignupScreen> {
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      _toast('Google sign-in failed: $e');
+      _toast(authErrorMessage(e, AuthAction.google));
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
+  Widget _visibilityToggle() => IconButton(
+    tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+    icon: Icon(
+      _obscurePassword
+          ? Icons.visibility_outlined
+          : Icons.visibility_off_outlined,
+    ),
+    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+  );
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final ok = _passwordLongEnough;
 
     return Scaffold(
       appBar: AppBar(toolbarHeight: 0),
@@ -140,15 +140,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 18),
                 LabeledField(
                   label: 'Email',
-                  field: TextFormField(
+                  field: EmailField(
                     controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      hintText: 'you@example.com',
-                    ),
-                    validator: validateEmail,
+                    validator: validateSignupEmail,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -158,48 +152,54 @@ class _SignupScreenState extends State<SignupScreen> {
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     autofillHints: const [AutofillHints.newPassword],
-                    textInputAction: TextInputAction.done,
+                    textInputAction: TextInputAction.next,
+                    // Rebuild so the strength bar below updates as they type.
                     onChanged: (_) => setState(() {}),
-                    onFieldSubmitted: (_) => _signUp(),
                     decoration: InputDecoration(
                       hintText: 'Create a password',
-                      suffixIcon: IconButton(
-                        tooltip: _obscurePassword
-                            ? 'Show password'
-                            : 'Hide password',
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
-                        onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword,
-                        ),
-                      ),
+                      suffixIcon: _visibilityToggle(),
                     ),
-                    validator: (value) =>
-                        (value ?? '').length < _minPasswordLength
-                        ? 'Use at least $_minPasswordLength characters'
-                        : null,
+                    validator: (value) => validateNewPassword(
+                      value,
+                      name: _nameController.text,
+                      email: _emailController.text,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Icon(
-                      ok ? Icons.check_circle_outline : Icons.circle_outlined,
-                      size: 20,
-                      color: ok ? c.income : c.faint,
+                const SizedBox(height: 12),
+                _PasswordStrengthMeter(
+                  check: checkNewPassword(
+                    _passwordController.text,
+                    name: _nameController.text,
+                    email: _emailController.text,
+                  ),
+                  // Once the form has been submitted the field shows the
+                  // problem itself, so don't repeat it here.
+                  showProblem: _autovalidate == AutovalidateMode.disabled,
+                ),
+                const SizedBox(height: 18),
+                LabeledField(
+                  label: 'Confirm password',
+                  field: TextFormField(
+                    controller: _confirmController,
+                    obscureText: _obscurePassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _signUp(),
+                    decoration: InputDecoration(
+                      hintText: 'Type your password again',
+                      suffixIcon: _visibilityToggle(),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'At least $_minPasswordLength characters',
-                      style: AppText.rowTitle.copyWith(
-                        fontSize: 14,
-                        color: ok ? c.income : c.muted,
-                      ),
-                    ),
-                  ],
+                    validator: (value) {
+                      if ((value ?? '').isEmpty) {
+                        return 'Type your password again';
+                      }
+                      if (value != _passwordController.text) {
+                        return 'Passwords don\'t match';
+                      }
+                      return null;
+                    },
+                  ),
                 ),
                 const SizedBox(height: 28),
                 ElevatedButton(
@@ -222,6 +222,91 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A three-step bar (Weak / Okay / Strong) under the password field, with a
+/// one-line hint about what to do next.
+class _PasswordStrengthMeter extends StatelessWidget {
+  final PasswordCheck check;
+  final bool showProblem;
+
+  const _PasswordStrengthMeter({
+    required this.check,
+    required this.showProblem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final (filled, color, label, hint) = switch (check.strength) {
+      PasswordStrength.empty => (
+        0,
+        c.faint,
+        null,
+        'Use $minPasswordLength or more characters. A short phrase is easy '
+            'to remember and hard to guess.',
+      ),
+      PasswordStrength.weak => (
+        1,
+        c.spending,
+        'Weak',
+        showProblem ? check.problem : null,
+      ),
+      PasswordStrength.okay => (
+        2,
+        c.warning,
+        'Okay',
+        'Good. A longer password is even stronger.',
+      ),
+      PasswordStrength.strong => (3, c.income, 'Strong', 'Great password.'),
+    };
+
+    return Semantics(
+      label: label == null
+          ? hint
+          : 'Password strength: $label.${hint == null ? '' : ' $hint'}',
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 8,
+        children: [
+          Row(
+            spacing: 6,
+            children: [
+              for (var i = 0; i < 3; i++)
+                Expanded(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: i < filled ? color : c.surfaceHigh,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              SizedBox(
+                width: 64,
+                child: Text(
+                  label ?? '',
+                  textAlign: TextAlign.end,
+                  style: AppText.rowTitle.copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (hint != null)
+            Text(
+              hint,
+              style: AppText.body.copyWith(fontSize: 14, color: c.muted),
+            ),
+        ],
       ),
     );
   }
