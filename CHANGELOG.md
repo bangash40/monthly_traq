@@ -4,6 +4,36 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.4.0 (build 5) — 2026-09-29
+
+Friendlier, safer sign-up and login.
+
+### Added
+- A password strength bar on sign-up (Weak / Okay / Strong) with a one-line
+  tip. Passwords need 8 or more characters; common ones ("password123",
+  "P@ssw0rd!", "12345678"), easy patterns and your own name or email are
+  turned away.
+- A Confirm password field on sign-up.
+- "Did you mean ali@gmail.com?" under the email field when the address
+  looks misspelled (gmial.com, gmail.con, hotmail, test.om…). One tap fixes
+  it.
+- Sign-up turns away placeholder addresses (example.com, test.com, test.om,
+  fake.net…) and temporary-inbox services (Mailinator, YOPmail and others),
+  since they can't receive a password-reset email. Logging in to existing
+  accounts is unchanged.
+
+### Changed
+- Stricter email format checks (no spaces, one @, a proper ending).
+- Clear, plain-language messages for every login, sign-up, password reset,
+  Google sign-in and Delete account error, instead of raw Firebase text.
+- Form errors wrap onto a second line instead of being cut off.
+- "New to MonthlyTraq? Create account" and "Already have an account? Log
+  in" sit right under the buttons instead of being pinned to the bottom of
+  the screen.
+
+### Fixed
+- The app crashed when the Delete account password box closed.
+
 ## 1.3.0 (build 4) — 2026-09-28
 
 Getting ready for the Play Store.
