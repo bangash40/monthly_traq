@@ -15,8 +15,12 @@ Future<bool> deleteTransactionWithUndo(
 
   try {
     await repo.deleteTransaction(transaction.id);
-  } catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text('Could not delete: $e')));
+  } catch (_) {
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Couldn\'t delete the transaction. Please try again.'),
+      ),
+    );
     return false;
   }
 
@@ -24,14 +28,22 @@ Future<bool> deleteTransactionWithUndo(
   messenger.showSnackBar(
     SnackBar(
       content: const Text('Transaction deleted'),
+      // A snackbar with an action stays up until it's tapped unless told
+      // otherwise; Undo should fade away on its own like in other apps.
+      persist: false,
+      duration: const Duration(seconds: 5),
       action: SnackBarAction(
         label: 'Undo',
         onPressed: () async {
           try {
             await repo.restoreTransaction(transaction);
-          } catch (e) {
+          } catch (_) {
             messenger.showSnackBar(
-              SnackBar(content: Text('Could not restore: $e')),
+              const SnackBar(
+                content: Text(
+                  'Couldn\'t bring the transaction back. Please try again.',
+                ),
+              ),
             );
           }
         },
