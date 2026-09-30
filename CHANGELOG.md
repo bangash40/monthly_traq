@@ -4,6 +4,21 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.6.0 (build 11) — 2026-10-01
+
+Make Home your own. Out of the box it looks exactly as before; the new
+extras are switches you can turn on.
+
+### Added
+- Home screen layout (Profile → Appearance): show or hide each Home card
+  and drag them into the order you like. Reset to default puts Home back.
+- A Daily allowance card, off by default: how much you can spend today and
+  still stay on budget, with a bar for what you've spent today. Spend less
+  and tomorrow's amount goes up; spend more and it goes down.
+- A Privacy button, off by default: an eye on the balance card that
+  changes every amount on Home to "Rs. ••••". Other screens still show
+  real numbers.
+
 ## 1.5.0 (build 10) — 2026-10-01
 
 ### Added
