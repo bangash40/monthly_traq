@@ -4,6 +4,14 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.4.4 (build 9) — 2026-10-01
+
+### Removed
+- The Open-source licenses row from Profile → About.
+- Placeholder rows for features that aren't planned for now (they only
+  ever showed in debug builds): Cash books, Accounts, Number format,
+  Calendar, Export data, Import transactions, API access and Password.
+
 ## 1.4.3 (build 8) — 2026-10-01
 
 ### Changed
