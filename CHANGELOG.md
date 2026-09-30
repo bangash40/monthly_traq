@@ -4,6 +4,14 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.4.3 (build 8) — 2026-10-01
+
+### Changed
+- The + (add transaction) button now sits inside the bottom bar as a
+  filled rounded button, instead of floating above it. It no longer covers
+  the bottom of lists and screens, and the bar's five slots are evenly
+  spaced.
+
 ## 1.4.2 (build 7) — 2026-10-01
 
 ### Fixed
