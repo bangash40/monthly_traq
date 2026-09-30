@@ -658,19 +658,26 @@ class ButtonLabel extends StatelessWidget {
 
 /// The app mark: a wallet on the brand color (login, licenses page).
 class AppLogoTile extends StatelessWidget {
-  const AppLogoTile({super.key});
+  /// Width and height; the corner radius and icon scale with it.
+  final double size;
+
+  const AppLogoTile({super.key, this.size = 68});
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     return Container(
-      width: 68,
-      height: 68,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: c.primary,
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        borderRadius: BorderRadius.circular(AppRadius.card * size / 68),
       ),
-      child: Icon(Icons.account_balance_wallet, color: c.onPrimary, size: 34),
+      child: Icon(
+        Icons.account_balance_wallet,
+        color: c.onPrimary,
+        size: size / 2,
+      ),
     );
   }
 }

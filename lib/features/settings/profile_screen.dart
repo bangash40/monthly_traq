@@ -11,6 +11,7 @@ import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/app/theme_controller.dart';
 import 'package:monthly_traq/dev/sample_data.dart';
+import 'package:monthly_traq/features/settings/about_screen.dart';
 import 'package:monthly_traq/features/settings/appearance_screen.dart';
 import 'package:monthly_traq/features/settings/categories_screen.dart';
 import 'package:monthly_traq/features/settings/currency_picker_screen.dart';
@@ -301,7 +302,7 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           SettingsGroup(
-            title: 'About',
+            title: 'More',
             rows: [
               SettingsRow(
                 icon: Icons.privacy_tip_outlined,
@@ -317,6 +318,11 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.star_outline,
                 label: 'Rate ${AppInfo.name}',
                 onTap: () => _rateApp(context),
+              ),
+              SettingsRow(
+                icon: Icons.info_outline,
+                label: 'About',
+                onTap: () => _push(context, const AboutScreen()),
               ),
             ],
           ),
