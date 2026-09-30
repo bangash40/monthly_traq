@@ -4,6 +4,16 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.6.1 (build 12) — 2026-10-01
+
+### Changed
+- In Profile, the Data section (Backup, Clear cache, Delete all data,
+  Delete account) now comes after More, just above Log out.
+
+### Removed
+- The version label at the bottom of Profile. The full version is in
+  Profile → More → About.
+
 ## 1.6.0 (build 11) — 2026-10-01
 
 Make Home your own. Out of the box it looks exactly as before; the new
