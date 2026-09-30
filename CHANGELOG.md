@@ -4,6 +4,13 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.4.1 (build 6) — 2026-09-30
+
+### Fixed
+- The back button now works like other Android apps: on Transactions,
+  Analytics or Profile it takes you to Home, and on Home it leaves the app.
+  Before, back on any tab closed the app straight away.
+
 ## 1.4.0 (build 5) — 2026-09-29
 
 Friendlier, safer sign-up and login.
