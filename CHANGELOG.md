@@ -4,6 +4,14 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.4.2 (build 7) — 2026-10-01
+
+### Fixed
+- The "Transaction deleted · Undo" message now disappears on its own after
+  5 seconds instead of staying on screen until tapped.
+- If deleting or restoring a transaction fails, the message is now plain
+  language instead of raw error text.
+
 ## 1.4.1 (build 6) — 2026-09-30
 
 ### Fixed
