@@ -68,28 +68,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _showLicenses(BuildContext context) async {
-    final info = await PackageInfo.fromPlatform();
-    if (!context.mounted) return;
-    showLicensePage(
-      context: context,
-      applicationName: AppInfo.name,
-      applicationVersion: info.version,
-      applicationIcon: const Padding(
-        padding: EdgeInsets.all(12),
-        child: AppLogoTile(),
-      ),
-    );
-  }
-
-  void _showPro(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature is part of MonthlyTraq Pro, coming soon.'),
-      ),
-    );
-  }
-
   Future<void> _showBackupInfo(BuildContext context) {
     return showDialog<void>(
       context: context,
@@ -198,16 +176,6 @@ class ProfileScreen extends StatelessWidget {
                 value: ordinal(repo.monthStartDay),
                 onTap: () => showMonthStartDayPicker(context),
               ),
-              if (_showUnfinished) ...const [
-                SettingsRow.soon(
-                  icon: Icons.menu_book_outlined,
-                  label: 'Cash books',
-                ),
-                SettingsRow.soon(
-                  icon: Icons.account_balance_outlined,
-                  label: 'Accounts',
-                ),
-              ],
             ],
           ),
           SettingsGroup(
@@ -266,20 +234,11 @@ class ProfileScreen extends StatelessWidget {
                 toggleValue: settings.thousandsSeparator,
                 onToggle: settings.setThousandsSeparator,
               ),
-              if (_showUnfinished) ...const [
-                SettingsRow.soon(
-                  icon: Icons.format_list_numbered,
-                  label: 'Number format',
-                ),
-                SettingsRow.soon(
+              if (_showUnfinished)
+                const SettingsRow.soon(
                   icon: Icons.calculate_outlined,
                   label: 'Calculator',
                 ),
-                SettingsRow.soon(
-                  icon: Icons.calendar_month_outlined,
-                  label: 'Calendar',
-                ),
-              ],
             ],
           ),
           // These switches are remembered but don't do anything yet.
@@ -306,18 +265,6 @@ class ProfileScreen extends StatelessWidget {
           SettingsGroup(
             title: 'Data',
             rows: [
-              if (_showUnfinished) ...[
-                const SettingsRow.soon(
-                  icon: Icons.download_outlined,
-                  label: 'Export data',
-                ),
-                SettingsRow(
-                  icon: Icons.upload_outlined,
-                  label: 'Import transactions',
-                  kind: SettingsRowKind.pro,
-                  onTap: () => _showPro(context, 'Importing transactions'),
-                ),
-              ],
               SettingsRow(
                 icon: Icons.cloud_done_outlined,
                 label: 'Backup',
@@ -346,22 +293,10 @@ class ProfileScreen extends StatelessWidget {
           if (_showUnfinished)
             SettingsGroup(
               title: 'Advanced',
-              rows: [
-                const SettingsRow.soon(
+              rows: const [
+                SettingsRow.soon(
                   icon: Icons.auto_awesome_outlined,
                   label: 'AI settings',
-                ),
-                SettingsRow(
-                  icon: Icons.api,
-                  label: 'API access',
-                  kind: SettingsRowKind.pro,
-                  onTap: () => _showPro(context, 'API access'),
-                ),
-                SettingsRow(
-                  icon: Icons.lock_outline,
-                  label: 'Password',
-                  kind: SettingsRowKind.pro,
-                  onTap: () => _showPro(context, 'App password'),
                 ),
               ],
             ),
@@ -382,11 +317,6 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.star_outline,
                 label: 'Rate ${AppInfo.name}',
                 onTap: () => _rateApp(context),
-              ),
-              SettingsRow(
-                icon: Icons.description_outlined,
-                label: 'Open-source licenses',
-                onTap: () => _showLicenses(context),
               ),
             ],
           ),
