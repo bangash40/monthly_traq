@@ -28,7 +28,18 @@ class MoneyFormatter {
   final String symbol;
   final bool grouping;
 
-  const MoneyFormatter({this.symbol = 'Rs.', this.grouping = true});
+  /// Privacy mode: every number shows as "••••" ("Rs. ••••").
+  final bool masked;
+
+  const MoneyFormatter({
+    this.symbol = 'Rs.',
+    this.grouping = true,
+    this.masked = false,
+  });
+
+  /// This formatter with every number hidden.
+  MoneyFormatter get hidden =>
+      MoneyFormatter(symbol: symbol, grouping: grouping, masked: true);
 
   // Value equality, so the provider only rebuilds widgets when the currency
   // or separator setting actually changes.
@@ -36,13 +47,15 @@ class MoneyFormatter {
   bool operator ==(Object other) =>
       other is MoneyFormatter &&
       other.symbol == symbol &&
-      other.grouping == grouping;
+      other.grouping == grouping &&
+      other.masked == masked;
 
   @override
-  int get hashCode => Object.hash(symbol, grouping);
+  int get hashCode => Object.hash(symbol, grouping, masked);
 
   /// The magnitude of [value], without symbol or sign: "3,450".
   String number(double value) {
+    if (masked) return '••••';
     final magnitude = value.abs();
     final cents = (magnitude * 100).round();
     final hasFraction = cents % 100 != 0;

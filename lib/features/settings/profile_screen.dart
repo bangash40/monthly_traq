@@ -17,6 +17,7 @@ import 'package:monthly_traq/features/settings/categories_screen.dart';
 import 'package:monthly_traq/features/settings/currency_picker_screen.dart';
 import 'package:monthly_traq/features/settings/delete_account.dart';
 import 'package:monthly_traq/features/settings/edit_profile_screen.dart';
+import 'package:monthly_traq/features/settings/home_layout_screen.dart';
 import 'package:monthly_traq/features/settings/privacy_policy_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/budget_cycle.dart';
@@ -195,13 +196,14 @@ class ProfileScreen extends StatelessWidget {
                 value: themeController.fontSizeLabel,
                 onTap: () => _push(context, const AppearanceScreen()),
               ),
-              if (_showUnfinished) ...const [
-                SettingsRow.soon(
-                  icon: Icons.home_outlined,
-                  label: 'Home screen layout',
-                ),
-                SettingsRow.soon(icon: Icons.apps, label: 'App icon'),
-              ],
+              SettingsRow(
+                icon: Icons.dashboard_customize_outlined,
+                label: 'Home screen layout',
+                value: settings.isDefaultHome ? 'Default' : 'Custom',
+                onTap: () => _push(context, const HomeLayoutScreen()),
+              ),
+              if (_showUnfinished)
+                const SettingsRow.soon(icon: Icons.apps, label: 'App icon'),
             ],
           ),
           SettingsGroup(

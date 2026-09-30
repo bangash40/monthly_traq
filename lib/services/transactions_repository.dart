@@ -10,6 +10,7 @@ import 'package:monthly_traq/models/monthly_total.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/budget_cycle.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
+import 'package:monthly_traq/services/daily_allowance.dart';
 
 /// Thrown when a Firestore write doesn't get an ack within [_writeTimeout] —
 /// almost always because the device is offline. The write itself is NOT
@@ -307,6 +308,15 @@ class TransactionsRepository extends ChangeNotifier {
       monthlyBudget <= 0 ? 0 : (monthlyExpense / monthlyBudget).clamp(0, 2);
 
   int get daysLeftInCycle => currentCycle.daysLeft(DateTime.now());
+
+  /// What can be spent each day for the rest of the current cycle; null
+  /// without a budget.
+  DailyAllowance? get dailyAllowance => DailyAllowance.compute(
+    budget: monthlyBudget,
+    transactions: _transactions,
+    cycle: currentCycle,
+    now: DateTime.now(),
+  );
 
   /// The current cycle's three biggest spending categories.
   List<CategoryTotal> get topSpending => _stats

@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/app_settings.dart';
+import 'package:monthly_traq/app/home_layout.dart';
 import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
@@ -9,6 +11,7 @@ import 'package:monthly_traq/features/settings/edit_profile_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
+import 'package:monthly_traq/services/daily_allowance.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/budget_sheet.dart';
 import 'package:monthly_traq/widgets/transaction_rows.dart';
@@ -41,24 +44,26 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  /// The widget for one Home card, or null when it has nothing to show
+  /// (no spending yet, or no budget for the daily allowance).
+  Widget? _section(BuildContext context, HomeCard card) {
     final repo = context.watch<TransactionsRepository>();
-    final recent = repo.transactions.take(5).toList();
-    final top = repo.topSpending;
-
-    return Scaffold(
-      appBar: AppBar(toolbarHeight: 0),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
-        children: [
-          const _Greeting(),
-          const SizedBox(height: 20),
-          const _BalanceCard(),
-          const SizedBox(height: 16),
-          const _BudgetCard(),
-          if (top.isNotEmpty) ...[
-            const SizedBox(height: 24),
+    switch (card) {
+      case HomeCard.balance:
+        return const _BalanceCard();
+      case HomeCard.budget:
+        return const _BudgetCard();
+      case HomeCard.dailyAllowance:
+        final allowance = repo.dailyAllowance;
+        return allowance == null
+            ? null
+            : _DailyAllowanceCard(allowance: allowance);
+      case HomeCard.topSpending:
+        final top = repo.topSpending;
+        if (top.isEmpty) return null;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             SectionHeader(
               'Top spending',
               actionLabel: 'See all',
@@ -67,43 +72,79 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(height: 10),
             _TopSpending(totals: top),
           ],
-          const SizedBox(height: 24),
-          SectionHeader(
-            'Recent',
-            actionLabel: recent.isEmpty ? null : 'See all',
-            onAction: onSeeAllTransactions,
-          ),
-          const SizedBox(height: 10),
-          if (recent.isEmpty)
-            EmptyState(
-              icon: Icons.receipt_long,
-              title: 'No transactions yet',
-              message:
-                  'Log what you spend and earn and it shows up here, grouped '
-                  'by day.',
-              actionLabel: 'Add your first transaction',
-              onAction: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddEditTransactionScreen(),
-                ),
-              ),
-            )
-          else
-            GroupCard(
-              children: [
-                for (final t in recent)
-                  TransactionRow(
-                    transaction: t,
-                    category: repo.categoryById(t.categoryId),
-                    subtitle:
-                        '${repo.categoryById(t.categoryId)?.name ?? 'Uncategorized'}'
-                        ' · ${shortDate(t.date)}',
-                    onTap: () => _openTransaction(context, t),
-                  ),
-              ],
+        );
+      case HomeCard.recent:
+        final recent = repo.transactions.take(5).toList();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SectionHeader(
+              'Recent',
+              actionLabel: recent.isEmpty ? null : 'See all',
+              onAction: onSeeAllTransactions,
             ),
-        ],
+            const SizedBox(height: 10),
+            if (recent.isEmpty)
+              EmptyState(
+                icon: Icons.receipt_long,
+                title: 'No transactions yet',
+                message:
+                    'Log what you spend and earn and it shows up here, '
+                    'grouped by day.',
+                actionLabel: 'Add your first transaction',
+                onAction: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddEditTransactionScreen(),
+                  ),
+                ),
+              )
+            else
+              GroupCard(
+                children: [
+                  for (final t in recent)
+                    TransactionRow(
+                      transaction: t,
+                      category: repo.categoryById(t.categoryId),
+                      subtitle:
+                          '${repo.categoryById(t.categoryId)?.name ?? 'Uncategorized'}'
+                          ' · ${shortDate(t.date)}',
+                      onTap: () => _openTransaction(context, t),
+                    ),
+                ],
+              ),
+          ],
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = context.watch<AppSettings>();
+    final money = context.money;
+
+    final children = <Widget>[const _Greeting()];
+    for (final card in settings.homeLayout.visible) {
+      final section = _section(context, card);
+      if (section == null) continue;
+      final hasHeader = card == HomeCard.topSpending || card == HomeCard.recent;
+      children
+        ..add(
+          SizedBox(height: children.length == 1 ? 20 : (hasHeader ? 24 : 16)),
+        )
+        ..add(section);
+    }
+
+    // Privacy mode swaps in a formatter that hides every amount, for Home
+    // only — screens opened from here still show the real numbers.
+    return Provider<MoneyFormatter>.value(
+      value: settings.amountsHidden ? money.hidden : money,
+      child: Scaffold(
+        appBar: AppBar(toolbarHeight: 0),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+          children: children,
+        ),
       ),
     );
   }
@@ -184,6 +225,8 @@ class _BalanceCard extends StatelessWidget {
     final repo = context.watch<TransactionsRepository>();
     final money = context.money;
     final onPrimary = c.onPrimary;
+    final settings = context.watch<AppSettings>();
+    final hidden = settings.amountsHidden;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
@@ -204,6 +247,21 @@ class _BalanceCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (settings.showPrivacyButton) ...[
+                IconButton(
+                  tooltip: hidden ? 'Show amounts' : 'Hide amounts',
+                  onPressed: () => settings.setHideAmounts(!hidden),
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    hidden
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: onPrimary.withValues(alpha: 0.78),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -484,6 +542,109 @@ class _TopSpending extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// "Rs. 1,000 left to spend today", with how much was spent today against
+/// the day's allowance.
+class _DailyAllowanceCard extends StatelessWidget {
+  final DailyAllowance allowance;
+
+  const _DailyAllowanceCard({required this.allowance});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final money = context.money;
+    final a = allowance;
+    final ratio = a.perDay <= 0 ? 1.0 : (a.spentToday / a.perDay);
+
+    final (headline, headlineColor, tail) = a.budgetUsedUp
+        ? ('No budget left', c.spending, '')
+        : a.isOverToday
+        ? (
+            '${money.format(-a.leftToday)} over',
+            c.spending,
+            '  today\'s ${money.format(a.perDay)}',
+          )
+        : (money.format(a.leftToday), c.ink, '  left to spend today');
+
+    final footnote = a.budgetUsedUp
+        ? 'You\'ve used this cycle\'s budget. Anything more goes over it.'
+        : a.isOverToday
+        ? 'Tomorrow\'s allowance will be a little lower to stay on budget.'
+        : null;
+
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Daily allowance', style: AppText.section),
+              ),
+              Text(
+                a.daysLeft <= 1 ? 'Last day' : '${a.daysLeft} days left',
+                style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: headline,
+                  style: AppText.amountLarge.copyWith(color: headlineColor),
+                ),
+                TextSpan(
+                  text: tail,
+                  style: AppText.label.copyWith(fontSize: 15, color: c.muted),
+                ),
+              ],
+            ),
+          ),
+          if (!a.budgetUsedUp) ...[
+            const SizedBox(height: 14),
+            Semantics(
+              label: 'Today\'s allowance used',
+              value: '${(ratio * 100).round()} percent',
+              child: MeterBar(
+                value: ratio.clamp(0, 1),
+                color: ratio >= 1
+                    ? c.spendingFill
+                    : ratio >= 0.7
+                    ? c.warningFill
+                    : c.accent,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Text(
+                  'Spent ${money.format(a.spentToday)} today',
+                  style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
+                ),
+                const Spacer(),
+                Text(
+                  '${money.format(a.perDay)} a day',
+                  style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
+                ),
+              ],
+            ),
+          ],
+          if (footnote != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              footnote,
+              style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
