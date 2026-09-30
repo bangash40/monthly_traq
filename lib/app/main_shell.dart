@@ -79,20 +79,6 @@ class _MainShellState extends State<MainShell> {
             ),
           ],
         ),
-        floatingActionButton: SizedBox.square(
-          dimension: 64,
-          child: FloatingActionButton(
-            tooltip: 'Add transaction',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AddEditTransactionScreen(),
-              ),
-            ),
-            child: const Icon(Icons.add, size: 32),
-          ),
-        ),
-        floatingActionButtonLocation: const _RaisedCenterDockedFabLocation(),
         bottomNavigationBar: DecoratedBox(
           decoration: BoxDecoration(
             color: c.surface,
@@ -118,7 +104,14 @@ class _MainShellState extends State<MainShell> {
                     isSelected: _selectedIndex == 1,
                     onTap: () => _select(1),
                   ),
-                  const SizedBox(width: 72),
+                  _AddButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddEditTransactionScreen(),
+                      ),
+                    ),
+                  ),
                   _NavItem(
                     icon: Icons.donut_large,
                     selectedIcon: Icons.donut_large,
@@ -143,21 +136,41 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-/// Centers the add button on the bar's top edge, lifted so most of it sits
-/// above the bar.
-class _RaisedCenterDockedFabLocation extends FloatingActionButtonLocation {
-  const _RaisedCenterDockedFabLocation();
+/// The + in the middle of the bottom bar. It sits fully inside the bar (not
+/// floating above it), so it never covers the content behind it; the filled
+/// brand color keeps it the most visible action.
+class _AddButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _AddButton({required this.onPressed});
 
   @override
-  Offset getOffset(ScaffoldPrelayoutGeometry geometry) {
-    final x =
-        (geometry.scaffoldSize.width -
-            geometry.floatingActionButtonSize.width) /
-        2;
-    final y =
-        geometry.contentBottom -
-        geometry.floatingActionButtonSize.height * 0.62;
-    return Offset(x, y);
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Expanded(
+      child: Center(
+        child: Tooltip(
+          message: 'Add transaction',
+          child: Semantics(
+            button: true,
+            label: 'Add transaction',
+            excludeSemantics: true,
+            child: Material(
+              color: c.primary,
+              borderRadius: BorderRadius.circular(18),
+              child: InkWell(
+                onTap: onPressed,
+                borderRadius: BorderRadius.circular(18),
+                child: SizedBox.square(
+                  dimension: 52,
+                  child: Icon(Icons.add, color: c.onPrimary, size: 30),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
