@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:monthly_traq/app/app_info.dart';
@@ -265,34 +264,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
-          SettingsGroup(
-            title: 'Data',
-            rows: [
-              SettingsRow(
-                icon: Icons.cloud_done_outlined,
-                label: 'Backup',
-                value: 'Automatic',
-                onTap: () => _showBackupInfo(context),
-              ),
-              SettingsRow(
-                icon: Icons.cleaning_services_outlined,
-                label: 'Clear cache',
-                onTap: () => _clearCache(context),
-              ),
-              SettingsRow(
-                icon: Icons.delete_forever_outlined,
-                label: 'Delete all data',
-                kind: SettingsRowKind.destructive,
-                onTap: () => _confirmDeleteAll(context),
-              ),
-              SettingsRow(
-                icon: Icons.person_remove_outlined,
-                label: 'Delete account',
-                kind: SettingsRowKind.destructive,
-                onTap: () => deleteAccountFlow(context),
-              ),
-            ],
-          ),
           if (_showUnfinished)
             SettingsGroup(
               title: 'Advanced',
@@ -325,6 +296,34 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.info_outline,
                 label: 'About',
                 onTap: () => _push(context, const AboutScreen()),
+              ),
+            ],
+          ),
+          SettingsGroup(
+            title: 'Data',
+            rows: [
+              SettingsRow(
+                icon: Icons.cloud_done_outlined,
+                label: 'Backup',
+                value: 'Automatic',
+                onTap: () => _showBackupInfo(context),
+              ),
+              SettingsRow(
+                icon: Icons.cleaning_services_outlined,
+                label: 'Clear cache',
+                onTap: () => _clearCache(context),
+              ),
+              SettingsRow(
+                icon: Icons.delete_forever_outlined,
+                label: 'Delete all data',
+                kind: SettingsRowKind.destructive,
+                onTap: () => _confirmDeleteAll(context),
+              ),
+              SettingsRow(
+                icon: Icons.person_remove_outlined,
+                label: 'Delete account',
+                kind: SettingsRowKind.destructive,
+                onTap: () => deleteAccountFlow(context),
               ),
             ],
           ),
@@ -371,8 +370,6 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          const _VersionLabel(),
         ],
       ),
     );
@@ -448,27 +445,6 @@ class _ProfileCard extends StatelessWidget {
               Icon(Icons.chevron_right, color: c.faint),
             ],
           ),
-        );
-      },
-    );
-  }
-}
-
-/// "MonthlyTraq 1.2.0", read from the installed build itself so it always
-/// matches what's on the device.
-class _VersionLabel extends StatelessWidget {
-  const _VersionLabel();
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<PackageInfo>(
-      future: PackageInfo.fromPlatform(),
-      builder: (context, snapshot) {
-        final info = snapshot.data;
-        return Text(
-          info == null ? '' : 'MonthlyTraq ${info.version}',
-          textAlign: TextAlign.center,
-          style: AppText.caption.copyWith(color: context.colors.muted),
         );
       },
     );
