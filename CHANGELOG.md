@@ -4,6 +4,16 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.5.0 (build 10) — 2026-10-01
+
+### Added
+- An About screen (Profile → More → About) with the app logo in your
+  theme's color, the app name, and the full version with the build number,
+  e.g. "Version 1.5.0 (10)".
+
+### Changed
+- The About section in Profile is now called More.
+
 ## 1.4.4 (build 9) — 2026-10-01
 
 ### Removed
