@@ -41,91 +41,100 @@ class _MainShellState extends State<MainShell> {
       const ProfileScreen(),
     ];
 
-    return Scaffold(
-      body: Column(
-        children: [
-          AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            child: !isOffline || isLoading
-                ? const SizedBox(width: double.infinity)
-                : Container(
-                    width: double.infinity,
-                    color: c.tint(c.warningFill),
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      MediaQuery.paddingOf(context).top + 6,
-                      16,
-                      6,
+    // Back on any other tab returns to Home; back on Home leaves the app —
+    // the usual Android pattern. Pages opened on top of a tab (Theme,
+    // Privacy policy…) still close first, since they're separate routes.
+    return PopScope(
+      canPop: _selectedIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _select(0);
+      },
+      child: Scaffold(
+        body: Column(
+          children: [
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              child: !isOffline || isLoading
+                  ? const SizedBox(width: double.infinity)
+                  : Container(
+                      width: double.infinity,
+                      color: c.tint(c.warningFill),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        MediaQuery.paddingOf(context).top + 6,
+                        16,
+                        6,
+                      ),
+                      child: Text(
+                        "You're offline — showing saved data",
+                        textAlign: TextAlign.center,
+                        style: AppText.caption.copyWith(color: c.warning),
+                      ),
                     ),
-                    child: Text(
-                      "You're offline — showing saved data",
-                      textAlign: TextAlign.center,
-                      style: AppText.caption.copyWith(color: c.warning),
-                    ),
-                  ),
-          ),
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : IndexedStack(index: _selectedIndex, children: screens),
-          ),
-        ],
-      ),
-      floatingActionButton: SizedBox.square(
-        dimension: 64,
-        child: FloatingActionButton(
-          tooltip: 'Add transaction',
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddEditTransactionScreen(),
             ),
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : IndexedStack(index: _selectedIndex, children: screens),
+            ),
+          ],
+        ),
+        floatingActionButton: SizedBox.square(
+          dimension: 64,
+          child: FloatingActionButton(
+            tooltip: 'Add transaction',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AddEditTransactionScreen(),
+              ),
+            ),
+            child: const Icon(Icons.add, size: 32),
           ),
-          child: const Icon(Icons.add, size: 32),
         ),
-      ),
-      floatingActionButtonLocation: const _RaisedCenterDockedFabLocation(),
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          color: c.surface,
-          border: Border(top: BorderSide(color: c.hairline)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 72,
-            child: Row(
-              children: [
-                _NavItem(
-                  icon: Icons.home_outlined,
-                  selectedIcon: Icons.home_rounded,
-                  label: 'Home',
-                  isSelected: _selectedIndex == 0,
-                  onTap: () => _select(0),
-                ),
-                _NavItem(
-                  icon: Icons.receipt_long_outlined,
-                  selectedIcon: Icons.receipt_long,
-                  label: 'Transactions',
-                  isSelected: _selectedIndex == 1,
-                  onTap: () => _select(1),
-                ),
-                const SizedBox(width: 72),
-                _NavItem(
-                  icon: Icons.donut_large,
-                  selectedIcon: Icons.donut_large,
-                  label: 'Analytics',
-                  isSelected: _selectedIndex == 2,
-                  onTap: () => _select(2),
-                ),
-                _NavItem(
-                  icon: Icons.person_outline,
-                  selectedIcon: Icons.person,
-                  label: 'Profile',
-                  isSelected: _selectedIndex == 3,
-                  onTap: () => _select(3),
-                ),
-              ],
+        floatingActionButtonLocation: const _RaisedCenterDockedFabLocation(),
+        bottomNavigationBar: DecoratedBox(
+          decoration: BoxDecoration(
+            color: c.surface,
+            border: Border(top: BorderSide(color: c.hairline)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 72,
+              child: Row(
+                children: [
+                  _NavItem(
+                    icon: Icons.home_outlined,
+                    selectedIcon: Icons.home_rounded,
+                    label: 'Home',
+                    isSelected: _selectedIndex == 0,
+                    onTap: () => _select(0),
+                  ),
+                  _NavItem(
+                    icon: Icons.receipt_long_outlined,
+                    selectedIcon: Icons.receipt_long,
+                    label: 'Transactions',
+                    isSelected: _selectedIndex == 1,
+                    onTap: () => _select(1),
+                  ),
+                  const SizedBox(width: 72),
+                  _NavItem(
+                    icon: Icons.donut_large,
+                    selectedIcon: Icons.donut_large,
+                    label: 'Analytics',
+                    isSelected: _selectedIndex == 2,
+                    onTap: () => _select(2),
+                  ),
+                  _NavItem(
+                    icon: Icons.person_outline,
+                    selectedIcon: Icons.person,
+                    label: 'Profile',
+                    isSelected: _selectedIndex == 3,
+                    onTap: () => _select(3),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
