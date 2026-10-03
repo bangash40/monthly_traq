@@ -4,6 +4,17 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.8.3 (build 17) — 2026-10-03
+
+### Changed
+- Numbers, bars and charts animate once per app launch — the first time
+  each tab is opened — instead of every time you switch tabs. They still
+  animate when something changes (a new transaction, another month).
+
+### Fixed
+- Home's numbers count up after the launch intro has faded away, so the
+  count is actually visible; before, it played behind the intro.
+
 ## 1.8.2 (build 16) — 2026-10-03
 
 ### Added

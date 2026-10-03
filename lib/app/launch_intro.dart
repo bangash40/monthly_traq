@@ -24,6 +24,11 @@ class LaunchIntro extends StatefulWidget {
 
   static final _ready = ValueNotifier(false);
 
+  /// Turns true once the intro has fully faded away (or at once when it's
+  /// skipped), so Home can hold its count-up and charts until they're
+  /// actually visible instead of playing them behind the intro.
+  static final revealed = ValueNotifier(false);
+
   /// Called by the first real screen (Home with its data, login or
   /// onboarding) once it's on display, so the intro can fade onto it rather
   /// than onto a loading spinner.
@@ -67,6 +72,7 @@ class _LaunchIntroState extends State<LaunchIntro>
     _played = true;
     if (Motion.reduced(context)) {
       _showing = false;
+      LaunchIntro.revealed.value = true;
       return;
     }
     LaunchIntro._ready.addListener(_maybeFinish);
@@ -85,6 +91,7 @@ class _LaunchIntroState extends State<LaunchIntro>
     if (!LaunchIntro._ready.value && !_timedOut) return;
     _timeout?.cancel();
     _fade.forward().then((_) {
+      LaunchIntro.revealed.value = true;
       if (mounted) setState(() => _showing = false);
     });
   }

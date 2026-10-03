@@ -620,7 +620,7 @@ class MeterBar extends StatelessWidget {
           children: [
             ColoredBox(color: context.colors.surfaceHigh),
             TweenAnimationBuilder<double>(
-              // Refills each time its tab is opened.
+              // Fills when its tab is first opened.
               key: ValueKey(TabVisit.of(context)),
               tween: Tween(begin: 0, end: value.clamp(0.0, 1.0)),
               duration: Motion.of(context, Motion.long),

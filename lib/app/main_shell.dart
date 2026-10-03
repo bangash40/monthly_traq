@@ -22,9 +22,26 @@ class _MainShellState extends State<MainShell>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
 
-  /// Times each tab has been opened (Home counts as opened at launch), so a
-  /// tab's charts and numbers animate when it's opened, not out of sight.
-  final _visits = [1, 0, 0, 0];
+  /// 1 once each tab has been opened, so a tab's charts and numbers animate
+  /// the first time it's seen, not out of sight — and not again on every
+  /// tab switch. Home counts as opened once the launch intro has revealed
+  /// it.
+  final _visits = [0, 0, 0, 0];
+
+  @override
+  void initState() {
+    super.initState();
+    if (LaunchIntro.revealed.value) {
+      _visits[0] = 1;
+    } else {
+      LaunchIntro.revealed.addListener(_onRevealed);
+    }
+  }
+
+  void _onRevealed() {
+    LaunchIntro.revealed.removeListener(_onRevealed);
+    if (mounted) setState(() => _visits[0] = 1);
+  }
 
   /// One scroll position per tab. Switching tabs keeps each where it was
   /// left (as most apps do); tapping the tab you're already on scrolls it
@@ -44,6 +61,7 @@ class _MainShellState extends State<MainShell>
 
   @override
   void dispose() {
+    LaunchIntro.revealed.removeListener(_onRevealed);
     for (final scroller in _scrollers) {
       scroller.dispose();
     }
@@ -59,7 +77,8 @@ class _MainShellState extends State<MainShell>
     }
     setState(() {
       _selectedIndex = index;
-      _visits[index]++;
+      // Animates the first time it's opened; later visits don't replay.
+      _visits[index] = 1;
     });
     if (!Motion.reduced(context)) _tabFade.forward(from: 0);
   }

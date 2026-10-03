@@ -23,10 +23,11 @@ abstract final class Motion {
       reduced(context) ? Duration.zero : duration;
 }
 
-/// How many times the bottom-bar tab this widget sits in has been opened.
-/// The tabs are all built up front, so without this their animations would
-/// play out of sight at launch; keying animations on it replays them each
-/// time the tab is opened. Outside the tabs (pushed screens) it's 0.
+/// 1 once the bottom-bar tab this widget sits in has been opened, 0 before.
+/// The tabs are all built up front, so without this a tab's animations
+/// would play out of sight at launch; keying them on it plays them the
+/// first time the tab is opened — once per app launch, not on every tab
+/// switch. Outside the tabs (pushed screens) it's 0.
 class TabVisit extends InheritedWidget {
   final int visit;
 
@@ -39,9 +40,9 @@ class TabVisit extends InheritedWidget {
   bool updateShouldNotify(TabVisit old) => old.visit != visit;
 }
 
-/// Counts a number up to [value] — from zero when it's first shown or its
-/// tab is opened, then from the old value whenever it changes — handing
-/// each frame's number to [builder].
+/// Counts a number up to [value] — from zero when it's first shown (or its
+/// tab is first opened), then from the old value whenever it changes —
+/// handing each frame's number to [builder].
 class CountUp extends StatelessWidget {
   final double value;
   final Widget Function(BuildContext context, double value) builder;
@@ -70,9 +71,9 @@ class CountUp extends StatelessWidget {
   }
 }
 
-/// Plays a 0 → 1 progress when first shown, again whenever [trigger]
-/// changes (another month, other data), and each time its tab is opened —
-/// for charts that draw themselves in.
+/// Plays a 0 → 1 progress when first shown (or its tab is first opened) and
+/// again whenever [trigger] changes (another month, other data) — for
+/// charts that draw themselves in.
 class GrowIn extends StatelessWidget {
   final Object? trigger;
   final Widget Function(BuildContext context, double progress) builder;

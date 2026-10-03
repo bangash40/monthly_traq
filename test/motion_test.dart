@@ -120,7 +120,7 @@ void main() {
       expect(find.text('4330.00'), findsOneWidget);
     });
 
-    testWidgets('counts up again each time its tab is opened', (tester) async {
+    testWidgets('counts up again when its tab is first opened', (tester) async {
       Widget tab(int visit) => MaterialApp(
         home: TabVisit(
           visit: visit,
