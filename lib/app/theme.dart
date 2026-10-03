@@ -42,7 +42,7 @@ class AppTheme {
   ThemeData themeData(Brightness brightness) => buildTheme(this, brightness);
 }
 
-const kDefaultThemeId = 'indigo';
+const kDefaultThemeId = 'sage';
 
 const kAppThemes = [
   AppTheme(
@@ -161,8 +161,11 @@ const kAppThemes = [
   ),
 ];
 
-AppTheme themeById(String id) =>
-    kAppThemes.firstWhere((t) => t.id == id, orElse: () => kAppThemes.first);
+/// The theme with [id]; an unknown id gets the default theme.
+AppTheme themeById(String id) => kAppThemes.firstWhere(
+  (t) => t.id == id,
+  orElse: () => kAppThemes.firstWhere((t) => t.id == kDefaultThemeId),
+);
 
 /// Corner radii from the design's shape scale.
 class AppRadius {

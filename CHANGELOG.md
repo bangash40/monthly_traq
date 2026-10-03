@@ -4,6 +4,25 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.7.0 (build 13) — 2026-10-03
+
+A new look: a new app icon, and Sage Light as the default.
+
+### Added
+- A new app icon, the "month donut": a calendar page with a spending donut
+  on it — your month, and where its money goes. Drawn in Sage, and sized so
+  no launcher shape clips it.
+- `tool/render_icon.py`, which renders the icon images so they can be
+  regenerated later.
+
+### Changed
+- The app now opens in the Sage theme, Light mode, whatever the phone's
+  dark-mode setting. A theme or mode you already picked is kept.
+- The splash screen shows the new icon on Sage's light background, so it
+  flows straight into the first screen.
+- The logo on the login and About screens is the new icon, in the current
+  theme's color.
+
 ## 1.6.1 (build 12) — 2026-10-01
 
 ### Changed

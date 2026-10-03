@@ -11,11 +11,15 @@ const kFontScaleSteps = [0.9, 1.0, 1.12, 1.25];
 const kFontSizeLabels = ['Small', 'Default', 'Large', 'Largest'];
 const kDefaultFontSizeStep = 1;
 
+/// Out of the box the app is Sage in Light mode, whatever the phone's own
+/// dark-mode setting.
+const kDefaultThemeMode = ThemeMode.light;
+
 /// The user's appearance choices, saved on this device: one theme (each
 /// has a light and a dark palette), System / Light / Dark mode, and text
 /// size.
 class ThemeController extends ChangeNotifier {
-  ThemeMode mode = ThemeMode.system;
+  ThemeMode mode = kDefaultThemeMode;
   String themeId = kDefaultThemeId;
   int fontSizeStep = kDefaultFontSizeStep;
 
@@ -36,9 +40,10 @@ class ThemeController extends ChangeNotifier {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     mode = switch (prefs.getString(_themeModeKey)) {
+      'system' => ThemeMode.system,
       'light' => ThemeMode.light,
       'dark' => ThemeMode.dark,
-      _ => ThemeMode.system,
+      _ => kDefaultThemeMode,
     };
     themeId = themeById(prefs.getString(_themeIdKey) ?? kDefaultThemeId).id;
     final step = prefs.getInt(_fontSizeStepKey);

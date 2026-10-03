@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.6.1+12
+version: 1.7.0+13
 
 environment:
   sdk: ^3.13.0
@@ -105,20 +105,26 @@ flutter_launcher_icons:
   android: true
   ios: false
   image_path: "assets/icon/icon.png"
-  adaptive_icon_background: "#4338CA"
+  adaptive_icon_background: "#E3EFE8"
   adaptive_icon_foreground: "assets/icon/icon_foreground.png"
   min_sdk_android: 21
 
+# The splash uses the default theme's (Sage Light) background in both phone
+# modes: Android shows it before the app starts, and the app opens in Light
+# mode by default whatever the phone's setting, so a dark splash would flash
+# into a light first screen. The icon keeps its own tile color.
 flutter_native_splash:
-  color: "#4338CA"
+  color: "#F2F6F3"
   image: assets/icon/icon_foreground.png
-  color_dark: "#4F46E5"
+  color_dark: "#F2F6F3"
   image_dark: assets/icon/icon_foreground.png
   android_12:
-    color: "#4338CA"
+    color: "#F2F6F3"
     image: assets/icon/icon_foreground.png
-    color_dark: "#4F46E5"
+    icon_background_color: "#E3EFE8"
+    color_dark: "#F2F6F3"
     image_dark: assets/icon/icon_foreground.png
+    icon_background_color_dark: "#E3EFE8"
   android: true
   ios: false
   web: false

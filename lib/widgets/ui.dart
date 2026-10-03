@@ -656,9 +656,11 @@ class ButtonLabel extends StatelessWidget {
   }
 }
 
-/// The app mark: a wallet on the brand color (login, licenses page).
+/// The app mark — the launcher icon's "month donut": a calendar page with a
+/// spending donut on it (login, About). Drawn in the current theme's brand
+/// color, so it matches whichever theme is picked.
 class AppLogoTile extends StatelessWidget {
-  /// Width and height; the corner radius and icon scale with it.
+  /// Width and height; the corner radius and drawing scale with it.
   final double size;
 
   const AppLogoTile({super.key, this.size = 68});
@@ -666,18 +668,74 @@ class AppLogoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: c.primary,
-        borderRadius: BorderRadius.circular(AppRadius.card * size / 68),
-      ),
-      child: Icon(
-        Icons.account_balance_wallet,
-        color: c.onPrimary,
-        size: size / 2,
+    return Semantics(
+      label: 'MonthlyTraq logo',
+      image: true,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: c.primarySoft,
+          borderRadius: BorderRadius.circular(size * 0.23),
+        ),
+        child: CustomPaint(painter: _MonthDonutPainter(c.primary)),
       ),
     );
   }
+}
+
+/// Paints the logo on a 100-unit grid, the same geometry as the launcher
+/// icon (tool/render_icon.py draws assets/icon/icon.png).
+class _MonthDonutPainter extends CustomPainter {
+  final Color brand;
+
+  const _MonthDonutPainter(this.brand);
+
+  static const _mint = Color(0xFF5FC49E);
+  static const _amber = Color(0xFFF59E0B);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.scale(size.width / 100);
+    RRect rounded(double x, double y, double w, double h, double r) =>
+        RRect.fromRectAndRadius(Rect.fromLTWH(x, y, w, h), Radius.circular(r));
+    final fill = Paint();
+
+    // Calendar page with a thin tinted edge.
+    fill.color = Color.alphaBlend(brand.withValues(alpha: 0.28), Colors.white);
+    canvas.drawRRect(rounded(24.25, 28.25, 51.5, 48.5, 10.75), fill);
+    fill.color = Colors.white;
+    canvas.drawRRect(rounded(25.75, 29.75, 48.5, 45.5, 9.25), fill);
+
+    // Header band and binding rings in the brand color.
+    fill.color = brand;
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(
+        const Rect.fromLTWH(25.75, 29.75, 48.5, 12.25),
+        topLeft: const Radius.circular(9.25),
+        topRight: const Radius.circular(9.25),
+      ),
+      fill,
+    );
+    canvas.drawRRect(rounded(35, 23, 5, 11, 2.5), fill);
+    canvas.drawRRect(rounded(60, 23, 5, 11, 2.5), fill);
+
+    // Spending donut: brand, mint, amber, clockwise from 12 o'clock.
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6.5;
+    final bounds = Rect.fromCircle(center: const Offset(50, 59), radius: 10.5);
+    const toRadians = 3.141592653589793 / 180;
+    for (final (start, sweep, color) in [
+      (-90.0, 169.2, brand),
+      (92.84, 95.5, _mint),
+      (201.98, 54.6, _amber),
+    ]) {
+      ring.color = color;
+      canvas.drawArc(bounds, start * toRadians, sweep * toRadians, false, ring);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_MonthDonutPainter old) => old.brand != brand;
 }

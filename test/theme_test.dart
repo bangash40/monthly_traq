@@ -22,7 +22,7 @@ double contrast(Color a, Color b) {
 }
 
 void main() {
-  test('the design\'s seven themes, Indigo first and default', () {
+  test('the design\'s seven themes, with Sage the default', () {
     expect(kAppThemes.map((t) => t.name), [
       'Indigo',
       'Ocean',
@@ -32,8 +32,8 @@ void main() {
       'Saffron',
       'Graphite',
     ]);
-    expect(kDefaultThemeId, 'indigo');
-    expect(themeById('nope').id, 'indigo');
+    expect(kDefaultThemeId, 'sage');
+    expect(themeById('nope').id, 'sage');
   });
 
   for (final theme in kAppThemes) {
