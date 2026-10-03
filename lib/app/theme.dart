@@ -46,6 +46,22 @@ const kDefaultThemeId = 'sage';
 
 const kAppThemes = [
   AppTheme(
+    id: 'sage',
+    name: 'Sage',
+    light: ThemePalette(
+      background: Color(0xFFF2F6F3),
+      surface: Color(0xFFFFFFFF),
+      primary: Color(0xFF2F6B55),
+      accent: Color(0xFF2F6B55),
+    ),
+    dark: ThemePalette(
+      background: Color(0xFF0A1411),
+      surface: Color(0xFF12201A),
+      primary: Color(0xFF2F7A61),
+      accent: Color(0xFF8FD6B6),
+    ),
+  ),
+  AppTheme(
     id: 'indigo',
     name: 'Indigo',
     light: ThemePalette(
@@ -75,22 +91,6 @@ const kAppThemes = [
       surface: Color(0xFF111D28),
       primary: Color(0xFF1570B5),
       accent: Color(0xFF7CC1F2),
-    ),
-  ),
-  AppTheme(
-    id: 'sage',
-    name: 'Sage',
-    light: ThemePalette(
-      background: Color(0xFFF2F6F3),
-      surface: Color(0xFFFFFFFF),
-      primary: Color(0xFF2F6B55),
-      accent: Color(0xFF2F6B55),
-    ),
-    dark: ThemePalette(
-      background: Color(0xFF0A1411),
-      surface: Color(0xFF12201A),
-      primary: Color(0xFF2F7A61),
-      accent: Color(0xFF8FD6B6),
     ),
   ),
   AppTheme(

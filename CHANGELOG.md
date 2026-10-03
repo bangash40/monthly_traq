@@ -4,6 +4,11 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.8.1 (build 15) — 2026-10-03
+
+### Changed
+- Sage, the default theme, is now listed first in Profile → Appearance.
+
 ## 1.8.0 (build 14) — 2026-10-03
 
 Motion and feel. Every animation is short, plays once, and is skipped when
