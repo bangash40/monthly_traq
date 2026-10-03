@@ -4,6 +4,12 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.8.2 (build 16) — 2026-10-03
+
+### Added
+- Tap the tab you're already on to scroll it back to the top. Switching
+  tabs still keeps each one where you left it.
+
 ## 1.8.1 (build 15) — 2026-10-03
 
 ### Changed

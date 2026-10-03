@@ -26,6 +26,11 @@ class _MainShellState extends State<MainShell>
   /// tab's charts and numbers animate when it's opened, not out of sight.
   final _visits = [1, 0, 0, 0];
 
+  /// One scroll position per tab. Switching tabs keeps each where it was
+  /// left (as most apps do); tapping the tab you're already on scrolls it
+  /// back to the top.
+  final _scrollers = List.generate(4, (_) => ScrollController());
+
   /// Fades the newly picked tab in, so switching tabs doesn't jump.
   late final _tabFade = AnimationController(
     vsync: this,
@@ -39,18 +44,34 @@ class _MainShellState extends State<MainShell>
 
   @override
   void dispose() {
+    for (final scroller in _scrollers) {
+      scroller.dispose();
+    }
     _tabOpacity.dispose();
     _tabFade.dispose();
     super.dispose();
   }
 
   void _select(int index) {
-    if (index == _selectedIndex) return;
+    if (index == _selectedIndex) {
+      _scrollToTop(index);
+      return;
+    }
     setState(() {
       _selectedIndex = index;
       _visits[index]++;
     });
     if (!Motion.reduced(context)) _tabFade.forward(from: 0);
+  }
+
+  void _scrollToTop(int index) {
+    final scroller = _scrollers[index];
+    if (!scroller.hasClients || scroller.offset <= 0) return;
+    scroller.animateTo(
+      0,
+      duration: Motion.of(context, const Duration(milliseconds: 450)),
+      curve: Motion.curve,
+    );
   }
 
   @override
@@ -114,7 +135,14 @@ class _MainShellState extends State<MainShell>
                         index: _selectedIndex,
                         children: [
                           for (final (i, screen) in screens.indexed)
-                            TabVisit(visit: _visits[i], child: screen),
+                            TabVisit(
+                              visit: _visits[i],
+                              // Each tab's list picks up its own controller.
+                              child: PrimaryScrollController(
+                                controller: _scrollers[i],
+                                child: screen,
+                              ),
+                            ),
                         ],
                       ),
                     ),
