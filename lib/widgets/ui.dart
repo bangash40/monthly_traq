@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
+import 'package:monthly_traq/widgets/motion.dart';
 
 /// The design's basic building blocks. Every screen is assembled from these
 /// so spacing, radii and colors stay consistent across themes and modes.
@@ -587,17 +588,24 @@ class EmptyState extends StatelessWidget {
 }
 
 /// A rounded progress bar: a [color] fill over a tinted track, sized to
-/// the full width it's given.
+/// the full width it's given. It fills from empty when first shown and
+/// glides to a new value when one comes in.
 class MeterBar extends StatelessWidget {
   final double value;
   final Color color;
   final double height;
+
+  /// The fill color for a given fill level, so a budget bar can turn amber
+  /// and then red as it passes 70% and 100% while it fills. Overrides
+  /// [color].
+  final Color Function(double fill)? colorAt;
 
   const MeterBar({
     super.key,
     required this.value,
     required this.color,
     this.height = 10,
+    this.colorAt,
   });
 
   @override
@@ -611,13 +619,21 @@ class MeterBar extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             ColoredBox(color: context.colors.surfaceHigh),
-            FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: value.clamp(0.0, 1.0),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(999),
+            TweenAnimationBuilder<double>(
+              // Refills each time its tab is opened.
+              key: ValueKey(TabVisit.of(context)),
+              tween: Tween(begin: 0, end: value.clamp(0.0, 1.0)),
+              duration: Motion.of(context, Motion.long),
+              curve: Motion.curve,
+              builder: (context, fill, _) => FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: fill,
+                child: AnimatedContainer(
+                  duration: Motion.of(context, Motion.short),
+                  decoration: BoxDecoration(
+                    color: colorAt?.call(fill) ?? color,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
               ),
             ),
@@ -678,7 +694,7 @@ class AppLogoTile extends StatelessWidget {
           color: c.primarySoft,
           borderRadius: BorderRadius.circular(size * 0.23),
         ),
-        child: CustomPaint(painter: _MonthDonutPainter(c.primary)),
+        child: CustomPaint(painter: MonthDonutPainter(brand: c.primary)),
       ),
     );
   }
@@ -686,10 +702,14 @@ class AppLogoTile extends StatelessWidget {
 
 /// Paints the logo on a 100-unit grid, the same geometry as the launcher
 /// icon (tool/render_icon.py draws assets/icon/icon.png).
-class _MonthDonutPainter extends CustomPainter {
+class MonthDonutPainter extends CustomPainter {
   final Color brand;
 
-  const _MonthDonutPainter(this.brand);
+  /// How much of the donut is drawn, 0 to 1, sweeping clockwise from
+  /// 12 o'clock — the launch intro animates it.
+  final double progress;
+
+  const MonthDonutPainter({required this.brand, this.progress = 1});
 
   static const _mint = Color(0xFF5FC49E);
   static const _amber = Color(0xFFF59E0B);
@@ -726,16 +746,20 @@ class _MonthDonutPainter extends CustomPainter {
       ..strokeWidth = 6.5;
     final bounds = Rect.fromCircle(center: const Offset(50, 59), radius: 10.5);
     const toRadians = 3.141592653589793 / 180;
+    final drawnTo = -90 + 360 * progress.clamp(0.0, 1.0);
     for (final (start, sweep, color) in [
       (-90.0, 169.2, brand),
       (92.84, 95.5, _mint),
       (201.98, 54.6, _amber),
     ]) {
+      final shown = (drawnTo - start).clamp(0.0, sweep);
+      if (shown <= 0) continue;
       ring.color = color;
-      canvas.drawArc(bounds, start * toRadians, sweep * toRadians, false, ring);
+      canvas.drawArc(bounds, start * toRadians, shown * toRadians, false, ring);
     }
   }
 
   @override
-  bool shouldRepaint(_MonthDonutPainter old) => old.brand != brand;
+  bool shouldRepaint(MonthDonutPainter old) =>
+      old.brand != brand || old.progress != progress;
 }

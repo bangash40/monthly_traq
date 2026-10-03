@@ -6,6 +6,7 @@ import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
+import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
 
 /// What a transaction is called in lists: its title, or its category's
@@ -70,12 +71,16 @@ class TransactionRow extends StatelessWidget {
   final String? subtitle;
   final VoidCallback? onTap;
 
+  /// Glows briefly — the row was just added or edited.
+  final bool highlight;
+
   const TransactionRow({
     super.key,
     required this.transaction,
     required this.category,
     this.subtitle,
     this.onTap,
+    this.highlight = false,
   });
 
   @override
@@ -84,7 +89,7 @@ class TransactionRow extends StatelessWidget {
     final isIncome = transaction.type == TransactionType.income;
     final resolved = category ?? uncategorized(transaction.type);
 
-    return InkWell(
+    final row = InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -126,6 +131,55 @@ class TransactionRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (!highlight) return row;
+    // Keyed so it plays again if this row is saved again.
+    return _SavedGlow(key: ValueKey('glow-${transaction.id}'), child: row);
+  }
+}
+
+/// A just-saved row: scrolls itself into view if it's off-screen, holds a
+/// brand-colored glow for a moment, then fades it out.
+class _SavedGlow extends StatefulWidget {
+  final Widget child;
+
+  const _SavedGlow({super.key, required this.child});
+
+  @override
+  State<_SavedGlow> createState() => _SavedGlowState();
+}
+
+class _SavedGlowState extends State<_SavedGlow> {
+  @override
+  void initState() {
+    super.initState();
+    // Only scrolls when the row is out of sight (e.g. Recent below the fold
+    // on Home), and only as far as needed.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Scrollable.ensureVisible(
+        context,
+        duration: Motion.of(context, const Duration(milliseconds: 450)),
+        curve: Motion.curve,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final brand = context.colors.primary;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Motion.of(context, const Duration(milliseconds: 3000)),
+      builder: (context, t, child) => ColoredBox(
+        // Full glow for the first 60% (the Add screen is still closing for
+        // part of it), then a fade to nothing.
+        color: brand.withValues(alpha: 0.16 * (t < 0.6 ? 1 : (1 - t) / 0.4)),
+        child: child,
+      ),
+      child: widget.child,
     );
   }
 }

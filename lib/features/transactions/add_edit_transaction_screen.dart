@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/haptics.dart';
 import 'package:monthly_traq/app/app_settings.dart';
 import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/text_styles.dart';
@@ -12,6 +13,7 @@ import 'package:monthly_traq/services/calculator.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/category_editor_sheet.dart';
 import 'package:monthly_traq/widgets/delete_transaction.dart';
+import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
 
 /// Adds a transaction, or edits [existing]: amount on a calculator keypad,
@@ -39,6 +41,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
   late String _note = widget.existing?.title ?? '';
   bool _showAllCategories = false;
   bool _isSaving = false;
+
+  /// True for a moment after saving, while the button shows "Saved".
+  bool _justSaved = false;
   String? _error;
 
   bool get _isEditing => widget.existing != null;
@@ -57,6 +62,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
       repo.categories.where((c) => c.type == _type).toList();
 
   void _press(void Function() edit) {
+    haptic(context, Haptic.tick);
     setState(() {
       edit();
       _error = null;
@@ -150,6 +156,14 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
           ),
         );
       }
+      if (!mounted) return;
+      // A brief "Saved" tick on the button before closing, so it's clear
+      // the entry went in.
+      haptic(context, Haptic.success);
+      setState(() => _justSaved = true);
+      await Future<void>.delayed(
+        Motion.of(context, const Duration(milliseconds: 450)),
+      );
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -317,10 +331,13 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                   selectedId: _categoryId,
                   collapsed: !_showAllCategories,
                   collapsedCount: _collapsedCount,
-                  onSelect: (id) => setState(() {
-                    _categoryId = id;
-                    _error = null;
-                  }),
+                  onSelect: (id) {
+                    haptic(context, Haptic.tick);
+                    setState(() {
+                      _categoryId = id;
+                      _error = null;
+                    });
+                  },
                   onMore: () => setState(() => _showAllCategories = true),
                   onNew: _newCategory,
                 ),
@@ -331,6 +348,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
             calc: _calc,
             onPress: _press,
             isSaving: _isSaving,
+            justSaved: _justSaved,
             saveLabel: _isEditing
                 ? 'Save changes'
                 : _type == TransactionType.income
@@ -534,6 +552,7 @@ class _Keypad extends StatelessWidget {
   final Calculator calc;
   final void Function(void Function() edit) onPress;
   final bool isSaving;
+  final bool justSaved;
   final String saveLabel;
   final VoidCallback onSave;
 
@@ -541,6 +560,7 @@ class _Keypad extends StatelessWidget {
     required this.calc,
     required this.onPress,
     required this.isSaving,
+    required this.justSaved,
     required this.saveLabel,
     required this.onSave,
   });
@@ -603,11 +623,26 @@ class _Keypad extends StatelessWidget {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: isSaving ? null : onSave,
-                  child: ButtonLabel(
-                    saveLabel,
-                    loading: isSaving,
-                    icon: Icons.check,
+                  // Stays in its normal color while showing "Saved".
+                  onPressed: justSaved ? () {} : (isSaving ? null : onSave),
+                  child: AnimatedSwitcher(
+                    duration: Motion.of(context, Motion.short),
+                    transitionBuilder: (child, animation) => ScaleTransition(
+                      scale: Tween(begin: 0.85, end: 1.0).animate(animation),
+                      child: FadeTransition(opacity: animation, child: child),
+                    ),
+                    child: justSaved
+                        ? const ButtonLabel(
+                            'Saved',
+                            key: ValueKey('saved'),
+                            icon: Icons.check_circle,
+                          )
+                        : ButtonLabel(
+                            saveLabel,
+                            key: const ValueKey('save'),
+                            loading: isSaving,
+                            icon: Icons.check,
+                          ),
                   ),
                 ),
               ),

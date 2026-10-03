@@ -10,6 +10,7 @@ import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/charts.dart';
 import 'package:monthly_traq/widgets/month_switcher.dart';
+import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
 
 /// Where the money went (or came from) in the month picked with the month
@@ -83,9 +84,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               ),
                             ),
                             FittedBox(
-                              child: Text(
-                                money.format(total),
-                                style: AppText.amountLarge,
+                              child: CountUp(
+                                value: total,
+                                builder: (context, shown) => Text(
+                                  money.format(shown),
+                                  style: AppText.amountLarge,
+                                ),
                               ),
                             ),
                             if (change != null) ...[

@@ -7,6 +7,7 @@ import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/models/monthly_total.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
+import 'package:monthly_traq/widgets/motion.dart';
 
 /// The smallest "round" number (1, 2 or 5 × 10ⁿ) at or above [value], so
 /// chart axes stop at 60k or 120k rather than 113,450.
@@ -22,7 +23,8 @@ double niceCeiling(double value) {
 }
 
 /// Share per category as a ring, each segment in the category's own color,
-/// with small gaps between segments and [center] in the middle.
+/// with small gaps between segments and [center] in the middle. The ring
+/// sweeps round clockwise when it appears or its numbers change.
 class CategoryDonut extends StatelessWidget {
   final List<CategoryTotal> totals;
   final Widget center;
@@ -37,16 +39,21 @@ class CategoryDonut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final values = [for (final t in totals) t.amount];
     return SizedBox.square(
       dimension: size,
-      child: CustomPaint(
-        painter: _DonutPainter(
-          values: [for (final t in totals) t.amount],
-          colors: [for (final t in totals) t.category.color],
-          gapColor: context.colors.surface,
-        ),
-        child: Center(
-          child: Padding(padding: const EdgeInsets.all(34), child: center),
+      child: GrowIn(
+        trigger: Object.hashAll(values),
+        builder: (context, progress) => CustomPaint(
+          painter: _DonutPainter(
+            values: values,
+            colors: [for (final t in totals) t.category.color],
+            gapColor: context.colors.surface,
+            progress: progress,
+          ),
+          child: Center(
+            child: Padding(padding: const EdgeInsets.all(34), child: center),
+          ),
         ),
       ),
     );
@@ -58,10 +65,14 @@ class _DonutPainter extends CustomPainter {
   final List<Color> colors;
   final Color gapColor;
 
+  /// How much of the ring is drawn, 0 to 1, clockwise from 12 o'clock.
+  final double progress;
+
   _DonutPainter({
     required this.values,
     required this.colors,
     required this.gapColor,
+    this.progress = 1,
   });
 
   static const _stroke = 26.0;
@@ -80,10 +91,14 @@ class _DonutPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = _stroke;
 
+    final drawnTo = -math.pi / 2 + progress * 2 * math.pi;
     var start = -math.pi / 2;
     for (var i = 0; i < values.length; i++) {
       final sweep = values[i] / total * 2 * math.pi;
-      canvas.drawArc(rect, start, sweep, false, paint..color = colors[i]);
+      final shown = math.min(sweep, drawnTo - start);
+      if (shown > 0) {
+        canvas.drawArc(rect, start, shown, false, paint..color = colors[i]);
+      }
       start += sweep;
     }
 
@@ -97,6 +112,7 @@ class _DonutPainter extends CustomPainter {
       final outer = radius + _stroke / 2 + 1;
       var angle = -math.pi / 2;
       for (final v in values) {
+        if (angle > drawnTo) break;
         final direction = Offset(math.cos(angle), math.sin(angle));
         canvas.drawLine(
           center + direction * inner,
@@ -110,7 +126,10 @@ class _DonutPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DonutPainter old) =>
-      old.values != values || old.colors != colors || old.gapColor != gapColor;
+      old.values != values ||
+      old.colors != colors ||
+      old.gapColor != gapColor ||
+      old.progress != progress;
 }
 
 /// Income vs spending for recent months: grouped bars on a light grid with
@@ -178,28 +197,33 @@ class MonthlyTrendChart extends StatelessWidget {
                   left: _axisWidth,
                   bottom: _plotBottom,
                   top: _plotTop,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      for (final m in months)
-                        Expanded(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              _Bar(
-                                fraction: m.income / top,
-                                color: c.incomeFill,
-                              ),
-                              const SizedBox(width: 5),
-                              _Bar(
-                                fraction: m.expense / top,
-                                color: c.spendingFill,
-                              ),
-                            ],
+                  child: GrowIn(
+                    trigger: Object.hashAll([
+                      for (final m in months) ...[m.income, m.expense],
+                    ]),
+                    builder: (context, grow) => Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        for (final m in months)
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                _Bar(
+                                  fraction: m.income / top * grow,
+                                  color: c.incomeFill,
+                                ),
+                                const SizedBox(width: 5),
+                                _Bar(
+                                  fraction: m.expense / top * grow,
+                                  color: c.spendingFill,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -274,43 +298,47 @@ class DailyBars extends StatelessWidget {
 
     return SizedBox(
       height: 120,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (final day in days)
-            Expanded(
-              child: Tooltip(
-                message:
-                    '${DateFormat('MMM d').format(day.day)}: '
-                    '${context.money.format(day.amount)}',
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                  child: day.amount <= 0
-                      ? Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: c.surfaceHigh,
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        )
-                      : FractionallySizedBox(
-                          heightFactor: math.max(day.amount / peak, 0.06),
-                          alignment: Alignment.bottomCenter,
-                          child: Container(
+      child: GrowIn(
+        trigger: Object.hashAll([for (final d in days) d.amount]),
+        builder: (context, grow) => Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            for (final day in days)
+              Expanded(
+                child: Tooltip(
+                  message:
+                      '${DateFormat('MMM d').format(day.day)}: '
+                      '${context.money.format(day.amount)}',
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                    child: day.amount <= 0
+                        ? Container(
+                            height: 6,
                             decoration: BoxDecoration(
-                              color: day.amount == peak
-                                  ? color
-                                  : color.withValues(alpha: 0.45),
-                              borderRadius: BorderRadius.circular(
-                                AppRadius.bar,
+                              color: c.surfaceHigh,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          )
+                        : FractionallySizedBox(
+                            heightFactor:
+                                math.max(day.amount / peak, 0.06) * grow,
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: day.amount == peak
+                                    ? color
+                                    : color.withValues(alpha: 0.45),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.bar,
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

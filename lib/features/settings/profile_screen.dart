@@ -222,6 +222,13 @@ class ProfileScreen extends StatelessWidget {
                 value: '${repo.categories.length}',
                 onTap: () => _push(context, const CategoriesScreen()),
               ),
+              SettingsRow(
+                icon: Icons.vibration,
+                label: 'Haptic feedback',
+                kind: SettingsRowKind.toggle,
+                toggleValue: settings.hapticFeedback,
+                onToggle: settings.setHapticFeedback,
+              ),
               if (_showUnfinished)
                 const SettingsRow.soon(icon: Icons.language, label: 'Language'),
             ],

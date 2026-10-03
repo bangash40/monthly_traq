@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.7.0+13
+version: 1.8.0+14
 
 environment:
   sdk: ^3.13.0
@@ -112,18 +112,19 @@ flutter_launcher_icons:
 # The splash uses the default theme's (Sage Light) background in both phone
 # modes: Android shows it before the app starts, and the app opens in Light
 # mode by default whatever the phone's setting, so a dark splash would flash
-# into a light first screen. The icon keeps its own tile color.
+# into a light first screen. The icon keeps its own tile color. The splash
+# image is the logo without its donut; the launch intro draws the donut in.
 flutter_native_splash:
   color: "#F2F6F3"
-  image: assets/icon/icon_foreground.png
+  image: assets/icon/splash.png
   color_dark: "#F2F6F3"
-  image_dark: assets/icon/icon_foreground.png
+  image_dark: assets/icon/splash.png
   android_12:
     color: "#F2F6F3"
-    image: assets/icon/icon_foreground.png
+    image: assets/icon/splash.png
     icon_background_color: "#E3EFE8"
     color_dark: "#F2F6F3"
-    image_dark: assets/icon/icon_foreground.png
+    image_dark: assets/icon/splash.png
     icon_background_color_dark: "#E3EFE8"
   android: true
   ios: false

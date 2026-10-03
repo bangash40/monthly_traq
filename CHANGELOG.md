@@ -4,6 +4,32 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.8.0 (build 14) — 2026-10-03
+
+Motion and feel. Every animation is short, plays once, and is skipped when
+the phone's "Remove animations" setting is on.
+
+### Added
+- A launch intro: the splash's calendar page gets its spending donut swept
+  on, then fades into the app once the first screen is ready.
+- Numbers count up: the balance, income, spent, budget left, daily
+  allowance, In / Out / Net and the Analytics total.
+- Bars fill smoothly, and budget bars turn amber past 70% and red at 100%
+  as they fill. Charts draw in: the Analytics donut sweeps round and the
+  monthly and daily bars grow. They replay each time you open a tab.
+- Saving a transaction shows "✓ Saved" on the button, and the new row
+  glows for a moment in the list (Home scrolls to it).
+- Haptic feedback: a light tick on keypad keys and categories, a firmer
+  tap when you save, a strong one when you delete. Switch it off in
+  Profile → General → Haptic feedback. It works even when the phone's own
+  touch vibration is turned off.
+- A month-end celebration: if last month ended under budget, Home shows a
+  card with a burst of confetti for the first week of the new month.
+
+### Changed
+- Switching tabs fades the new tab in, and only the tab you tap is
+  highlighted.
+
 ## 1.7.0 (build 13) — 2026-10-03
 
 A new look: a new app icon, and Sage Light as the default.

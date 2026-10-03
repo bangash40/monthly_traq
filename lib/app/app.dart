@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/app_settings.dart';
+import 'package:monthly_traq/app/launch_intro.dart';
 import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/onboarding_gate.dart';
 import 'package:monthly_traq/app/theme_controller.dart';
@@ -41,7 +42,7 @@ class MonthlyTraqApp extends StatelessWidget {
                     mediaQuery.textScaler.scale(1) * themeController.fontScale,
                   ),
                 ),
-                child: child!,
+                child: LaunchIntro(child: child!),
               );
             },
           );

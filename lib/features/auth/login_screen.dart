@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/launch_intro.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/features/auth/auth_validation.dart';
@@ -38,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    LaunchIntro.markReady();
     if (widget.startOnSignup) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _openSignup();

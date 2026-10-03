@@ -136,6 +136,7 @@ class CategoryDetailScreen extends StatelessWidget {
                     TransactionRow(
                       transaction: t,
                       category: category.id.isEmpty ? null : category,
+                      highlight: repo.isJustSaved(t.id),
                       subtitle: DateFormat('h:mm a').format(t.date),
                       onTap: () => Navigator.push(
                         context,

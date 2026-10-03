@@ -7,6 +7,7 @@ import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/features/analytics/category_detail_screen.dart';
+import 'package:monthly_traq/features/dashboard/budget_win_card.dart';
 import 'package:monthly_traq/features/settings/edit_profile_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
@@ -15,6 +16,7 @@ import 'package:monthly_traq/services/daily_allowance.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/budget_sheet.dart';
 import 'package:monthly_traq/widgets/transaction_rows.dart';
+import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
 
 /// Home: this cycle at a glance. Always shows the current cycle, whatever
@@ -106,6 +108,7 @@ class DashboardScreen extends StatelessWidget {
                     TransactionRow(
                       transaction: t,
                       category: repo.categoryById(t.categoryId),
+                      highlight: repo.isJustSaved(t.id),
                       subtitle:
                           '${repo.categoryById(t.categoryId)?.name ?? 'Uncategorized'}'
                           ' · ${shortDate(t.date)}',
@@ -124,6 +127,13 @@ class DashboardScreen extends StatelessWidget {
     final money = context.money;
 
     final children = <Widget>[const _Greeting()];
+
+    // Early in a new cycle, celebrate a month that ended under budget.
+    final win = context.watch<TransactionsRepository>().lastCycleWin;
+    if (win != null && settings.dismissedBudgetWin != win.id) {
+      children.add(const SizedBox(height: 20));
+      children.add(BudgetWinCard(win: win));
+    }
     for (final card in settings.homeLayout.visible) {
       final section = _section(context, card);
       if (section == null) continue;
@@ -286,12 +296,15 @@ class _BalanceCard extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              money.format(
-                repo.balance,
-                sign: repo.balance < 0 ? MoneySign.expense : MoneySign.none,
+            child: CountUp(
+              value: repo.balance,
+              builder: (context, balance) => Text(
+                money.format(
+                  balance,
+                  sign: balance < 0 ? MoneySign.expense : MoneySign.none,
+                ),
+                style: AppText.balance.copyWith(fontSize: 42, color: onPrimary),
               ),
-              style: AppText.balance.copyWith(fontSize: 42, color: onPrimary),
             ),
           ),
           const SizedBox(height: 20),
@@ -301,7 +314,7 @@ class _BalanceCard extends StatelessWidget {
                 child: _Flow(
                   icon: Icons.south_west,
                   label: 'Income',
-                  value: money.format(repo.monthlyIncome),
+                  amount: repo.monthlyIncome,
                   color: onPrimary,
                 ),
               ),
@@ -310,7 +323,7 @@ class _BalanceCard extends StatelessWidget {
                 child: _Flow(
                   icon: Icons.north_east,
                   label: 'Spent',
-                  value: money.format(repo.monthlyExpense),
+                  amount: repo.monthlyExpense,
                   color: onPrimary,
                 ),
               ),
@@ -325,13 +338,13 @@ class _BalanceCard extends StatelessWidget {
 class _Flow extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String value;
+  final double amount;
   final Color color;
 
   const _Flow({
     required this.icon,
     required this.label,
-    required this.value,
+    required this.amount,
     required this.color,
   });
 
@@ -362,9 +375,12 @@ class _Flow extends StatelessWidget {
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  value,
-                  style: AppText.statValue.copyWith(color: color),
+                child: CountUp(
+                  value: amount,
+                  builder: (context, value) => Text(
+                    context.money.format(value),
+                    style: AppText.statValue.copyWith(color: color),
+                  ),
                 ),
               ),
             ],
@@ -419,34 +435,48 @@ class _BudgetCard extends StatelessWidget {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: ratio >= 1
-                                  ? '${money.format(-repo.budgetRemaining)} over'
-                                  : money.format(repo.budgetRemaining),
-                              style: AppText.amountLarge.copyWith(
-                                color: ratio >= 1 ? c.spending : c.ink,
+                      CountUp(
+                        value: ratio >= 1
+                            ? -repo.budgetRemaining
+                            : repo.budgetRemaining,
+                        builder: (context, shown) => Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: ratio >= 1
+                                    ? '${money.format(shown)} over'
+                                    : money.format(shown),
+                                style: AppText.amountLarge.copyWith(
+                                  color: ratio >= 1 ? c.spending : c.ink,
+                                ),
                               ),
-                            ),
-                            TextSpan(
-                              text: ratio >= 1
-                                  ? '  your ${money.format(budget)} budget'
-                                  : '  left of ${money.format(budget)}',
-                              style: AppText.label.copyWith(
-                                fontSize: 15,
-                                color: c.muted,
+                              TextSpan(
+                                text: ratio >= 1
+                                    ? '  your ${money.format(budget)} budget'
+                                    : '  left of ${money.format(budget)}',
+                                style: AppText.label.copyWith(
+                                  fontSize: 15,
+                                  color: c.muted,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
                       Semantics(
                         label: 'Budget used',
                         value: '${(ratio * 100).round()} percent',
-                        child: MeterBar(value: ratio, color: fill),
+                        child: MeterBar(
+                          value: ratio,
+                          color: fill,
+                          // Turns amber past 70% and red at 100% as it fills.
+                          colorAt: (f) => f >= 1
+                              ? c.spendingFill
+                              : f >= 0.7
+                              ? c.warningFill
+                              : c.accent,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Row(
@@ -560,15 +590,12 @@ class _DailyAllowanceCard extends StatelessWidget {
     final a = allowance;
     final ratio = a.perDay <= 0 ? 1.0 : (a.spentToday / a.perDay);
 
-    final (headline, headlineColor, tail) = a.budgetUsedUp
-        ? ('No budget left', c.spending, '')
+    // The headline amount counts up; "No budget left" has no number.
+    final (headlineAmount, headlineColor, tail) = a.budgetUsedUp
+        ? (null, c.spending, '')
         : a.isOverToday
-        ? (
-            '${money.format(-a.leftToday)} over',
-            c.spending,
-            '  today\'s ${money.format(a.perDay)}',
-          )
-        : (money.format(a.leftToday), c.ink, '  left to spend today');
+        ? (-a.leftToday, c.spending, '  today\'s ${money.format(a.perDay)}')
+        : (a.leftToday, c.ink, '  left to spend today');
 
     final footnote = a.budgetUsedUp
         ? 'You\'ve used this cycle\'s budget. Anything more goes over it.'
@@ -593,18 +620,25 @@ class _DailyAllowanceCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: headline,
-                  style: AppText.amountLarge.copyWith(color: headlineColor),
-                ),
-                TextSpan(
-                  text: tail,
-                  style: AppText.label.copyWith(fontSize: 15, color: c.muted),
-                ),
-              ],
+          CountUp(
+            value: headlineAmount ?? 0,
+            builder: (context, shown) => Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: headlineAmount == null
+                        ? 'No budget left'
+                        : a.isOverToday
+                        ? '${money.format(shown)} over'
+                        : money.format(shown),
+                    style: AppText.amountLarge.copyWith(color: headlineColor),
+                  ),
+                  TextSpan(
+                    text: tail,
+                    style: AppText.label.copyWith(fontSize: 15, color: c.muted),
+                  ),
+                ],
+              ),
             ),
           ),
           if (!a.budgetUsedUp) ...[
@@ -614,9 +648,10 @@ class _DailyAllowanceCard extends StatelessWidget {
               value: '${(ratio * 100).round()} percent',
               child: MeterBar(
                 value: ratio.clamp(0, 1),
-                color: ratio >= 1
+                color: c.accent,
+                colorAt: (f) => f >= 1
                     ? c.spendingFill
-                    : ratio >= 0.7
+                    : f >= 0.7
                     ? c.warningFill
                     : c.accent,
               ),

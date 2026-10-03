@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/app_settings.dart';
+import 'package:monthly_traq/app/haptics.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 
@@ -12,6 +14,7 @@ Future<bool> deleteTransactionWithUndo(
 ) async {
   final repo = context.read<TransactionsRepository>();
   final messenger = ScaffoldMessenger.of(context);
+  final hapticsOn = context.read<AppSettings>().hapticFeedback;
 
   try {
     await repo.deleteTransaction(transaction.id);
@@ -24,6 +27,7 @@ Future<bool> deleteTransactionWithUndo(
     return false;
   }
 
+  if (hapticsOn) playHaptic(Haptic.delete);
   messenger.hideCurrentSnackBar();
   messenger.showSnackBar(
     SnackBar(
@@ -35,6 +39,7 @@ Future<bool> deleteTransactionWithUndo(
       action: SnackBarAction(
         label: 'Undo',
         onPressed: () async {
+          if (hapticsOn) playHaptic(Haptic.tap);
           try {
             await repo.restoreTransaction(transaction);
           } catch (_) {

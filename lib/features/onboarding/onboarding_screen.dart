@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monthly_traq/app/launch_intro.dart';
 import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/app/text_styles.dart';
@@ -42,6 +43,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeOutCubic,
       );
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    LaunchIntro.markReady();
   }
 
   @override

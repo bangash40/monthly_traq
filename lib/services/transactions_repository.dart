@@ -9,6 +9,7 @@ import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/monthly_total.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/budget_cycle.dart';
+import 'package:monthly_traq/services/budget_win.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/services/daily_allowance.dart';
 
@@ -309,6 +310,15 @@ class TransactionsRepository extends ChangeNotifier {
 
   int get daysLeftInCycle => currentCycle.daysLeft(DateTime.now());
 
+  /// Last cycle ended within budget — Home celebrates it early in the new
+  /// cycle. Null when there's nothing to celebrate.
+  BudgetWin? get lastCycleWin => BudgetWin.forPreviousCycle(
+    budget: monthlyBudget,
+    transactions: _transactions,
+    current: currentCycle,
+    now: DateTime.now(),
+  );
+
   /// What can be spent each day for the rest of the current cycle; null
   /// without a budget.
   DailyAllowance? get dailyAllowance => DailyAllowance.compute(
@@ -402,17 +412,35 @@ class TransactionsRepository extends ChangeNotifier {
     );
   }
 
+  String? _savedId;
+  DateTime? _savedAt;
+
+  /// Whether [id] was added or edited in the last few seconds — lists give
+  /// that row a brief glow so it's easy to spot.
+  bool isJustSaved(String id) =>
+      id == _savedId &&
+      _savedAt != null &&
+      DateTime.now().difference(_savedAt!) < const Duration(seconds: 4);
+
+  void _markSaved(String id) {
+    _savedId = id;
+    _savedAt = DateTime.now();
+  }
+
   Future<void> addTransaction(TransactionModel transaction) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
-      userDoc.collection('transactions').add(transaction.toMap()),
-    );
+    // Pick the id up front (what add() does) so the new row is known
+    // before the write finishes.
+    final doc = userDoc.collection('transactions').doc();
+    _markSaved(doc.id);
+    await _withTimeout(doc.set(transaction.toMap()));
   }
 
   Future<void> updateTransaction(TransactionModel transaction) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
+    _markSaved(transaction.id);
     await _withTimeout(
       userDoc
           .collection('transactions')

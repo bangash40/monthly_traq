@@ -9,11 +9,16 @@ const _homeCardOrderKey = 'home_card_order';
 const _homeCardsHiddenKey = 'home_cards_hidden';
 const _hideAmountsKey = 'hide_amounts';
 const _showPrivacyButtonKey = 'show_privacy_button';
+const _hapticFeedbackKey = 'haptic_feedback';
+const _dismissedWinKey = 'dismissed_budget_win';
 
 /// The on/off preferences from the Profile tab, saved on this device.
 class AppSettings extends ChangeNotifier {
   /// Groups digits in every amount ("120,000" vs "120000").
   bool thousandsSeparator = true;
+
+  /// A light vibration on keypad taps, saving and deleting.
+  bool hapticFeedback = true;
 
   // Remembered only for now — the notification and sounds aren't built yet.
   bool quickAddNotification = true;
@@ -32,6 +37,10 @@ class AppSettings extends ChangeNotifier {
 
   bool get amountsHidden => showPrivacyButton && hideAmounts;
 
+  /// The last month-end celebration closed on Home (a BudgetWin id), so it
+  /// doesn't come back.
+  String? dismissedBudgetWin;
+
   /// Home exactly as it comes out of the box.
   bool get isDefaultHome => homeLayout.isDefault && !showPrivacyButton;
 
@@ -44,6 +53,8 @@ class AppSettings extends ChangeNotifier {
     thousandsSeparator = prefs.getBool(_thousandsSeparatorKey) ?? true;
     quickAddNotification = prefs.getBool(_quickAddNotificationKey) ?? true;
     soundEffects = prefs.getBool(_soundEffectsKey) ?? true;
+    hapticFeedback = prefs.getBool(_hapticFeedbackKey) ?? true;
+    dismissedBudgetWin = prefs.getString(_dismissedWinKey);
     homeLayout = HomeLayout.fromNames(
       prefs.getStringList(_homeCardOrderKey),
       prefs.getStringList(_homeCardsHiddenKey),
@@ -67,6 +78,18 @@ class AppSettings extends ChangeNotifier {
   Future<void> setQuickAddNotification(bool value) {
     quickAddNotification = value;
     return _save(_quickAddNotificationKey, value);
+  }
+
+  Future<void> dismissBudgetWin(String id) async {
+    dismissedBudgetWin = id;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_dismissedWinKey, id);
+  }
+
+  Future<void> setHapticFeedback(bool value) {
+    hapticFeedback = value;
+    return _save(_hapticFeedbackKey, value);
   }
 
   Future<void> setSoundEffects(bool value) {

@@ -10,6 +10,7 @@ import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/delete_transaction.dart';
 import 'package:monthly_traq/widgets/month_switcher.dart';
 import 'package:monthly_traq/widgets/transaction_rows.dart';
+import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
 
 class TransactionsScreen extends StatefulWidget {
@@ -199,6 +200,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       child: TransactionRow(
                         transaction: t,
                         category: repo.categoryById(t.categoryId),
+                        highlight: repo.isJustSaved(t.id),
                         onTap: () => _open(t),
                       ),
                     ),
@@ -231,47 +233,40 @@ class _CycleSummary extends StatelessWidget {
       }
     }
 
-    Widget tile(String label, String value, Color color) => Expanded(
-      child: AppCard(
-        padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-        radius: AppRadius.button,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: AppText.label.copyWith(color: c.muted)),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                style: AppText.statValue.copyWith(color: color),
-              ),
+    // Each total counts up to its value when the month opens or changes.
+    Widget tile(String label, double amount, MoneySign sign, Color color) =>
+        Expanded(
+          child: AppCard(
+            padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+            radius: AppRadius.button,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppText.label.copyWith(color: c.muted)),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: CountUp(
+                    value: amount,
+                    builder: (context, shown) => Text(
+                      money.format(shown, sign: sign, withSymbol: false),
+                      style: AppText.statValue.copyWith(color: color),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
 
     return Row(
       children: [
-        tile(
-          'In',
-          money.format(income, sign: MoneySign.income, withSymbol: false),
-          c.income,
-        ),
+        tile('In', income, MoneySign.income, c.income),
         const SizedBox(width: 10),
-        tile(
-          'Out',
-          money.format(spent, sign: MoneySign.expense, withSymbol: false),
-          c.ink,
-        ),
+        tile('Out', spent, MoneySign.expense, c.ink),
         const SizedBox(width: 10),
-        tile(
-          'Net',
-          money.format(income - spent, sign: MoneySign.auto, withSymbol: false),
-          c.ink,
-        ),
+        tile('Net', income - spent, MoneySign.auto, c.ink),
       ],
     );
   }

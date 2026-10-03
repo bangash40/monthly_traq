@@ -5,9 +5,11 @@ donut on it — to the PNGs the launcher-icon and splash generators read.
     dart run flutter_launcher_icons
     dart run flutter_native_splash:create
 
-Writes assets/icon/icon.png (the full square icon) and
-assets/icon/icon_foreground.png (the adaptive-icon foreground, also used on
-the splash screen). Needs Pillow (`pip install pillow`).
+Writes assets/icon/icon.png (the full square icon),
+assets/icon/icon_foreground.png (the adaptive-icon foreground) and
+assets/icon/splash.png (the same layer without the donut: the splash shows
+the calendar page, then the app's launch intro (lib/app/launch_intro.dart)
+sweeps the donut onto it). Needs Pillow (`pip install pillow`).
 
 The colors follow the default theme (Sage). If you change TILE here, change
 `adaptive_icon_background` and the splash `icon_background_color` values in
@@ -36,7 +38,7 @@ CLEAR = (0, 0, 0, 0)
 SUPERSAMPLE = 4  # draw 4x larger, then shrink, for smooth edges
 
 
-def draw_icon(d, s, ox, oy):
+def draw_icon(d, s, ox, oy, donut=True):
     """Draws the icon on a 100-unit grid: s = pixels per unit, (ox, oy) =
     where grid point (0, 0) lands."""
 
@@ -55,6 +57,8 @@ def draw_icon(d, s, ox, oy):
     rounded(35, 23, 5, 11, 2.5, BRAND)
     rounded(60, 23, 5, 11, 2.5, BRAND)
 
+    if not donut:
+        return
     # Spending donut: radius 10.5, ring 6.5 wide, clockwise from 12 o'clock
     # (Pillow measures angles clockwise from 3 o'clock).
     cx, cy, outer, width = 50, 59, 10.5 + 3.25, 6.5
@@ -65,14 +69,14 @@ def draw_icon(d, s, ox, oy):
               width=round(width * s))
 
 
-def render(size, background, grid_units, offset_units):
+def render(size, background, grid_units, offset_units, donut=True):
     """A size x size image showing grid_units of the 100-unit grid, the
     grid's origin offset_units in from the top left."""
     big = size * SUPERSAMPLE
     image = Image.new('RGBA', (big, big), background)
     scale = big / grid_units
     draw_icon(ImageDraw.Draw(image), scale, offset_units * scale,
-              offset_units * scale)
+              offset_units * scale, donut)
     return image.resize((size, size), Image.LANCZOS)
 
 
@@ -92,8 +96,10 @@ def main():
     layer = 108 / dp_per_unit
     render(1024, CLEAR, layer, (layer - 100) / 2).save(
         out / 'icon_foreground.png')
+    render(1024, CLEAR, layer, (layer - 100) / 2, donut=False).save(
+        out / 'splash.png')
 
-    print(f'Wrote {out / "icon.png"} and {out / "icon_foreground.png"}')
+    print(f'Wrote icon.png, icon_foreground.png and splash.png to {out}')
 
 
 if __name__ == '__main__':

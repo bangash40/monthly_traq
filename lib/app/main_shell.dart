@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:monthly_traq/app/launch_intro.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/features/analytics/analytics_screen.dart';
@@ -8,6 +9,7 @@ import 'package:monthly_traq/features/settings/profile_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
 import 'package:monthly_traq/features/transactions/transactions_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/widgets/motion.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -16,10 +18,40 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends State<MainShell>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
 
-  void _select(int index) => setState(() => _selectedIndex = index);
+  /// Times each tab has been opened (Home counts as opened at launch), so a
+  /// tab's charts and numbers animate when it's opened, not out of sight.
+  final _visits = [1, 0, 0, 0];
+
+  /// Fades the newly picked tab in, so switching tabs doesn't jump.
+  late final _tabFade = AnimationController(
+    vsync: this,
+    duration: Motion.short,
+    value: 1,
+  );
+  late final _tabOpacity = CurvedAnimation(
+    parent: _tabFade,
+    curve: Curves.easeOut,
+  );
+
+  @override
+  void dispose() {
+    _tabOpacity.dispose();
+    _tabFade.dispose();
+    super.dispose();
+  }
+
+  void _select(int index) {
+    if (index == _selectedIndex) return;
+    setState(() {
+      _selectedIndex = index;
+      _visits[index]++;
+    });
+    if (!Motion.reduced(context)) _tabFade.forward(from: 0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +62,7 @@ class _MainShellState extends State<MainShell> {
     final isOffline = context.select<TransactionsRepository, bool>(
       (repo) => repo.isOffline,
     );
+    if (!isLoading) LaunchIntro.markReady();
 
     final screens = [
       DashboardScreen(
@@ -75,7 +108,16 @@ class _MainShellState extends State<MainShell> {
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : IndexedStack(index: _selectedIndex, children: screens),
+                  : FadeTransition(
+                      opacity: _tabOpacity,
+                      child: IndexedStack(
+                        index: _selectedIndex,
+                        children: [
+                          for (final (i, screen) in screens.indexed)
+                            TabVisit(visit: _visits[i], child: screen),
+                        ],
+                      ),
+                    ),
             ),
           ],
         ),
@@ -204,11 +246,16 @@ class _NavItem extends StatelessWidget {
           onTap: onTap,
           splashFactory: NoSplash.splashFactory,
           highlightColor: Colors.transparent,
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                // The new tab's pill fades in; the old one goes at once, so
+                // two tabs never look selected together.
+                duration: isSelected
+                    ? Motion.of(context, Motion.short)
+                    : Duration.zero,
                 width: 60,
                 height: 32,
                 decoration: BoxDecoration(
