@@ -4,6 +4,25 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.8.4 (build 18) — 2026-10-04
+
+### Added
+- "Count toward monthly budget" for expense categories (Profile →
+  Categories → Edit). Turn it off for money that isn't budget spending —
+  loan repayments, installments, savings. That spending still lowers your
+  balance and shows in Spent, but doesn't use up your monthly budget or
+  daily allowance.
+- Under the budget bar, one line shows what wasn't counted ("Not counted:
+  Rs. 61,300 · 2 categories"); tap it for the breakdown. Analytics and the
+  Categories list mark these categories "Not in budget".
+
+### Changed
+- The category menu's "Rename & icon" is now "Edit".
+
+### Fixed
+- The New / Edit category sheet scrolls instead of overflowing at the
+  bottom when the keyboard is open.
+
 ## 1.8.3 (build 17) — 2026-10-03
 
 ### Changed

@@ -225,11 +225,21 @@ class _CategoryRow extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              category.name,
-              style: AppText.rowTitle.copyWith(fontSize: 17),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category.name,
+                  style: AppText.rowTitle.copyWith(fontSize: 17),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (category.excludeFromBudget)
+                  Text(
+                    'Not in budget',
+                    style: AppText.label.copyWith(color: c.muted),
+                  ),
+              ],
             ),
           ),
           PopupMenuButton<_Action>(
@@ -243,7 +253,7 @@ class _CategoryRow extends StatelessWidget {
                   children: [
                     Icon(Icons.edit_outlined, color: c.muted),
                     const SizedBox(width: 12),
-                    const Text('Rename & icon'),
+                    const Text('Edit'),
                   ],
                 ),
               ),

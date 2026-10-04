@@ -8,6 +8,7 @@ import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/features/analytics/category_detail_screen.dart';
 import 'package:monthly_traq/features/dashboard/budget_win_card.dart';
+import 'package:monthly_traq/features/dashboard/not_in_budget.dart';
 import 'package:monthly_traq/features/settings/edit_profile_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
@@ -501,6 +502,14 @@ class _BudgetCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                      // Spending in "not in budget" categories (loan
+                      // repayments…) is in Spent but not used up here —
+                      // say so, so the two numbers don't look wrong.
+                      if (repo.outsideBudgetTotals case final outside
+                          when outside.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        NotInBudgetLine(totals: outside),
+                      ],
                     ],
                   ),
           ),

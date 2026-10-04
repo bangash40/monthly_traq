@@ -243,7 +243,7 @@ class _BreakdownRow extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Expanded(
+                      Flexible(
                         child: Text(
                           category.name,
                           style: AppText.rowTitle.copyWith(fontSize: 16),
@@ -251,6 +251,28 @@ class _BreakdownRow extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (category.excludeFromBudget) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: c.surfaceHigh,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            'Not in budget',
+                            style: AppText.tiny.copyWith(
+                              fontSize: 11,
+                              color: c.muted,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
                       Text(
                         context.money.format(total.amount),
                         style: AppText.amount.copyWith(fontSize: 16),

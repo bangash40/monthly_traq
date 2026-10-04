@@ -303,10 +303,44 @@ class TransactionsRepository extends ChangeNotifier {
   double get monthlyExpense =>
       _stats.total(TransactionType.expense, currentCycle);
 
-  double get budgetRemaining => monthlyBudget - monthlyExpense;
+  /// Transactions whose category counts toward the monthly budget —
+  /// everything except categories marked "not in budget" (loan
+  /// repayments, savings…). Uncategorized spending still counts.
+  List<TransactionModel> get _budgetTransactions {
+    final excluded = {
+      for (final c in _categories)
+        if (c.excludeFromBudget) c.id,
+    };
+    if (excluded.isEmpty) return _transactions;
+    return [
+      for (final t in _transactions)
+        if (!excluded.contains(t.categoryId)) t,
+    ];
+  }
+
+  /// This cycle's spending that counts against the budget.
+  double get budgetSpent =>
+      CycleStats(_budgetTransactions)
+          .total(TransactionType.expense, currentCycle);
+
+  /// This cycle's spending in "not in budget" categories — part of Spent,
+  /// but left out of the budget.
+  double get spentOutsideBudget => monthlyExpense - budgetSpent;
+
+  /// This cycle's spending per "not in budget" category, largest first.
+  List<CategoryTotal> get outsideBudgetTotals => [
+    for (final total in _stats.byCategory(
+      TransactionType.expense,
+      currentCycle,
+      _categories,
+    ))
+      if (total.category.excludeFromBudget) total,
+  ];
+
+  double get budgetRemaining => monthlyBudget - budgetSpent;
 
   double get budgetUsedRatio =>
-      monthlyBudget <= 0 ? 0 : (monthlyExpense / monthlyBudget).clamp(0, 2);
+      monthlyBudget <= 0 ? 0 : (budgetSpent / monthlyBudget).clamp(0, 2);
 
   int get daysLeftInCycle => currentCycle.daysLeft(DateTime.now());
 
@@ -314,7 +348,7 @@ class TransactionsRepository extends ChangeNotifier {
   /// cycle. Null when there's nothing to celebrate.
   BudgetWin? get lastCycleWin => BudgetWin.forPreviousCycle(
     budget: monthlyBudget,
-    transactions: _transactions,
+    transactions: _budgetTransactions,
     current: currentCycle,
     now: DateTime.now(),
   );
@@ -323,7 +357,7 @@ class TransactionsRepository extends ChangeNotifier {
   /// without a budget.
   DailyAllowance? get dailyAllowance => DailyAllowance.compute(
     budget: monthlyBudget,
-    transactions: _transactions,
+    transactions: _budgetTransactions,
     cycle: currentCycle,
     now: DateTime.now(),
   );
@@ -514,6 +548,7 @@ class TransactionsRepository extends ChangeNotifier {
     required String name,
     required IconData icon,
     required TransactionType type,
+    bool excludeFromBudget = false,
   }) async {
     final userDoc = _userDoc;
     if (userDoc == null || !canAddCategory) return null;
@@ -533,6 +568,7 @@ class TransactionsRepository extends ChangeNotifier {
       color: color,
       type: type,
       sortOrder: sortOrder,
+      excludeFromBudget: excludeFromBudget,
     );
     final ref = await _withTimeout(
       userDoc.collection('categories').add({
@@ -548,6 +584,7 @@ class TransactionsRepository extends ChangeNotifier {
       color: color,
       type: type,
       sortOrder: sortOrder,
+      excludeFromBudget: excludeFromBudget,
     );
   }
 

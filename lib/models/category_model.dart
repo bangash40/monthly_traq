@@ -14,6 +14,11 @@ class CategoryModel {
   // category that has been given an explicit position.
   final int? sortOrder;
 
+  /// Spending here isn't budget spending — loan repayments, savings
+  /// deposits and the like. It still lowers the balance and shows in
+  /// Spent, but the monthly budget and daily allowance leave it out.
+  final bool excludeFromBudget;
+
   const CategoryModel({
     required this.id,
     required this.name,
@@ -21,7 +26,12 @@ class CategoryModel {
     required this.color,
     this.type = TransactionType.expense,
     this.sortOrder,
+    this.excludeFromBudget = false,
   });
+
+  /// Whether spending in this category counts against the monthly budget.
+  bool get countsTowardBudget =>
+      type == TransactionType.expense && !excludeFromBudget;
 
   factory CategoryModel.fromDoc(
     QueryDocumentSnapshot<Map<String, dynamic>> doc,
@@ -36,6 +46,7 @@ class CategoryModel {
           ? TransactionType.income
           : TransactionType.expense,
       sortOrder: data['sortOrder'] as int?,
+      excludeFromBudget: data['excludeFromBudget'] as bool? ?? false,
     );
   }
 
@@ -46,6 +57,7 @@ class CategoryModel {
       'color': color.toARGB32(),
       'type': type == TransactionType.income ? 'income' : 'expense',
       if (sortOrder != null) 'sortOrder': sortOrder,
+      'excludeFromBudget': excludeFromBudget,
     };
   }
 }
