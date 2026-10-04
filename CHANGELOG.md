@@ -4,6 +4,20 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.8.5 (build 19) — 2026-10-04
+
+### Added
+- Many more category icons — 135 in all, up from 37 — grouped into
+  sections: Food & drink, Groceries & shopping, Transport, Bills & home,
+  Health & care, Family & giving, Education & work, Fun & travel and Money.
+  Includes everyday ones like a motorbike, rickshaw, gas cylinder,
+  electricity, Wi-Fi, chai, biryani, cricket and a mosque for donations.
+
+### Changed
+- The New / Edit category sheet puts the name and budget switch at the
+  top, scrolls the icons, and keeps the Add / Save button pinned at the
+  bottom.
+
 ## 1.8.4 (build 18) — 2026-10-04
 
 ### Added

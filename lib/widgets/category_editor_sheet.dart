@@ -9,13 +9,6 @@ import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/ui.dart';
 
-/// Every icon a category can pick (the legacy "apple" key is only there to
-/// read old data, so it's left out).
-final _iconChoices = [
-  for (final entry in categoryIconsByKey.entries)
-    if (entry.key != 'apple') entry.value,
-];
-
 /// Creates a category, or — given [existing] — renames it and changes its
 /// icon. Returns the saved category, or null if cancelled.
 Future<CategoryModel?> showCategoryEditor(
@@ -52,7 +45,8 @@ class _CategoryEditorState extends State<_CategoryEditor> {
   late final _nameController = TextEditingController(
     text: widget.existing?.name,
   );
-  late IconData _icon = widget.existing?.icon ?? _iconChoices.first;
+  late IconData _icon =
+      widget.existing?.icon ?? iconForKey(defaultCategoryIconKey);
   late bool _countsTowardBudget =
       !(widget.existing?.excludeFromBudget ?? false);
   bool _isSaving = false;
@@ -128,6 +122,20 @@ class _CategoryEditorState extends State<_CategoryEditor> {
     }
   }
 
+  Widget _iconTile(IconData icon) {
+    final c = context.colors;
+    final selected = icon == _icon;
+    return Material(
+      color: selected ? _color : c.surfaceHigh,
+      borderRadius: BorderRadius.circular(AppRadius.iconTile),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.iconTile),
+        onTap: () => setState(() => _icon = icon),
+        child: Icon(icon, size: 22, color: selected ? Colors.white : c.muted),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
@@ -139,117 +147,125 @@ class _CategoryEditorState extends State<_CategoryEditor> {
         20,
         20 + MediaQuery.viewInsetsOf(context).bottom,
       ),
-      // Scrolls as a whole when it doesn't fit (keyboard up, small screens,
-      // large text) instead of overflowing at the bottom.
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                IconTile(icon: _icon, color: _color, size: 52, solid: true),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    _isEditing ? 'Edit category' : 'New category',
-                    style: AppText.section.copyWith(fontSize: 24),
-                  ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              IconTile(icon: _icon, color: _color, size: 52, solid: true),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  _isEditing ? 'Edit category' : 'New category',
+                  style: AppText.section.copyWith(fontSize: 24),
                 ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            LabeledField(
-              label: 'Name',
-              field: TextField(
-                controller: _nameController,
-                autofocus: !_isEditing,
-                textCapitalization: TextCapitalization.sentences,
-                maxLength: 40,
-                decoration: InputDecoration(
-                  hintText: widget.type == TransactionType.income
-                      ? 'e.g. Freelance'
-                      : 'e.g. Groceries',
-                  errorText: _error,
-                  counterText: '',
-                ),
-                onSubmitted: (_) => _save(),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Icon',
-              style: AppText.rowTitle.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 10),
-            GridView.count(
-              crossAxisCount: 6,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              children: [
-                for (final icon in _iconChoices)
-                  Material(
-                    color: icon == _icon ? _color : c.surfaceHigh,
-                    borderRadius: BorderRadius.circular(AppRadius.iconTile),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(AppRadius.iconTile),
-                      onTap: () => setState(() => _icon = icon),
-                      child: Icon(
-                        icon,
-                        size: 22,
-                        color: icon == _icon ? Colors.white : c.muted,
+            ],
+          ),
+          const SizedBox(height: 18),
+          // Name and the budget switch up top, the icons scrolling below
+          // them, and the button pinned at the bottom — so it's always in
+          // reach however many icons there are, keyboard up or not.
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  LabeledField(
+                    label: 'Name',
+                    field: TextField(
+                      controller: _nameController,
+                      autofocus: !_isEditing,
+                      textCapitalization: TextCapitalization.sentences,
+                      maxLength: 40,
+                      decoration: InputDecoration(
+                        hintText: widget.type == TransactionType.income
+                            ? 'e.g. Freelance'
+                            : 'e.g. Groceries',
+                        errorText: _error,
+                        counterText: '',
                       ),
+                      onSubmitted: (_) => _save(),
                     ),
                   ),
-              ],
-            ),
-            if (_isExpense) ...[
-              const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
+                  if (_isExpense) ...[
+                    const SizedBox(height: 16),
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Count toward monthly budget',
-                          style: AppText.rowTitle.copyWith(
-                            fontWeight: FontWeight.w800,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Count toward monthly budget',
+                                style: AppText.rowTitle.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _countsTowardBudget
+                                    ? 'Spending here uses up your monthly '
+                                          'budget.'
+                                    : 'Not in budget — for loan repayments, '
+                                          'savings and the like. Still lowers '
+                                          'your balance.',
+                                style: AppText.label.copyWith(color: c.muted),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _countsTowardBudget
-                              ? 'Spending here uses up your monthly budget.'
-                              : 'Not in budget — for loan repayments, savings '
-                                    'and the like. Still lowers your balance.',
-                          style: AppText.label.copyWith(color: c.muted),
+                        const SizedBox(width: 12),
+                        Switch(
+                          value: _countsTowardBudget,
+                          onChanged: (value) =>
+                              setState(() => _countsTowardBudget = value),
                         ),
                       ],
                     ),
+                  ],
+                  const SizedBox(height: 18),
+                  Text(
+                    'Icon',
+                    style: AppText.rowTitle.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                  const SizedBox(width: 12),
-                  Switch(
-                    value: _countsTowardBudget,
-                    onChanged: (value) =>
-                        setState(() => _countsTowardBudget = value),
-                  ),
+                  for (final group in categoryIconGroups) ...[
+                    const SizedBox(height: 14),
+                    Text(
+                      group.label.toUpperCase(),
+                      style: AppText.overline.copyWith(color: c.muted),
+                    ),
+                    const SizedBox(height: 8),
+                    GridView.count(
+                      crossAxisCount: 6,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      children: [
+                        for (final key in group.keys)
+                          _iconTile(iconForKey(key)),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 4),
                 ],
               ),
-            ],
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isSaving ? null : _save,
-              child: ButtonLabel(
-                _isEditing ? 'Save changes' : 'Add category',
-                loading: _isSaving,
-              ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _isSaving ? null : _save,
+            child: ButtonLabel(
+              _isEditing ? 'Save changes' : 'Add category',
+              loading: _isSaving,
+            ),
+          ),
+        ],
       ),
     );
   }
