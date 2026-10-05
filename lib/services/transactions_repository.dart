@@ -505,6 +505,9 @@ class TransactionsRepository extends ChangeNotifier {
     if (userDoc == null) return;
     await _deleteCollection(userDoc.collection('transactions'));
     await _deleteCollection(userDoc.collection('categories'));
+    await _deleteCollection(userDoc.collection('wallets'));
+    await _deleteCollection(userDoc.collection('people'));
+    await _deleteCollection(userDoc.collection('walletEntries'));
     await _withTimeout(userDoc.delete());
   }
 

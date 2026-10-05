@@ -8,7 +8,7 @@ class AppInfo {
 
   static const supportEmail = 'farhanbangash40@gmail.com';
 
-  static const privacyPolicyEffectiveDate = 'September 28, 2026';
+  static const privacyPolicyEffectiveDate = 'October 5, 2026';
 
   /// Opens the listing in the Play Store app.
   static final playStoreAppUri = Uri.parse('market://details?id=$packageName');

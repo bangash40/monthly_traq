@@ -18,6 +18,7 @@ void main() {
         HomeCard.recent,
       ]);
       expect(layout.isVisible(HomeCard.dailyAllowance), isFalse);
+      expect(layout.isVisible(HomeCard.wallets), isFalse);
       expect(layout.order, HomeCard.values);
       expect(layout.isDefault, isTrue);
     });
@@ -27,7 +28,19 @@ void main() {
         HomeCard.dailyAllowance,
         true,
       );
-      expect(layout.visible, HomeCard.values);
+      expect(layout.visible, [
+        HomeCard.balance,
+        HomeCard.budget,
+        HomeCard.dailyAllowance,
+        HomeCard.topSpending,
+        HomeCard.recent,
+      ]);
+      expect(layout.isDefault, isFalse);
+    });
+
+    test('turning Wallets on puts it under the balance', () {
+      final layout = HomeLayout.defaults.withVisibility(HomeCard.wallets, true);
+      expect(layout.visible.take(2), [HomeCard.balance, HomeCard.wallets]);
       expect(layout.isDefault, isFalse);
     });
 
@@ -57,16 +70,18 @@ void main() {
 
     test('moving a card', () {
       // Recent (last) to the top.
-      final moved = HomeLayout.defaults.moved(4, 0);
+      final last = HomeCard.values.length - 1;
+      final moved = HomeLayout.defaults.moved(last, 0);
       expect(moved.order, [
         HomeCard.recent,
         HomeCard.balance,
+        HomeCard.wallets,
         HomeCard.budget,
         HomeCard.dailyAllowance,
         HomeCard.topSpending,
       ]);
       // Balance (first) to the end.
-      expect(HomeLayout.defaults.moved(0, 4).order.last, HomeCard.balance);
+      expect(HomeLayout.defaults.moved(0, last).order.last, HomeCard.balance);
     });
 
     test('saves and loads by name', () {
@@ -94,7 +109,29 @@ void main() {
       expect(loaded.order.toSet(), HomeCard.values.toSet());
       expect(loaded.order.length, HomeCard.values.length);
       // A missing extra card joins switched off; a missing classic one on.
-      expect(loaded.hidden, {HomeCard.dailyAllowance});
+      expect(loaded.hidden, {HomeCard.dailyAllowance, HomeCard.wallets});
+    });
+
+    test('a card new in this version slots into its default place', () {
+      // A default layout saved before the Wallets card existed.
+      final loaded = HomeLayout.fromNames(
+        ['balance', 'budget', 'dailyAllowance', 'topSpending', 'recent'],
+        ['dailyAllowance'],
+      );
+      expect(loaded.order[1], HomeCard.wallets);
+      expect(loaded.isVisible(HomeCard.wallets), isFalse);
+      expect(loaded.isDefault, isTrue);
+
+      // A rearranged one keeps its order; Wallets still follows Balance.
+      final custom = HomeLayout.fromNames(
+        ['recent', 'balance', 'budget', 'dailyAllowance', 'topSpending'],
+        ['dailyAllowance'],
+      );
+      expect(custom.order.take(3), [
+        HomeCard.recent,
+        HomeCard.balance,
+        HomeCard.wallets,
+      ]);
     });
 
     test('a saved layout keeps the allowance on if it was turned on', () {

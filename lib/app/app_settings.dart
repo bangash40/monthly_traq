@@ -11,6 +11,7 @@ const _hideAmountsKey = 'hide_amounts';
 const _showPrivacyButtonKey = 'show_privacy_button';
 const _hapticFeedbackKey = 'haptic_feedback';
 const _dismissedWinKey = 'dismissed_budget_win';
+const _lastWalletKey = 'last_wallet_id';
 
 /// The on/off preferences from the Profile tab, saved on this device.
 class AppSettings extends ChangeNotifier {
@@ -41,6 +42,10 @@ class AppSettings extends ChangeNotifier {
   /// doesn't come back.
   String? dismissedBudgetWin;
 
+  /// The wallet the last transaction was logged with — new ones start on
+  /// it, since people mostly pay from the same place.
+  String? lastWalletId;
+
   /// Home exactly as it comes out of the box.
   bool get isDefaultHome => homeLayout.isDefault && !showPrivacyButton;
 
@@ -55,6 +60,7 @@ class AppSettings extends ChangeNotifier {
     soundEffects = prefs.getBool(_soundEffectsKey) ?? true;
     hapticFeedback = prefs.getBool(_hapticFeedbackKey) ?? true;
     dismissedBudgetWin = prefs.getString(_dismissedWinKey);
+    lastWalletId = prefs.getString(_lastWalletKey);
     homeLayout = HomeLayout.fromNames(
       prefs.getStringList(_homeCardOrderKey),
       prefs.getStringList(_homeCardsHiddenKey),
@@ -78,6 +84,17 @@ class AppSettings extends ChangeNotifier {
   Future<void> setQuickAddNotification(bool value) {
     quickAddNotification = value;
     return _save(_quickAddNotificationKey, value);
+  }
+
+  Future<void> setLastWalletId(String? id) async {
+    if (id == lastWalletId) return;
+    lastWalletId = id;
+    final prefs = await SharedPreferences.getInstance();
+    if (id == null) {
+      await prefs.remove(_lastWalletKey);
+    } else {
+      await prefs.setString(_lastWalletKey, id);
+    }
   }
 
   Future<void> dismissBudgetWin(String id) async {

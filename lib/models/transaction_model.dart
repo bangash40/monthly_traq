@@ -23,13 +23,17 @@ class TransactionModel {
     this.note,
   });
 
-  factory TransactionModel.fromDoc(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+  factory TransactionModel.fromDoc(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final data = doc.data();
     return TransactionModel(
       id: doc.id,
       title: data['title'] as String,
       amount: (data['amount'] as num).toDouble(),
-      type: data['type'] == 'income' ? TransactionType.income : TransactionType.expense,
+      type: data['type'] == 'income'
+          ? TransactionType.income
+          : TransactionType.expense,
       categoryId: data['categoryId'] as String?,
       date: (data['date'] as Timestamp).toDate(),
       note: data['note'] as String?,

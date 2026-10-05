@@ -4,6 +4,26 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.0 (build 20) — 2026-10-05
+
+### Added
+- Wallets (Profile → Money → Wallets): track JazzCash, Easypaisa, your bank
+  or cash, separately from your monthly budget. Nothing you record in a
+  wallet shows in Transactions or counts as monthly income or spending.
+- Each wallet has its own screen with its balance, split into Yours and
+  Others' money, and buttons for Spent, Add, Received, Send back and Move
+  (between wallets), plus an activity list. Tap any entry to edit or
+  delete it; "Correct balance" fixes a wallet that doesn't match.
+- Money you're keeping for others: record money someone gives you with
+  Received. Each person has one running account. Spending never lowers
+  what you owe them; only Send back does. Their screen shows what you're
+  keeping, which wallets it's in, and the full history.
+- A Wallets card for Home, off by default — turn it on in Profile → Home
+  screen layout.
+
+### Changed
+- The privacy policy covers wallets and the people in them.
+
 ## 1.8.5 (build 19) — 2026-10-04
 
 ### Added

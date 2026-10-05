@@ -10,6 +10,7 @@ import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/app/theme_controller.dart';
 import 'package:monthly_traq/dev/sample_data.dart';
+import 'package:monthly_traq/features/money/money_screen.dart';
 import 'package:monthly_traq/features/settings/about_screen.dart';
 import 'package:monthly_traq/features/settings/appearance_screen.dart';
 import 'package:monthly_traq/features/settings/categories_screen.dart';
@@ -21,6 +22,7 @@ import 'package:monthly_traq/features/settings/privacy_policy_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/budget_cycle.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/budget_sheet.dart';
 import 'package:monthly_traq/widgets/month_start_day_picker.dart';
 import 'package:monthly_traq/widgets/settings_rows.dart';
@@ -148,6 +150,7 @@ class ProfileScreen extends StatelessWidget {
     final repo = context.watch<TransactionsRepository>();
     final themeController = context.watch<ThemeController>();
     final settings = context.watch<AppSettings>();
+    final wallets = context.watch<WalletsRepository>();
     final money = context.money;
     final c = context.colors;
 
@@ -176,6 +179,21 @@ class ProfileScreen extends StatelessWidget {
                 label: 'Month starts on',
                 value: ordinal(repo.monthStartDay),
                 onTap: () => showMonthStartDayPicker(context),
+              ),
+            ],
+          ),
+          SettingsGroup(
+            title: 'Money',
+            rows: [
+              SettingsRow(
+                icon: Icons.wallet_outlined,
+                label: 'Wallets',
+                value: switch (wallets.wallets.length) {
+                  0 => 'Add',
+                  1 => '1 wallet',
+                  final n => '$n wallets',
+                },
+                onTap: () => _push(context, const WalletsScreen()),
               ),
             ],
           ),

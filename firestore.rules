@@ -34,8 +34,10 @@ service cloud.firestore {
     }
 
     function isValidTransaction(data) {
-      return data.keys().hasOnly(['title', 'amount', 'type', 'categoryId', 'date', 'note'])
+      // walletId is optional: transactions from before wallets don't have it.
+      return data.keys().hasOnly(['title', 'amount', 'type', 'categoryId', 'date', 'note', 'walletId'])
         && data.keys().hasAll(['title', 'amount', 'type', 'categoryId', 'date', 'note'])
+        && (!('walletId' in data.keys()) || data.walletId == null || data.walletId is string)
         && data.title is string && data.title.size() <= 100
         && data.amount is number && data.amount > 0
         && data.type in ['income', 'expense']
@@ -59,6 +61,45 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    function isValidWallet(data) {
+      return data.keys().hasOnly(['name', 'iconKey', 'color', 'openingBalance', 'sortOrder', 'createdAt'])
+        && data.keys().hasAll(['name', 'iconKey', 'color', 'openingBalance', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 40
+        && data.iconKey is string && data.iconKey.size() > 0 && data.iconKey.size() <= 40
+        && data.color is int
+        && data.openingBalance is number
+        && (!('sortOrder' in data.keys()) || data.sortOrder is int)
+        && data.createdAt is timestamp;
+    }
+
+    // Someone whose money the user keeps in their wallets (an amanat).
+    function isValidPerson(data) {
+      return data.keys().hasOnly(['name', 'createdAt'])
+        && data.keys().hasAll(['name', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 60
+        && data.createdAt is timestamp;
+    }
+
+    // One thing that happened in a wallet: spent, own money added, money
+    // received from someone to keep, money sent back to them, a move to
+    // another wallet, or a correction (the only kind with a signed amount).
+    function isValidWalletEntry(data) {
+      return data.keys().hasOnly(['kind', 'walletId', 'toWalletId', 'personId', 'amount', 'date', 'note', 'createdAt'])
+        && data.keys().hasAll(['kind', 'walletId', 'amount', 'date', 'createdAt'])
+        && data.kind in ['spend', 'add', 'receive', 'giveBack', 'transfer', 'adjust']
+        && data.walletId is string
+        && data.amount is number
+        && (data.kind == 'adjust' || data.amount > 0)
+        && (!('toWalletId' in data.keys()) || data.toWalletId == null || data.toWalletId is string)
+        && (data.kind != 'transfer'
+            || (data.toWalletId is string && data.toWalletId != data.walletId))
+        && (!('personId' in data.keys()) || data.personId == null || data.personId is string)
+        && (!(data.kind in ['receive', 'giveBack']) || data.personId is string)
+        && data.date is timestamp
+        && (!('note' in data.keys()) || data.note == null || (data.note is string && data.note.size() <= 200))
+        && data.createdAt is timestamp;
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId) && isValidUserDoc(request.resource.data);
@@ -75,6 +116,24 @@ service cloud.firestore {
       match /categories/{categoryId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidCategory(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /wallets/{walletId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidWallet(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /people/{personId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidPerson(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /walletEntries/{entryId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidWalletEntry(request.resource.data);
         allow delete: if isOwner(userId);
       }
     }

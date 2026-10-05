@@ -8,6 +8,12 @@ enum HomeCard {
     'Your balance, with this month\'s income and spending',
     Icons.account_balance_wallet_outlined,
   ),
+  wallets(
+    'Wallets',
+    'What\'s in your wallets, and money you\'re holding for others. '
+        'Shows once you add a wallet.',
+    Icons.account_balance_wallet,
+  ),
   budget(
     'Monthly budget',
     'How much of your budget is left',
@@ -44,30 +50,38 @@ class HomeLayout {
 
   /// Extra cards that start switched off, so the default Home stays the
   /// classic balance → budget → top spending → recent.
-  static const offByDefault = {HomeCard.dailyAllowance};
+  static const offByDefault = {HomeCard.dailyAllowance, HomeCard.wallets};
 
   static final defaults = HomeLayout._(
     List.unmodifiable(HomeCard.values),
     Set.unmodifiable(offByDefault),
   );
 
-  /// Cleans up [order]: drops repeats and adds any missing card at the end,
-  /// so every card is always listed.
+  /// Cleans up [order]: drops repeats and adds any missing card in its
+  /// default place, so every card is always listed.
   factory HomeLayout({
     required List<HomeCard> order,
     Set<HomeCard> hidden = const {},
   }) {
     final cleaned = <HomeCard>[
       ...{...order},
-      for (final card in HomeCard.values)
-        if (!order.contains(card)) card,
     ];
+    // A card missing from [order] (new in this app version) goes right
+    // after the card it follows by default — so a saved layout that was
+    // otherwise the default stays the default — or first if nothing before
+    // it is there.
+    for (final (i, card) in HomeCard.values.indexed) {
+      if (cleaned.contains(card)) continue;
+      final before = HomeCard.values.take(i).toList().reversed;
+      final anchor = before.where(cleaned.contains).firstOrNull;
+      cleaned.insert(anchor == null ? 0 : cleaned.indexOf(anchor) + 1, card);
+    }
     return HomeLayout._(List.unmodifiable(cleaned), Set.unmodifiable(hidden));
   }
 
   /// Reads the saved form; names this version doesn't know are ignored.
-  /// A card added in a later version joins at the end — switched off if
-  /// it's one of the [offByDefault] extras.
+  /// A card added in a later version joins in its default place —
+  /// switched off if it's one of the [offByDefault] extras.
   factory HomeLayout.fromNames(List<String>? order, List<String>? hidden) {
     if (order == null) return defaults;
     HomeCard? byName(String name) =>

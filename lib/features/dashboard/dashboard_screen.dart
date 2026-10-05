@@ -8,6 +8,8 @@ import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/features/analytics/category_detail_screen.dart';
 import 'package:monthly_traq/features/dashboard/budget_win_card.dart';
+import 'package:monthly_traq/features/money/money_common.dart';
+import 'package:monthly_traq/features/money/money_screen.dart';
 import 'package:monthly_traq/features/dashboard/not_in_budget.dart';
 import 'package:monthly_traq/features/settings/edit_profile_screen.dart';
 import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.dart';
@@ -15,6 +17,7 @@ import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/services/daily_allowance.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/budget_sheet.dart';
 import 'package:monthly_traq/widgets/transaction_rows.dart';
 import 'package:monthly_traq/widgets/motion.dart';
@@ -54,6 +57,9 @@ class DashboardScreen extends StatelessWidget {
     switch (card) {
       case HomeCard.balance:
         return const _BalanceCard();
+      case HomeCard.wallets:
+        if (!context.watch<WalletsRepository>().hasWallets) return null;
+        return const _WalletsCard();
       case HomeCard.budget:
         return const _BudgetCard();
       case HomeCard.dailyAllowance:
@@ -687,6 +693,60 @@ class _DailyAllowanceCard extends StatelessWidget {
               style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Wallets on Home: the total, and how much of it is the person's own vs
+/// other people's money they're keeping. Tap for the Wallets screen.
+class _WalletsCard extends StatelessWidget {
+  const _WalletsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final money = context.money;
+    final ledger = watchLedger(context);
+    final count = context.watch<WalletsRepository>().wallets.length;
+
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(20, 18, 16, 18),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const WalletsScreen()),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(child: Text('Wallets', style: AppText.section)),
+              Text(
+                count == 1 ? '1 wallet' : '$count wallets',
+                style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
+              ),
+              Icon(Icons.chevron_right, color: c.faint),
+            ],
+          ),
+          const SizedBox(height: 8),
+          CountUp(
+            value: ledger.total,
+            builder: (context, shown) =>
+                Text(signedMoney(money, shown), style: AppText.amountLarge),
+          ),
+          const SizedBox(height: 12),
+          SplitBar(own: ledger.own, others: ledger.others),
+          const SizedBox(height: 10),
+          Text(
+            ledger.others > 0
+                ? 'Yours ${signedMoney(money, ledger.own)} · Others\' ${money.format(ledger.others)}'
+                : 'All yours',
+            style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
