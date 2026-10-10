@@ -4,6 +4,29 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.5 (build 24) — 2026-10-10
+
+### Added
+- Investments (Profile → Money → Investments): add your PSX broker
+  accounts with what you've put in and what they're worth, copied from
+  your broker's app. See the value, what you put in, and your gain
+  ("+Rs. 45,000 (+22.5%)"), with "Updated 3 days ago" so you know when to
+  refresh it.
+- Each account has Update (a new value), Put in, Take out and Dividend,
+  a line showing how its value moved, and its full history. Money in and
+  out can come from or go to your monthly money, a wallet, or just be
+  recorded; deleting an entry undoes what it added.
+- Net worth (Profile → Money → Net worth): what you own minus what you owe
+  — your own money in wallets, savings goals, investments, and what's
+  still owed on repayments — with a switch for each part. Your Home total
+  balance can be added too; it starts switched off so the same money isn't
+  counted twice.
+- A Net worth card for Home, off by default — turn it on in Profile → Home
+  screen layout.
+
+### Changed
+- The privacy policy covers investments.
+
 ## 1.9.4 (build 23) — 2026-10-10
 
 ### Added

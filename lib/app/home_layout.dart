@@ -25,6 +25,12 @@ enum HomeCard {
         'goal.',
     Icons.savings_outlined,
   ),
+  netWorth(
+    'Net worth',
+    'What you own minus what you owe: wallets, goals, investments and '
+        'repayments together.',
+    Icons.account_balance_outlined,
+  ),
   budget(
     'Monthly budget',
     'How much of your budget is left',
@@ -66,6 +72,7 @@ class HomeLayout {
     HomeCard.wallets,
     HomeCard.repayments,
     HomeCard.goals,
+    HomeCard.netWorth,
   };
 
   static final defaults = HomeLayout._(

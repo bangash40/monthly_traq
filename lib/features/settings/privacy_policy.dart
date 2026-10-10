@@ -35,6 +35,9 @@ const privacyPolicy = [
         'them.',
     'Savings goals: the goals you add (name, target and date) and the '
         'money you record adding to or taking out of them.',
+    'Investments: the investment accounts you add (a name) and what you '
+        'record in them — money put in and taken out, dividends, and the '
+        'values you copy in. The app doesn\'t connect to your broker.',
     'Profile photo: if you add one, a compressed copy is stored with your '
         'account.',
     'Settings on your device: your theme, text size and similar '
@@ -63,8 +66,9 @@ const privacyPolicy = [
     [
       'To delete your account in the app, go to Profile → Data → Delete '
           'account. This permanently deletes your transactions, categories, '
-          'wallets, the people in them, repayments, savings goals, budget, '
-          'currency, profile photo and sign-in. It cannot be undone.',
+          'wallets, the people in them, repayments, savings goals, '
+          'investments, budget, currency, profile photo and sign-in. It '
+          'cannot be undone.',
       'To delete only your transactions and keep your account, use '
           'Profile → Data → Delete all data.',
       'If you can no longer use the app, email ${AppInfo.supportEmail} from '

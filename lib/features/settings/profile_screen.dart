@@ -12,6 +12,8 @@ import 'package:monthly_traq/app/theme_controller.dart';
 import 'package:monthly_traq/dev/sample_data.dart';
 import 'package:monthly_traq/features/money/money_screen.dart';
 import 'package:monthly_traq/features/money/goals_screen.dart';
+import 'package:monthly_traq/features/money/investments_screen.dart';
+import 'package:monthly_traq/features/money/net_worth_screen.dart';
 import 'package:monthly_traq/features/money/repayments_screen.dart';
 import 'package:monthly_traq/features/settings/about_screen.dart';
 import 'package:monthly_traq/features/settings/appearance_screen.dart';
@@ -25,6 +27,8 @@ import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/budget_cycle.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/goals_repository.dart';
+import 'package:monthly_traq/services/investments_repository.dart';
+import 'package:monthly_traq/services/net_worth.dart';
 import 'package:monthly_traq/services/repayments_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/budget_sheet.dart';
@@ -157,6 +161,11 @@ class ProfileScreen extends StatelessWidget {
     final wallets = context.watch<WalletsRepository>();
     final repayments = context.watch<RepaymentsRepository>();
     final goals = context.watch<GoalsRepository>();
+    final investments = context.watch<InvestmentsRepository>();
+    final netWorth = netWorthOf(
+      watchNetWorthParts(context),
+      watchNetWorthOff(context),
+    );
     final money = context.money;
     final c = context.colors;
 
@@ -192,6 +201,15 @@ class ProfileScreen extends StatelessWidget {
             title: 'Money',
             rows: [
               SettingsRow(
+                icon: Icons.account_balance_outlined,
+                label: 'Net worth',
+                value: money.format(
+                  netWorth,
+                  sign: netWorth < 0 ? MoneySign.expense : MoneySign.none,
+                ),
+                onTap: () => _push(context, const NetWorthScreen()),
+              ),
+              SettingsRow(
                 icon: Icons.wallet_outlined,
                 label: 'Wallets',
                 value: switch (wallets.wallets.length) {
@@ -220,6 +238,14 @@ class ProfileScreen extends StatelessWidget {
                   final n => '$n goals',
                 },
                 onTap: () => _push(context, const GoalsScreen()),
+              ),
+              SettingsRow(
+                icon: Icons.trending_up,
+                label: 'Investments',
+                value: investments.hasAccounts
+                    ? money.format(investments.totals.value)
+                    : 'Add',
+                onTap: () => _push(context, const InvestmentsScreen()),
               ),
             ],
           ),

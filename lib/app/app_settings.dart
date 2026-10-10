@@ -12,6 +12,7 @@ const _showPrivacyButtonKey = 'show_privacy_button';
 const _hapticFeedbackKey = 'haptic_feedback';
 const _dismissedWinKey = 'dismissed_budget_win';
 const _lastWalletKey = 'last_wallet_id';
+const _netWorthOffKey = 'net_worth_off';
 
 /// The on/off preferences from the Profile tab, saved on this device.
 class AppSettings extends ChangeNotifier {
@@ -46,6 +47,10 @@ class AppSettings extends ChangeNotifier {
   /// it, since people mostly pay from the same place.
   String? lastWalletId;
 
+  /// The parts Net worth leaves out (NetWorthPart names). The Home balance
+  /// starts out left out: it may be the same money as the wallets.
+  Set<String> netWorthOff = {'balance'};
+
   /// Home exactly as it comes out of the box.
   bool get isDefaultHome => homeLayout.isDefault && !showPrivacyButton;
 
@@ -61,6 +66,9 @@ class AppSettings extends ChangeNotifier {
     hapticFeedback = prefs.getBool(_hapticFeedbackKey) ?? true;
     dismissedBudgetWin = prefs.getString(_dismissedWinKey);
     lastWalletId = prefs.getString(_lastWalletKey);
+    netWorthOff = {
+      ...(prefs.getStringList(_netWorthOffKey) ?? ['balance']),
+    };
     homeLayout = HomeLayout.fromNames(
       prefs.getStringList(_homeCardOrderKey),
       prefs.getStringList(_homeCardsHiddenKey),
@@ -95,6 +103,15 @@ class AppSettings extends ChangeNotifier {
     } else {
       await prefs.setString(_lastWalletKey, id);
     }
+  }
+
+  Future<void> setNetWorthPart(String part, bool counted) async {
+    netWorthOff = counted
+        ? ({...netWorthOff}..remove(part))
+        : {...netWorthOff, part};
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_netWorthOffKey, [...netWorthOff]);
   }
 
   Future<void> dismissBudgetWin(String id) async {

@@ -168,6 +168,33 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    // A broker account the user invests through; its value is copied in
+    // from the broker's app.
+    function isValidInvestAccount(data) {
+      return data.keys().hasOnly(['name', 'color', 'createdAt'])
+        && data.keys().hasAll(['name', 'color', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 40
+        && data.color is int
+        && data.createdAt is timestamp;
+    }
+
+    // Money put in or taken out, a dividend, or a value copied in (the
+    // whole value, so it may be zero), with the transaction or wallet
+    // entry it added (if any).
+    function isValidInvestEntry(data) {
+      return data.keys().hasOnly(['accountId', 'kind', 'amount', 'date', 'source', 'transactionId', 'walletEntryId', 'createdAt'])
+        && data.keys().hasAll(['accountId', 'kind', 'amount', 'date', 'source', 'createdAt'])
+        && data.accountId is string
+        && data.kind in ['deposit', 'withdraw', 'dividend', 'value']
+        && data.amount is number
+        && ((data.kind == 'value' && data.amount >= 0) || (data.kind != 'value' && data.amount > 0))
+        && data.date is timestamp
+        && data.source in ['budget', 'wallet', 'none']
+        && (!('transactionId' in data.keys()) || data.transactionId == null || data.transactionId is string)
+        && (!('walletEntryId' in data.keys()) || data.walletEntryId == null || data.walletEntryId is string)
+        && data.createdAt is timestamp;
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId) && isValidUserDoc(request.resource.data);
@@ -226,6 +253,18 @@ service cloud.firestore {
       match /goalEntries/{entryId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidGoalEntry(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /investAccounts/{accountId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidInvestAccount(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /investEntries/{entryId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidInvestEntry(request.resource.data);
         allow delete: if isOwner(userId);
       }
     }

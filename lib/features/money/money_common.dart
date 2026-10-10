@@ -708,19 +708,30 @@ class ChoicePills<T> extends StatelessWidget {
 Future<String?> pickExpenseCategory(
   BuildContext context, {
   String? selectedId,
-}) => showMoneySheet<String>(context, _CategoryPicker(selectedId: selectedId));
+}) => pickCategory(context, selectedId: selectedId);
+
+/// Like [pickExpenseCategory], for either kind of category.
+Future<String?> pickCategory(
+  BuildContext context, {
+  String? selectedId,
+  TransactionType type = TransactionType.expense,
+}) => showMoneySheet<String>(
+  context,
+  _CategoryPicker(selectedId: selectedId, type: type),
+);
 
 class _CategoryPicker extends StatelessWidget {
   final String? selectedId;
+  final TransactionType type;
 
-  const _CategoryPicker({required this.selectedId});
+  const _CategoryPicker({required this.selectedId, required this.type});
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     final all = [
       for (final cat in context.watch<TransactionsRepository>().categories)
-        if (cat.type == TransactionType.expense) cat,
+        if (cat.type == type) cat,
     ];
     final categories = <CategoryModel>[
       ...all.where((cat) => cat.excludeFromBudget),

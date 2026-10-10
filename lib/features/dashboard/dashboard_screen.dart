@@ -10,6 +10,7 @@ import 'package:monthly_traq/features/analytics/category_detail_screen.dart';
 import 'package:monthly_traq/features/dashboard/budget_win_card.dart';
 import 'package:monthly_traq/features/money/money_common.dart';
 import 'package:monthly_traq/features/money/money_screen.dart';
+import 'package:monthly_traq/features/money/net_worth_screen.dart';
 import 'package:monthly_traq/features/money/goals_screen.dart';
 import 'package:monthly_traq/features/money/repayments_screen.dart';
 import 'package:monthly_traq/features/dashboard/not_in_budget.dart';
@@ -70,6 +71,8 @@ class DashboardScreen extends StatelessWidget {
       case HomeCard.goals:
         if (!context.watch<GoalsRepository>().hasGoals) return null;
         return const GoalsHomeCard();
+      case HomeCard.netWorth:
+        return const NetWorthHomeCard();
       case HomeCard.budget:
         return const _BudgetCard();
       case HomeCard.dailyAllowance:

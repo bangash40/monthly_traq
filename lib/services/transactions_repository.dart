@@ -514,6 +514,8 @@ class TransactionsRepository extends ChangeNotifier {
     await _deleteCollection(userDoc.collection('repaymentPayments'));
     await _deleteCollection(userDoc.collection('goals'));
     await _deleteCollection(userDoc.collection('goalEntries'));
+    await _deleteCollection(userDoc.collection('investAccounts'));
+    await _deleteCollection(userDoc.collection('investEntries'));
     await _withTimeout(userDoc.delete());
   }
 
