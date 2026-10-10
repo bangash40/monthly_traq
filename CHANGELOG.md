@@ -4,6 +4,27 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.4 (build 23) — 2026-10-10
+
+### Added
+- Savings goals (Profile → Money → Savings goals): save up for something —
+  a mobile, a bike, a trip — with a target, what's already saved, an
+  optional date to reach it by, and an icon.
+- Each goal shows how much is saved ("Rs. 60,000 of Rs. 150,000 · 40%"),
+  whether you're On track or Behind, and with a date, how much to save
+  each month to reach it in time.
+- Add money from your monthly money (it adds the expense in the category
+  you pick), from a wallet, or just record it. Take money out into a wallet
+  or just record it. Deleting an entry undoes it, including the expense or
+  wallet entry it added.
+- Reaching a goal celebrates it; mark it done once you've bought it and it
+  moves to Done.
+- A Savings goals card for Home, off by default — turn it on in Profile →
+  Home screen layout.
+
+### Changed
+- The privacy policy covers savings goals.
+
 ## 1.9.3 (build 22) — 2026-10-10
 
 ### Added

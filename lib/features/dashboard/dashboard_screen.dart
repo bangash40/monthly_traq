@@ -10,6 +10,7 @@ import 'package:monthly_traq/features/analytics/category_detail_screen.dart';
 import 'package:monthly_traq/features/dashboard/budget_win_card.dart';
 import 'package:monthly_traq/features/money/money_common.dart';
 import 'package:monthly_traq/features/money/money_screen.dart';
+import 'package:monthly_traq/features/money/goals_screen.dart';
 import 'package:monthly_traq/features/money/repayments_screen.dart';
 import 'package:monthly_traq/features/dashboard/not_in_budget.dart';
 import 'package:monthly_traq/features/settings/edit_profile_screen.dart';
@@ -18,6 +19,7 @@ import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/services/daily_allowance.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/services/goals_repository.dart';
 import 'package:monthly_traq/services/repayments_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/budget_sheet.dart';
@@ -65,6 +67,9 @@ class DashboardScreen extends StatelessWidget {
       case HomeCard.repayments:
         if (!context.watch<RepaymentsRepository>().hasRepayments) return null;
         return const RepaymentsHomeCard();
+      case HomeCard.goals:
+        if (!context.watch<GoalsRepository>().hasGoals) return null;
+        return const GoalsHomeCard();
       case HomeCard.budget:
         return const _BudgetCard();
       case HomeCard.dailyAllowance:

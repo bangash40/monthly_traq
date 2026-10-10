@@ -6,92 +6,13 @@ import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/features/money/money_common.dart';
-import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/repayment_models.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/models/wallet_models.dart';
 import 'package:monthly_traq/services/repayments_repository.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
-import 'package:monthly_traq/widgets/budget_sheet.dart';
 import 'package:monthly_traq/widgets/ui.dart';
-
-void _toastError(BuildContext context, Object error) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        error is SyncTimeoutException
-            ? error.toString()
-            : 'Couldn\'t save. Please try again.',
-      ),
-    ),
-  );
-}
-
-String _plain(double amount) => GroupedNumberFormatter.formatText(
-  amount == amount.roundToDouble()
-      ? amount.toStringAsFixed(0)
-      : amount.toStringAsFixed(2),
-);
-
-String _dateLabel(DateTime date) {
-  final now = DateTime.now();
-  if (DateUtils.isSameDay(date, now)) return 'Today';
-  if (DateUtils.isSameDay(date, now.add(const Duration(days: 1)))) {
-    return 'Tomorrow';
-  }
-  if (DateUtils.isSameDay(date, now.subtract(const Duration(days: 1)))) {
-    return 'Yesterday';
-  }
-  return DateFormat(date.year == now.year ? 'EEE, d MMM' : 'd MMM y')
-      .format(date);
-}
-
-/// A row of pill buttons, one of them selected.
-class _ChoicePills<T> extends StatelessWidget {
-  final List<(T, String)> options;
-  final T value;
-  final ValueChanged<T> onChanged;
-
-  const _ChoicePills({
-    required this.options,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final (option, label) in options)
-          Material(
-            color: option == value ? c.primary : c.surfaceHigh,
-            borderRadius: BorderRadius.circular(999),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(999),
-              onTap: () => onChanged(option),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                child: Text(
-                  label,
-                  style: AppText.label.copyWith(
-                    color: option == value ? c.onPrimary : c.ink,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
 
 // Repayment: add / edit / delete
 
@@ -118,13 +39,13 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
   late final _name = TextEditingController(text: _e?.name);
   late final _lender = TextEditingController(text: _e?.lender);
   late final _total = TextEditingController(
-    text: _e == null ? '' : _plain(_e.total),
+    text: _e == null ? '' : plainAmount(_e.total),
   );
   late final _paidBefore = TextEditingController(
-    text: _e == null || _e.paidBefore == 0 ? '' : _plain(_e.paidBefore),
+    text: _e == null || _e.paidBefore == 0 ? '' : plainAmount(_e.paidBefore),
   );
   late final _installment = TextEditingController(
-    text: _e?.installment == null ? '' : _plain(_e!.installment!),
+    text: _e?.installment == null ? '' : plainAmount(_e!.installment!),
   );
   late RepaymentFrequency _frequency =
       _e?.frequency ?? RepaymentFrequency.monthly;
@@ -277,7 +198,7 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      _toastError(context, e);
+      toastSaveError(context, e);
     }
   }
 
@@ -298,7 +219,7 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
       await context.read<RepaymentsRepository>().deleteRepayment(existing.id);
       navigator.pop();
     } catch (e) {
-      if (mounted) _toastError(context, e);
+      if (mounted) toastSaveError(context, e);
     }
   }
 
@@ -378,7 +299,7 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
           style: AppText.rowTitle.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 10),
-        _ChoicePills<RepaymentFrequency>(
+        ChoicePills<RepaymentFrequency>(
           options: [for (final f in RepaymentFrequency.values) (f, f.label)],
           value: _frequency,
           onChanged: (f) => setState(() => _frequency = f),
@@ -425,7 +346,7 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
             label: 'Next payment due',
             field: FieldButton(
               leading: Icon(Icons.event_outlined, color: c.muted),
-              label: _nextDue == null ? 'Pick a date' : _dateLabel(_nextDue!),
+              label: _nextDue == null ? 'Pick a date' : friendlyDate(_nextDue!),
               empty: _nextDue == null,
               error: _dueError,
               onTap: _pickDue,
@@ -489,7 +410,7 @@ class _PaySheetState extends State<_PaySheet> {
         ? null
         : (installment < remaining ? installment : remaining);
     _amount = TextEditingController(
-      text: suggested == null ? '' : _plain(suggested),
+      text: suggested == null ? '' : plainAmount(suggested),
     );
     _initialAmount = _amount.text;
 
@@ -537,10 +458,7 @@ class _PaySheetState extends State<_PaySheet> {
   }
 
   Future<void> _pickCategory() async {
-    final picked = await showMoneySheet<String>(
-      context,
-      _CategoryPicker(selectedId: _categoryId),
-    );
+    final picked = await pickExpenseCategory(context, selectedId: _categoryId);
     if (picked != null) {
       setState(() {
         _categoryId = picked;
@@ -636,7 +554,7 @@ class _PaySheetState extends State<_PaySheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      _toastError(context, e);
+      toastSaveError(context, e);
     }
   }
 
@@ -687,7 +605,7 @@ class _PaySheetState extends State<_PaySheet> {
           style: AppText.rowTitle.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 10),
-        _ChoicePills<PaymentSource>(
+        ChoicePills<PaymentSource>(
           options: [
             (PaymentSource.budget, 'Monthly money'),
             if (wallets.hasWallets) (PaymentSource.wallet, 'A wallet'),
@@ -773,90 +691,11 @@ class _PaySheetState extends State<_PaySheet> {
           label: 'Date',
           field: FieldButton(
             leading: Icon(Icons.calendar_today_outlined, color: c.muted),
-            label: _dateLabel(_date),
+            label: friendlyDate(_date),
             onTap: _pickDate,
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Expense categories to file a payment under; not-counted ones first,
-/// since that's where repayments usually go.
-class _CategoryPicker extends StatelessWidget {
-  final String? selectedId;
-
-  const _CategoryPicker({required this.selectedId});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    final all = [
-      for (final cat in context.watch<TransactionsRepository>().categories)
-        if (cat.type == TransactionType.expense) cat,
-    ];
-    final categories = <CategoryModel>[
-      ...all.where((cat) => cat.excludeFromBudget),
-      ...all.where((cat) => !cat.excludeFromBudget),
-    ];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Category', style: AppText.section.copyWith(fontSize: 24)),
-          const SizedBox(height: 16),
-          Flexible(
-            child: SingleChildScrollView(
-              child: GroupCard(
-                children: [
-                  for (final cat in categories)
-                    InkWell(
-                      onTap: () => Navigator.pop(context, cat.id),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        child: Row(
-                          children: [
-                            IconTile(
-                              icon: cat.icon,
-                              color: cat.color,
-                              size: 40,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Text(
-                                cat.name,
-                                style: AppText.rowTitle.copyWith(fontSize: 16),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (cat.excludeFromBudget) ...[
-                              const TagBadge('Not counted'),
-                              const SizedBox(width: 8),
-                            ],
-                            Icon(
-                              cat.id == selectedId
-                                  ? Icons.check_circle
-                                  : Icons.circle_outlined,
-                              color: cat.id == selectedId ? c.accent : c.faint,
-                              size: 22,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -904,6 +743,6 @@ Future<void> confirmDeletePayment(
     if (linkedTx) await txRepo.deleteTransaction(payment.transactionId!);
     if (linkedEntry != null) await walletsRepo.deleteEntry(linkedEntry.id);
   } catch (e) {
-    if (context.mounted) _toastError(context, e);
+    if (context.mounted) toastSaveError(context, e);
   }
 }

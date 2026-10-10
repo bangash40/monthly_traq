@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:monthly_traq/models/category_model.dart';
+import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/app_settings.dart';
 import 'package:monthly_traq/app/money.dart';
@@ -612,6 +615,172 @@ class _PersonPickerSheetState extends State<_PersonPickerSheet> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// "Couldn't save" (or the sync timeout's own message) as a snackbar.
+void toastSaveError(BuildContext context, Object error) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        error is SyncTimeoutException
+            ? error.toString()
+            : 'Couldn\'t save. Please try again.',
+      ),
+    ),
+  );
+}
+
+/// An amount as an [AmountField] shows it: "12,500", or "12,500.50".
+String plainAmount(double amount) => GroupedNumberFormatter.formatText(
+  amount == amount.roundToDouble()
+      ? amount.toStringAsFixed(0)
+      : amount.toStringAsFixed(2),
+);
+
+/// "Today", "Tomorrow", "Yesterday", "Mon, 5 Oct", or "5 Oct 2025".
+String friendlyDate(DateTime date) {
+  final now = DateTime.now();
+  if (DateUtils.isSameDay(date, now)) return 'Today';
+  if (DateUtils.isSameDay(date, now.add(const Duration(days: 1)))) {
+    return 'Tomorrow';
+  }
+  if (DateUtils.isSameDay(date, now.subtract(const Duration(days: 1)))) {
+    return 'Yesterday';
+  }
+  return DateFormat(date.year == now.year ? 'EEE, d MMM' : 'd MMM y')
+      .format(date);
+}
+
+/// A row of pill buttons, one of them selected.
+class ChoicePills<T> extends StatelessWidget {
+  final List<(T, String)> options;
+  final T value;
+  final ValueChanged<T> onChanged;
+
+  const ChoicePills({
+    super.key,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final (option, label) in options)
+          Material(
+            color: option == value ? c.primary : c.surfaceHigh,
+            borderRadius: BorderRadius.circular(999),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: () => onChanged(option),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                child: Text(
+                  label,
+                  style: AppText.label.copyWith(
+                    color: option == value ? c.onPrimary : c.ink,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Lets the person pick an expense category to file a payment or saving
+/// under; not-counted ones first, since that's where these usually go.
+/// Returns the category id, or null if dismissed.
+Future<String?> pickExpenseCategory(
+  BuildContext context, {
+  String? selectedId,
+}) => showMoneySheet<String>(context, _CategoryPicker(selectedId: selectedId));
+
+class _CategoryPicker extends StatelessWidget {
+  final String? selectedId;
+
+  const _CategoryPicker({required this.selectedId});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final all = [
+      for (final cat in context.watch<TransactionsRepository>().categories)
+        if (cat.type == TransactionType.expense) cat,
+    ];
+    final categories = <CategoryModel>[
+      ...all.where((cat) => cat.excludeFromBudget),
+      ...all.where((cat) => !cat.excludeFromBudget),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Category', style: AppText.section.copyWith(fontSize: 24)),
+          const SizedBox(height: 16),
+          Flexible(
+            child: SingleChildScrollView(
+              child: GroupCard(
+                children: [
+                  for (final cat in categories)
+                    InkWell(
+                      onTap: () => Navigator.pop(context, cat.id),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          children: [
+                            IconTile(
+                              icon: cat.icon,
+                              color: cat.color,
+                              size: 40,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                cat.name,
+                                style: AppText.rowTitle.copyWith(fontSize: 16),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (cat.excludeFromBudget) ...[
+                              const TagBadge('Not counted'),
+                              const SizedBox(width: 8),
+                            ],
+                            Icon(
+                              cat.id == selectedId
+                                  ? Icons.check_circle
+                                  : Icons.circle_outlined,
+                              color: cat.id == selectedId ? c.accent : c.faint,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

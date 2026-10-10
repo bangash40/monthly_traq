@@ -77,6 +77,7 @@ void main() {
         HomeCard.balance,
         HomeCard.wallets,
         HomeCard.repayments,
+        HomeCard.goals,
         HomeCard.budget,
         HomeCard.dailyAllowance,
         HomeCard.topSpending,

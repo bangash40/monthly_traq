@@ -135,6 +135,39 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    // Something the user is saving up for. doneAt is set once they mark it
+    // done (bought it).
+    function isValidGoal(data) {
+      return data.keys().hasOnly(['name', 'iconKey', 'color', 'target', 'savedBefore', 'targetDate', 'doneAt', 'addSource', 'categoryId', 'walletId', 'createdAt'])
+        && data.keys().hasAll(['name', 'iconKey', 'color', 'target', 'savedBefore', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 60
+        && data.iconKey is string && data.iconKey.size() > 0 && data.iconKey.size() <= 40
+        && data.color is int
+        && data.target is number && data.target > 0
+        && data.savedBefore is number && data.savedBefore >= 0
+        && (!('targetDate' in data.keys()) || data.targetDate == null || data.targetDate is timestamp)
+        && (!('doneAt' in data.keys()) || data.doneAt == null || data.doneAt is timestamp)
+        && (!('addSource' in data.keys()) || data.addSource == null || data.addSource in ['budget', 'wallet', 'none'])
+        && (!('categoryId' in data.keys()) || data.categoryId == null || data.categoryId is string)
+        && (!('walletId' in data.keys()) || data.walletId == null || data.walletId is string)
+        && data.createdAt is timestamp;
+    }
+
+    // Money added to or taken out of a goal, with the expense or wallet
+    // entry it added (if any).
+    function isValidGoalEntry(data) {
+      return data.keys().hasOnly(['goalId', 'kind', 'amount', 'date', 'source', 'transactionId', 'walletEntryId', 'createdAt'])
+        && data.keys().hasAll(['goalId', 'kind', 'amount', 'date', 'source', 'createdAt'])
+        && data.goalId is string
+        && data.kind in ['add', 'takeOut']
+        && data.amount is number && data.amount > 0
+        && data.date is timestamp
+        && data.source in ['budget', 'wallet', 'none']
+        && (!('transactionId' in data.keys()) || data.transactionId == null || data.transactionId is string)
+        && (!('walletEntryId' in data.keys()) || data.walletEntryId == null || data.walletEntryId is string)
+        && data.createdAt is timestamp;
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId) && isValidUserDoc(request.resource.data);
@@ -181,6 +214,18 @@ service cloud.firestore {
       match /repaymentPayments/{paymentId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidRepaymentPayment(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /goals/{goalId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidGoal(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /goalEntries/{entryId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidGoalEntry(request.resource.data);
         allow delete: if isOwner(userId);
       }
     }

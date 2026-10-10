@@ -11,6 +11,7 @@ import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/app/theme_controller.dart';
 import 'package:monthly_traq/dev/sample_data.dart';
 import 'package:monthly_traq/features/money/money_screen.dart';
+import 'package:monthly_traq/features/money/goals_screen.dart';
 import 'package:monthly_traq/features/money/repayments_screen.dart';
 import 'package:monthly_traq/features/settings/about_screen.dart';
 import 'package:monthly_traq/features/settings/appearance_screen.dart';
@@ -23,6 +24,7 @@ import 'package:monthly_traq/features/settings/privacy_policy_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/budget_cycle.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/services/goals_repository.dart';
 import 'package:monthly_traq/services/repayments_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/budget_sheet.dart';
@@ -154,6 +156,7 @@ class ProfileScreen extends StatelessWidget {
     final settings = context.watch<AppSettings>();
     final wallets = context.watch<WalletsRepository>();
     final repayments = context.watch<RepaymentsRepository>();
+    final goals = context.watch<GoalsRepository>();
     final money = context.money;
     final c = context.colors;
 
@@ -207,6 +210,16 @@ class ProfileScreen extends StatelessWidget {
                   final n => '$n repayments',
                 },
                 onTap: () => _push(context, const RepaymentsScreen()),
+              ),
+              SettingsRow(
+                icon: Icons.savings_outlined,
+                label: 'Savings goals',
+                value: switch (goals.goals.length) {
+                  0 => 'Add',
+                  1 => '1 goal',
+                  final n => '$n goals',
+                },
+                onTap: () => _push(context, const GoalsScreen()),
               ),
             ],
           ),

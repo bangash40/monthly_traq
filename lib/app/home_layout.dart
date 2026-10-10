@@ -19,6 +19,12 @@ enum HomeCard {
     'What\'s due next on money you owe. Shows once you add a repayment.',
     Icons.event_repeat,
   ),
+  goals(
+    'Savings goals',
+    'How close you are to what you\'re saving for. Shows once you add a '
+        'goal.',
+    Icons.savings_outlined,
+  ),
   budget(
     'Monthly budget',
     'How much of your budget is left',
@@ -59,6 +65,7 @@ class HomeLayout {
     HomeCard.dailyAllowance,
     HomeCard.wallets,
     HomeCard.repayments,
+    HomeCard.goals,
   };
 
   static final defaults = HomeLayout._(

@@ -33,6 +33,8 @@ const privacyPolicy = [
     'Repayments: the repayments you add (name, who it\'s owed to, the '
         'total, the schedule and due date) and the payments you record on '
         'them.',
+    'Savings goals: the goals you add (name, target and date) and the '
+        'money you record adding to or taking out of them.',
     'Profile photo: if you add one, a compressed copy is stored with your '
         'account.',
     'Settings on your device: your theme, text size and similar '
@@ -61,8 +63,8 @@ const privacyPolicy = [
     [
       'To delete your account in the app, go to Profile → Data → Delete '
           'account. This permanently deletes your transactions, categories, '
-          'wallets, the people in them, repayments, budget, currency, profile '
-          'photo and sign-in. It cannot be undone.',
+          'wallets, the people in them, repayments, savings goals, budget, '
+          'currency, profile photo and sign-in. It cannot be undone.',
       'To delete only your transactions and keep your account, use '
           'Profile → Data → Delete all data.',
       'If you can no longer use the app, email ${AppInfo.supportEmail} from '

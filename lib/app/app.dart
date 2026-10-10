@@ -6,6 +6,7 @@ import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/onboarding_gate.dart';
 import 'package:monthly_traq/app/theme_controller.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/services/goals_repository.dart';
 import 'package:monthly_traq/services/repayments_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 
@@ -19,6 +20,7 @@ class MonthlyTraqApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => TransactionsRepository()),
         ChangeNotifierProvider(create: (context) => WalletsRepository()),
         ChangeNotifierProvider(create: (context) => RepaymentsRepository()),
+        ChangeNotifierProvider(create: (context) => GoalsRepository()),
         ChangeNotifierProvider(create: (context) => ThemeController()),
         ChangeNotifierProvider(create: (context) => AppSettings()),
         ProxyProvider2<TransactionsRepository, AppSettings, MoneyFormatter>(
