@@ -4,6 +4,17 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.8 (build 27) — 2026-10-11
+
+### Added
+- When the connection comes back, the offline strip at the top turns green
+  and says "Back online" for a moment before it goes.
+
+### Fixed
+- Opening the app no longer flashes "You're offline" for a moment while it
+  connects. The offline strip now appears only when the connection has
+  really been lost for a couple of seconds.
+
 ## 1.9.7 (build 26) — 2026-10-10
 
 ### Fixed
