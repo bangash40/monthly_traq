@@ -105,7 +105,19 @@ class _OfflineBannerFrameState extends State<OfflineBannerFrame> {
       children: [
         if (showStrip)
           Material(
-            color: _backOnline ? c.tint(c.incomeFill) : c.tint(c.warningFill),
+            // The green is mixed in stronger than the amber: it's only up
+            // for a moment, so it has to read clearly as "back".
+            color: _backOnline
+                ? Color.alphaBlend(
+                    c.incomeFill.withValues(alpha: 0.38),
+                    c.surface,
+                  )
+                // Light mode's usual tint is close to cream, so the amber is
+                // mixed in a bit stronger there to still read as a sign.
+                : Color.alphaBlend(
+                    c.warningFill.withValues(alpha: c.isDark ? 0.18 : 0.30),
+                    c.surface,
+                  ),
             // Shrunk to the status bar, it still tells screen readers.
             child: Semantics(
               container: true,
