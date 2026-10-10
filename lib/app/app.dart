@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/app_settings.dart';
 import 'package:monthly_traq/app/launch_intro.dart';
 import 'package:monthly_traq/app/money.dart';
+import 'package:monthly_traq/app/offline_banner.dart';
 import 'package:monthly_traq/app/onboarding_gate.dart';
 import 'package:monthly_traq/app/theme_controller.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
@@ -71,7 +72,7 @@ class MonthlyTraqApp extends StatelessWidget {
                     mediaQuery.textScaler.scale(1) * themeController.fontScale,
                   ),
                 ),
-                child: LaunchIntro(child: child!),
+                child: LaunchIntro(child: OfflineBannerFrame(child: child!)),
               );
             },
           );

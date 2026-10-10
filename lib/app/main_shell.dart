@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/launch_intro.dart';
@@ -29,46 +27,6 @@ class _MainShellState extends State<MainShell>
   /// tab switch. Home counts as opened once the launch intro has revealed
   /// it.
   final _visits = [0, 0, 0, 0];
-
-  /// Whether the app was offline at the last build, to notice changes.
-  bool _wasOffline = false;
-
-  /// Whether the offline banner is showing. It waits a moment first: right
-  /// after the app opens it reads from the phone's copy before reaching the
-  /// server, and that blip shouldn't flash "offline" (or "Back online").
-  bool _showOffline = false;
-  Timer? _offlineTimer;
-
-  /// Whether the app has reached the server since it opened. Until then it
-  /// waits longer before saying "offline", since connecting at startup can
-  /// take a few seconds.
-  bool _beenOnline = false;
-
-  /// True for a moment after the connection returns, while the banner says
-  /// "Back online" in green before it goes.
-  bool _backOnline = false;
-  Timer? _backOnlineTimer;
-
-  void _trackConnection({required bool offline, required bool loaded}) {
-    if (loaded && !offline) _beenOnline = true;
-    if (offline == _wasOffline) return;
-    _wasOffline = offline;
-    _offlineTimer?.cancel();
-    _backOnlineTimer?.cancel();
-    if (offline) {
-      _backOnline = false;
-      _offlineTimer = Timer(Duration(seconds: _beenOnline ? 2 : 6), () {
-        if (mounted) setState(() => _showOffline = true);
-      });
-    } else if (_showOffline) {
-      // Only say "Back online" if the person was told they were offline.
-      _showOffline = false;
-      _backOnline = true;
-      _backOnlineTimer = Timer(const Duration(seconds: 2), () {
-        if (mounted) setState(() => _backOnline = false);
-      });
-    }
-  }
 
   @override
   void initState() {
@@ -103,8 +61,6 @@ class _MainShellState extends State<MainShell>
 
   @override
   void dispose() {
-    _offlineTimer?.cancel();
-    _backOnlineTimer?.cancel();
     LaunchIntro.revealed.removeListener(_onRevealed);
     for (final scroller in _scrollers) {
       scroller.dispose();
@@ -143,11 +99,7 @@ class _MainShellState extends State<MainShell>
     final isLoading = context.select<TransactionsRepository, bool>(
       (repo) => repo.isLoading,
     );
-    final isOffline = context.select<TransactionsRepository, bool>(
-      (repo) => repo.isOffline,
-    );
     if (!isLoading) LaunchIntro.markReady();
-    _trackConnection(offline: isOffline && !isLoading, loaded: !isLoading);
 
     final screens = [
       DashboardScreen(
@@ -170,32 +122,6 @@ class _MainShellState extends State<MainShell>
       child: Scaffold(
         body: Column(
           children: [
-            AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              child: !_showOffline && !_backOnline
-                  ? const SizedBox(width: double.infinity)
-                  : Container(
-                      width: double.infinity,
-                      color: _backOnline
-                          ? c.tint(c.incomeFill)
-                          : c.tint(c.warningFill),
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        MediaQuery.paddingOf(context).top + 6,
-                        16,
-                        6,
-                      ),
-                      child: Text(
-                        _backOnline
-                            ? 'Back online'
-                            : "You're offline — showing saved data",
-                        textAlign: TextAlign.center,
-                        style: AppText.caption.copyWith(
-                          color: _backOnline ? c.income : c.warning,
-                        ),
-                      ),
-                    ),
-            ),
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())

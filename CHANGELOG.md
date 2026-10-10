@@ -4,6 +4,15 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.9 (build 28) — 2026-10-11
+
+### Changed
+- The offline notice now shows on every screen — Add transaction, the
+  Money screens and their sheets too — not just the four main tabs.
+
+### Fixed
+- No extra gap under the offline notice.
+
 ## 1.9.8 (build 27) — 2026-10-11
 
 ### Added
