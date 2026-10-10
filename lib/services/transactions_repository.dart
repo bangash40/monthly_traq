@@ -461,14 +461,16 @@ class TransactionsRepository extends ChangeNotifier {
     _savedAt = DateTime.now();
   }
 
-  Future<void> addTransaction(TransactionModel transaction) async {
+  /// Adds [transaction] and returns its new id.
+  Future<String?> addTransaction(TransactionModel transaction) async {
     final userDoc = _userDoc;
-    if (userDoc == null) return;
+    if (userDoc == null) return null;
     // Pick the id up front (what add() does) so the new row is known
     // before the write finishes.
     final doc = userDoc.collection('transactions').doc();
     _markSaved(doc.id);
     await _withTimeout(doc.set(transaction.toMap()));
+    return doc.id;
   }
 
   Future<void> updateTransaction(TransactionModel transaction) async {
@@ -508,6 +510,8 @@ class TransactionsRepository extends ChangeNotifier {
     await _deleteCollection(userDoc.collection('wallets'));
     await _deleteCollection(userDoc.collection('people'));
     await _deleteCollection(userDoc.collection('walletEntries'));
+    await _deleteCollection(userDoc.collection('repayments'));
+    await _deleteCollection(userDoc.collection('repaymentPayments'));
     await _withTimeout(userDoc.delete());
   }
 

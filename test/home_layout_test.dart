@@ -76,6 +76,7 @@ void main() {
         HomeCard.recent,
         HomeCard.balance,
         HomeCard.wallets,
+        HomeCard.repayments,
         HomeCard.budget,
         HomeCard.dailyAllowance,
         HomeCard.topSpending,
@@ -109,7 +110,7 @@ void main() {
       expect(loaded.order.toSet(), HomeCard.values.toSet());
       expect(loaded.order.length, HomeCard.values.length);
       // A missing extra card joins switched off; a missing classic one on.
-      expect(loaded.hidden, {HomeCard.dailyAllowance, HomeCard.wallets});
+      expect(loaded.hidden, HomeLayout.offByDefault);
     });
 
     test('a card new in this version slots into its default place', () {

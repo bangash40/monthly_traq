@@ -224,15 +224,15 @@ class WalletsRepository extends ChangeNotifier {
 
   // Entries
 
-  Future<void> addEntry(WalletEntry entry) async {
+  /// Adds [entry] and returns its new id.
+  Future<String?> addEntry(WalletEntry entry) async {
     final userDoc = _userDoc;
-    if (userDoc == null) return;
+    if (userDoc == null) return null;
+    final doc = userDoc.collection('walletEntries').doc();
     await _withTimeout(
-      userDoc.collection('walletEntries').add({
-        ...entry.toMap(),
-        'createdAt': FieldValue.serverTimestamp(),
-      }),
+      doc.set({...entry.toMap(), 'createdAt': FieldValue.serverTimestamp()}),
     );
+    return doc.id;
   }
 
   Future<void> updateEntry(WalletEntry entry) async {

@@ -30,6 +30,9 @@ const privacyPolicy = [
         'them (amounts, dates and notes), and the people whose money you '
         'keep — the name you give each person and the amounts received from '
         'and sent back to them.',
+    'Repayments: the repayments you add (name, who it\'s owed to, the '
+        'total, the schedule and due date) and the payments you record on '
+        'them.',
     'Profile photo: if you add one, a compressed copy is stored with your '
         'account.',
     'Settings on your device: your theme, text size and similar '
@@ -58,8 +61,8 @@ const privacyPolicy = [
     [
       'To delete your account in the app, go to Profile → Data → Delete '
           'account. This permanently deletes your transactions, categories, '
-          'wallets, the people in them, budget, currency, profile photo and '
-          'sign-in. It cannot be undone.',
+          'wallets, the people in them, repayments, budget, currency, profile '
+          'photo and sign-in. It cannot be undone.',
       'To delete only your transactions and keep your account, use '
           'Profile → Data → Delete all data.',
       'If you can no longer use the app, email ${AppInfo.supportEmail} from '

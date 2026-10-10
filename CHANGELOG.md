@@ -4,6 +4,27 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.3 (build 22) — 2026-10-10
+
+### Added
+- Repayments (Profile → Money → Repayments): track installments, loans and
+  qisht — the total, what's already paid, and how often it's due (daily,
+  monthly, every few months, yearly, or no deadline).
+- The Repayments screen shows what's still owed and due this month, with
+  each repayment's status (Due today, Due in 3 days, Overdue), progress
+  ("12 of 24 paid") and what's left. Each one shows its next due date,
+  payments left, when it'll be done, and every payment.
+- Pay records a payment from your monthly money (it adds the expense in the
+  category you pick — not-counted categories are listed first), from a
+  wallet (it adds a "Spent" entry), or just records it. A full payment
+  moves the due date to the next one. Deleting a payment undoes it,
+  including the expense or wallet entry it added.
+- A Repayments card for Home, off by default — turn it on in Profile →
+  Home screen layout.
+
+### Changed
+- The privacy policy covers repayments.
+
 ## 1.9.1 (build 21) — 2026-10-10
 
 ### Added

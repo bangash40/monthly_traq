@@ -100,6 +100,41 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    // Money the user owes and pays back over time. Without a schedule
+    // (frequency 'none') there's no installment or due date.
+    function isValidRepayment(data) {
+      return data.keys().hasOnly(['name', 'lender', 'total', 'paidBefore', 'frequency', 'everyMonths', 'installment', 'nextDue', 'anchorDay', 'paySource', 'categoryId', 'walletId', 'createdAt'])
+        && data.keys().hasAll(['name', 'total', 'paidBefore', 'frequency', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 60
+        && (!('lender' in data.keys()) || data.lender == null || (data.lender is string && data.lender.size() <= 60))
+        && data.total is number && data.total > 0
+        && data.paidBefore is number && data.paidBefore >= 0
+        && data.frequency in ['daily', 'monthly', 'everyMonths', 'yearly', 'none']
+        && (!('everyMonths' in data.keys()) || data.everyMonths == null || (data.everyMonths is int && data.everyMonths >= 1 && data.everyMonths <= 60))
+        && (!('installment' in data.keys()) || data.installment == null || (data.installment is number && data.installment > 0))
+        && (!('nextDue' in data.keys()) || data.nextDue == null || data.nextDue is timestamp)
+        && (!('anchorDay' in data.keys()) || data.anchorDay == null || (data.anchorDay is int && data.anchorDay >= 1 && data.anchorDay <= 31))
+        && (!('paySource' in data.keys()) || data.paySource == null || data.paySource in ['budget', 'wallet', 'none'])
+        && (!('categoryId' in data.keys()) || data.categoryId == null || data.categoryId is string)
+        && (!('walletId' in data.keys()) || data.walletId == null || data.walletId is string)
+        && data.createdAt is timestamp;
+    }
+
+    // One payment towards a repayment, with the expense or wallet entry it
+    // added (if any) and the due date it moved on from (if it did).
+    function isValidRepaymentPayment(data) {
+      return data.keys().hasOnly(['repaymentId', 'amount', 'date', 'source', 'transactionId', 'walletEntryId', 'advancedFrom', 'createdAt'])
+        && data.keys().hasAll(['repaymentId', 'amount', 'date', 'source', 'createdAt'])
+        && data.repaymentId is string
+        && data.amount is number && data.amount > 0
+        && data.date is timestamp
+        && data.source in ['budget', 'wallet', 'none']
+        && (!('transactionId' in data.keys()) || data.transactionId == null || data.transactionId is string)
+        && (!('walletEntryId' in data.keys()) || data.walletEntryId == null || data.walletEntryId is string)
+        && (!('advancedFrom' in data.keys()) || data.advancedFrom == null || data.advancedFrom is timestamp)
+        && data.createdAt is timestamp;
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId) && isValidUserDoc(request.resource.data);
@@ -134,6 +169,18 @@ service cloud.firestore {
       match /walletEntries/{entryId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidWalletEntry(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /repayments/{repaymentId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidRepayment(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /repaymentPayments/{paymentId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidRepaymentPayment(request.resource.data);
         allow delete: if isOwner(userId);
       }
     }

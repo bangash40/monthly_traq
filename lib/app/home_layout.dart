@@ -14,6 +14,11 @@ enum HomeCard {
         'Shows once you add a wallet.',
     Icons.account_balance_wallet,
   ),
+  repayments(
+    'Repayments',
+    'What\'s due next on money you owe. Shows once you add a repayment.',
+    Icons.event_repeat,
+  ),
   budget(
     'Monthly budget',
     'How much of your budget is left',
@@ -50,7 +55,11 @@ class HomeLayout {
 
   /// Extra cards that start switched off, so the default Home stays the
   /// classic balance → budget → top spending → recent.
-  static const offByDefault = {HomeCard.dailyAllowance, HomeCard.wallets};
+  static const offByDefault = {
+    HomeCard.dailyAllowance,
+    HomeCard.wallets,
+    HomeCard.repayments,
+  };
 
   static final defaults = HomeLayout._(
     List.unmodifiable(HomeCard.values),
