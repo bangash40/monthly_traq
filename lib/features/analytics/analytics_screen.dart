@@ -39,7 +39,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     return Scaffold(
       appBar: AppBar(toolbarHeight: 0),
-      body: ListView(
+      body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
         children: [
           const Text('Analytics', style: AppText.screenTitle),

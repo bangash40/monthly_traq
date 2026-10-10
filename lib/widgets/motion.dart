@@ -97,3 +97,46 @@ class GrowIn extends StatelessWidget {
     );
   }
 }
+
+/// A scrolling list that keeps every child built while it's scrolled out of
+/// view. A plain ListView drops far-away children and builds them fresh on
+/// the way back, so their [CountUp]s, [GrowIn]s and bars would play again
+/// from zero each time. Fine for screen-length lists, not endless ones.
+/// Children keep their own keys, so a reordered child keeps its state.
+class KeptAliveListView extends StatelessWidget {
+  final EdgeInsetsGeometry? padding;
+  final List<Widget> children;
+
+  const KeptAliveListView({super.key, this.padding, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: padding,
+      children: [
+        for (final child in children) _KeptAlive(key: child.key, child: child),
+      ],
+    );
+  }
+}
+
+class _KeptAlive extends StatefulWidget {
+  final Widget child;
+
+  const _KeptAlive({super.key, required this.child});
+
+  @override
+  State<_KeptAlive> createState() => _KeptAliveState();
+}
+
+class _KeptAliveState extends State<_KeptAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}

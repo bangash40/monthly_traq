@@ -88,7 +88,7 @@ class GoalsScreen extends StatelessWidget {
 
     return SubPageScaffold(
       title: 'Savings goals',
-      body: ListView(
+      body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
         children: [
           if (!repo.hasGoals)
@@ -307,7 +307,7 @@ class GoalScreen extends StatelessWidget {
         onPressed: () => showGoalEditor(context, existing: g),
         icon: Icon(Icons.edit_outlined, color: c.ink),
       ),
-      body: ListView(
+      body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
         children: [
           AppCard(

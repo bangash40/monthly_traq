@@ -96,7 +96,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     return Scaffold(
       appBar: AppBar(toolbarHeight: 0),
-      body: ListView(
+      body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
         children: [
           const Text('Transactions', style: AppText.screenTitle),

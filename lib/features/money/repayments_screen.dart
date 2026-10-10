@@ -94,7 +94,7 @@ class RepaymentsScreen extends StatelessWidget {
 
     return SubPageScaffold(
       title: 'Repayments',
-      body: ListView(
+      body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
         children: [
           if (!repo.hasRepayments)
@@ -327,7 +327,7 @@ class RepaymentScreen extends StatelessWidget {
         onPressed: () => showRepaymentEditor(context, existing: r),
         icon: Icon(Icons.edit_outlined, color: c.ink),
       ),
-      body: ListView(
+      body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
         children: [
           AppCard(

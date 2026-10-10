@@ -4,6 +4,15 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.6 (build 25) — 2026-10-10
+
+### Fixed
+- Scrolling down and back up no longer replays the count-up and bar
+  animations. On a long Home, the balance used to count up from zero again
+  every time it came back into view; it now plays once when the app opens.
+  The same fix covers Transactions, Analytics, category details,
+  Repayments and Savings goals.
+
 ## 1.9.5 (build 24) — 2026-10-10
 
 ### Added

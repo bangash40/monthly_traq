@@ -10,6 +10,7 @@ import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/charts.dart';
 import 'package:monthly_traq/widgets/transaction_rows.dart';
+import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
 
 /// One category in the month Analytics is showing: its total, its share,
@@ -37,7 +38,7 @@ class CategoryDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(toolbarHeight: 0),
-      body: ListView(
+      body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
         children: [
           Row(

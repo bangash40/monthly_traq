@@ -162,7 +162,7 @@ class DashboardScreen extends StatelessWidget {
         ..add(
           SizedBox(height: children.length == 1 ? 20 : (hasHeader ? 24 : 16)),
         )
-        ..add(section);
+        ..add(KeyedSubtree(key: ValueKey(card), child: section));
     }
 
     // Privacy mode swaps in a formatter that hides every amount, for Home
@@ -171,7 +171,7 @@ class DashboardScreen extends StatelessWidget {
       value: settings.amountsHidden ? money.hidden : money,
       child: Scaffold(
         appBar: AppBar(toolbarHeight: 0),
-        body: ListView(
+        body: KeptAliveListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
           children: children,
         ),
