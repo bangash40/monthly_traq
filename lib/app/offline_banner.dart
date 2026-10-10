@@ -10,11 +10,12 @@ import 'package:monthly_traq/services/transactions_repository.dart';
 /// server. When the connection drops a strip slides in saying changes will
 /// sync later; after a few seconds it shrinks back so only the status bar
 /// stays amber — a quiet sign that costs no space, however long they're
-/// offline. When the connection returns the strip turns green and says
-/// "Back online" for a moment, then goes.
+/// offline. When the connection returns the status bar turns green for a
+/// moment, then goes.
 ///
-/// The strip takes the status bar's place, so the screens below don't add
-/// their own gap for it.
+/// The strip takes the status bar's place, and appears and goes in the same
+/// frame the screen below gives up or gets back its status-bar gap, so the
+/// space at the top never changes and nothing jumps.
 class OfflineBannerFrame extends StatefulWidget {
   final Widget child;
 
@@ -28,7 +29,7 @@ class _OfflineBannerFrameState extends State<OfflineBannerFrame> {
   /// How long the message stays before the strip shrinks to the status bar.
   static const _messageTime = Duration(seconds: 5);
 
-  /// How long "Back online" stays once the connection is back.
+  /// How long the status bar stays green once the connection is back.
   static const _backOnlineTime = Duration(seconds: 2);
 
   /// Whether the app was offline at the last build, to notice changes.
@@ -76,7 +77,7 @@ class _OfflineBannerFrameState extends State<OfflineBannerFrame> {
         });
       });
     } else if (_showOffline) {
-      // "Back online" only if the person was told they were offline.
+      // Green only if the person was told they were offline.
       _showOffline = false;
       _showMessage = false;
       _backOnline = true;
@@ -109,7 +110,11 @@ class _OfflineBannerFrameState extends State<OfflineBannerFrame> {
             child: Semantics(
               container: true,
               liveRegion: true,
-              label: _backOnline || _showMessage ? null : 'You\'re offline',
+              label: _backOnline
+                  ? 'Back online'
+                  : _showMessage
+                  ? null
+                  : 'You\'re offline',
               child: Padding(
                 padding: EdgeInsets.only(top: top),
                 child: AnimatedSize(
@@ -117,16 +122,7 @@ class _OfflineBannerFrameState extends State<OfflineBannerFrame> {
                   curve: Curves.easeOutCubic,
                   child: SizedBox(
                     width: double.infinity,
-                    child: _backOnline
-                        ? Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                            child: Text(
-                              'Back online',
-                              textAlign: TextAlign.center,
-                              style: AppText.caption.copyWith(color: c.income),
-                            ),
-                          )
-                        : _showMessage
+                    child: _showMessage
                         ? Padding(
                             padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                             child: Text(
