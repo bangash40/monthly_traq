@@ -50,7 +50,11 @@ String _plain(double amount) => GroupedNumberFormatter.formatText(
 // Wallet: add / edit / delete
 
 Future<void> showWalletEditor(BuildContext context, {WalletModel? existing}) =>
-    showMoneySheet<void>(context, _WalletEditor(existing: existing));
+    showMoneySheet<void>(
+      context,
+      _WalletEditor(existing: existing),
+      guarded: true,
+    );
 
 class _WalletEditor extends StatefulWidget {
   final WalletModel? existing;
@@ -68,13 +72,23 @@ class _WalletEditorState extends State<_WalletEditor> {
         ? ''
         : _plain(widget.existing!.openingBalance),
   );
-  late IconData _icon =
+  late final IconData _initialIcon =
       widget.existing?.icon ?? iconForKey('account_balance_wallet');
+  late IconData _icon = _initialIcon;
+  late final String _initialName = widget.existing?.name ?? '';
+  late final String _initialOpening = widget.existing == null
+      ? ''
+      : _plain(widget.existing!.openingBalance);
   String? _nameError;
   String? _amountError;
   bool _saving = false;
 
   bool get _isEditing => widget.existing != null;
+
+  bool _isDirty() =>
+      _name.text != _initialName ||
+      _opening.text != _initialOpening ||
+      _icon != _initialIcon;
 
   @override
   void dispose() {
@@ -96,8 +110,26 @@ class _WalletEditorState extends State<_WalletEditor> {
     });
     if (_nameError != null || _amountError != null) return;
 
-    setState(() => _saving = true);
     final repo = context.read<WalletsRepository>();
+    final sameName = repo.wallets.any(
+      (w) =>
+          w.id != widget.existing?.id &&
+          w.name.trim().toLowerCase() == name.toLowerCase(),
+    );
+    if (sameName) {
+      final proceed = await confirmDialog(
+        context,
+        title: 'You already have $name',
+        message: _isEditing
+            ? 'Another wallet is called $name. Use the same name for both?'
+            : 'Add another wallet with the same name?',
+        confirmLabel: _isEditing ? 'Save anyway' : 'Add anyway',
+        cancelLabel: 'Go back',
+      );
+      if (proceed != true || !mounted) return;
+    }
+
+    setState(() => _saving = true);
     try {
       final existing = widget.existing;
       if (existing == null) {
@@ -124,28 +156,12 @@ class _WalletEditorState extends State<_WalletEditor> {
 
   Future<void> _delete() async {
     final existing = widget.existing!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Delete ${existing.name}?'),
-        content: const Text(
+    final confirmed = await _confirmDelete(
+      context,
+      title: 'Delete ${existing.name}?',
+      message:
           'Everything recorded in it is deleted too, including money you '
           'received in it from others and moves to or from it.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(
-              foregroundColor: dialogContext.colors.spending,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
     if (confirmed != true || !mounted) return;
     final navigator = Navigator.of(context);
@@ -162,6 +178,7 @@ class _WalletEditorState extends State<_WalletEditor> {
     final c = context.colors;
     return MoneySheet(
       title: _isEditing ? 'Edit wallet' : 'New wallet',
+      isDirty: _isDirty,
       trailing: _isEditing
           ? IconButton(
               tooltip: 'Delete wallet',
@@ -272,6 +289,7 @@ Future<void> showEntrySheet(
       personId: personId,
       existing: existing,
     ),
+    guarded: true,
   );
 }
 
@@ -299,25 +317,12 @@ Future<bool?> _confirmDelete(
   BuildContext context, {
   required String title,
   required String message,
-}) => showDialog<bool>(
-  context: context,
-  builder: (dialogContext) => AlertDialog(
-    title: Text(title),
-    content: Text(message),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(dialogContext, false),
-        child: const Text('Cancel'),
-      ),
-      TextButton(
-        onPressed: () => Navigator.pop(dialogContext, true),
-        style: TextButton.styleFrom(
-          foregroundColor: dialogContext.colors.spending,
-        ),
-        child: const Text('Delete'),
-      ),
-    ],
-  ),
+}) => confirmDialog(
+  context,
+  title: title,
+  message: message,
+  confirmLabel: 'Delete',
+  destructive: true,
 );
 
 class _EntrySheet extends StatefulWidget {
@@ -369,12 +374,47 @@ class _EntrySheetState extends State<_EntrySheet> {
       if (existing.personId != null) {
         _person = PersonChoice.existing(existing.personId!);
       }
-      return;
+    } else {
+      if (widget.personId != null) {
+        _person = PersonChoice.existing(widget.personId!);
+      }
+      _walletId = widget.walletId ?? _defaultWallet(repo);
     }
-    if (widget.personId != null) {
-      _person = PersonChoice.existing(widget.personId!);
-    }
-    _walletId = widget.walletId ?? _defaultWallet(repo);
+    _initial; // Record the starting point now, before anything changes.
+  }
+
+  // What the sheet opened with, to tell whether anything was changed.
+  late final _initial = (
+    amount: _amount.text,
+    note: _note.text,
+    date: _date,
+    walletId: _walletId,
+    toWalletId: _toWalletId,
+    person: _person?.personId ?? _person?.newName,
+  );
+
+  bool _isDirty() =>
+      _amount.text != _initial.amount ||
+      _note.text != _initial.note ||
+      _date != _initial.date ||
+      _walletId != _initial.walletId ||
+      _toWalletId != _initial.toWalletId ||
+      (_person?.personId ?? _person?.newName) != _initial.person;
+
+  /// Spent, Send back and Move take money out of [_walletId].
+  bool get _takesOut =>
+      _kind == WalletEntryKind.spend ||
+      _kind == WalletEntryKind.giveBack ||
+      _kind == WalletEntryKind.transfer;
+
+  /// What the wallet has to take this from: its balance, plus this entry's
+  /// own amount when editing it (it's already been taken out).
+  double _available(WalletsRepository repo) {
+    final existing = widget.existing;
+    final already = existing != null && existing.walletId == _walletId
+        ? existing.amount
+        : 0.0;
+    return repo.ledger.of(_walletId!).total + already;
   }
 
   /// Sending back starts on the wallet holding most of that person's
@@ -468,6 +508,23 @@ class _EntrySheetState extends State<_EntrySheet> {
         _toWalletError != null ||
         _amountError != null) {
       return;
+    }
+
+    if (_takesOut) {
+      final available = _available(repo);
+      if (amount! > available + 0.005) {
+        final walletName = repo.walletById(_walletId)?.name ?? 'This wallet';
+        final proceed = await confirmDialog(
+          context,
+          title: 'More than $walletName has',
+          message:
+              '$walletName has ${signedMoney(money, available)}. Saving '
+              'this takes it to ${signedMoney(money, available - amount)}.',
+          confirmLabel: 'Save anyway',
+          cancelLabel: 'Go back',
+        );
+        if (proceed != true || !mounted) return;
+      }
     }
 
     setState(() => _saving = true);
@@ -658,6 +715,7 @@ class _EntrySheetState extends State<_EntrySheet> {
     return MoneySheet(
       title: title,
       subtitle: subtitle,
+      isDirty: _isDirty,
       trailing: _isEditing
           ? IconButton(
               tooltip: 'Delete entry',
@@ -727,7 +785,7 @@ class _EntrySheetState extends State<_EntrySheet> {
 // A person: rename / delete
 
 Future<void> showPersonEditor(BuildContext context, PersonModel person) =>
-    showMoneySheet<void>(context, _PersonEditor(person: person));
+    showMoneySheet<void>(context, _PersonEditor(person: person), guarded: true);
 
 class _PersonEditor extends StatefulWidget {
   final PersonModel person;
@@ -753,6 +811,25 @@ class _PersonEditorState extends State<_PersonEditor> {
     final name = _name.text.trim();
     setState(() => _error = name.isEmpty ? 'Enter a name' : null);
     if (_error != null) return;
+
+    final sameName = context.read<WalletsRepository>().people.any(
+      (p) =>
+          p.id != widget.person.id &&
+          p.name.trim().toLowerCase() == name.toLowerCase(),
+    );
+    if (sameName) {
+      final proceed = await confirmDialog(
+        context,
+        title: '$name is already in your list',
+        message:
+            'Two people with the same name are easy to mix up. Use it '
+            'anyway?',
+        confirmLabel: 'Save anyway',
+        cancelLabel: 'Go back',
+      );
+      if (proceed != true || !mounted) return;
+    }
+
     setState(() => _saving = true);
     try {
       await context.read<WalletsRepository>().renamePerson(
@@ -791,6 +868,7 @@ class _PersonEditorState extends State<_PersonEditor> {
     final c = context.colors;
     return MoneySheet(
       title: 'Edit person',
+      isDirty: () => _name.text != widget.person.name,
       trailing: IconButton(
         tooltip: 'Delete person',
         onPressed: _delete,
@@ -825,6 +903,7 @@ Future<void> showCorrectBalanceSheet(
 ) => showMoneySheet<void>(
   context,
   _CorrectBalanceSheet(wallet: wallet, current: current),
+  guarded: true,
 );
 
 class _CorrectBalanceSheet extends StatefulWidget {
@@ -872,6 +951,7 @@ class _CorrectBalanceSheetState extends State<_CorrectBalanceSheet> {
     final money = context.money;
     return MoneySheet(
       title: 'Correct ${widget.wallet.name}',
+      isDirty: () => _actual.text != _plain(widget.current),
       subtitle:
           'The app shows ${money.format(widget.current)}. Enter what your '
           '${widget.wallet.name} actually has, and the difference is recorded.',

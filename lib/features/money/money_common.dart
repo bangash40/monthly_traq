@@ -84,6 +84,11 @@ class MoneySheet extends StatelessWidget {
   /// Extra actions shown beside the title (e.g. delete).
   final Widget? trailing;
 
+  /// Whether something was typed or changed. When it returns true, back
+  /// and tapping outside ask before discarding it. Open such sheets with
+  /// `showMoneySheet(guarded: true)` so a swipe can't skip the question.
+  final bool Function()? isDirty;
+
   const MoneySheet({
     super.key,
     required this.title,
@@ -91,10 +96,36 @@ class MoneySheet extends StatelessWidget {
     required this.children,
     required this.button,
     this.trailing,
+    this.isDirty,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = this.isDirty;
+    if (isDirty == null) return _build(context);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final navigator = Navigator.of(context);
+        if (!isDirty() ||
+            await confirmDialog(
+                  context,
+                  title: 'Discard changes?',
+                  message: 'What you typed here won\'t be saved.',
+                  confirmLabel: 'Discard',
+                  cancelLabel: 'Keep editing',
+                  destructive: true,
+                ) ==
+                true) {
+          navigator.pop();
+        }
+      },
+      child: _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
     final c = context.colors;
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -139,13 +170,52 @@ class MoneySheet extends StatelessWidget {
   }
 }
 
-Future<T?> showMoneySheet<T>(BuildContext context, Widget sheet) =>
-    showModalBottomSheet<T>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) => sheet,
-    );
+/// Opens [sheet] from the bottom. A [guarded] sheet (one you type into)
+/// can't be swiped away, so closing it always goes through its
+/// [MoneySheet.isDirty] check.
+Future<T?> showMoneySheet<T>(
+  BuildContext context,
+  Widget sheet, {
+  bool guarded = false,
+}) => showModalBottomSheet<T>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  enableDrag: !guarded,
+  builder: (context) => sheet,
+);
+
+/// A two-button question: true for [confirmLabel], false or null for
+/// [cancelLabel] or dismissing it.
+Future<bool?> confirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmLabel,
+  String cancelLabel = 'Cancel',
+  bool destructive = false,
+}) => showDialog<bool>(
+  context: context,
+  builder: (dialogContext) => AlertDialog(
+    title: Text(title),
+    content: Text(message),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(dialogContext, false),
+        child: Text(cancelLabel),
+      ),
+      TextButton(
+        onPressed: () => Navigator.pop(dialogContext, true),
+        style: destructive
+            ? TextButton.styleFrom(
+                foregroundColor: dialogContext.colors.spending,
+              )
+            : null,
+        child: Text(confirmLabel),
+      ),
+    ],
+  ),
+);
 
 /// What the wallet picker returns: a wallet, or "no wallet".
 class WalletChoice {
