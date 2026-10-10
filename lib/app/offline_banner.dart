@@ -29,6 +29,8 @@ class _OfflineBannerFrameState extends State<OfflineBannerFrame> {
   /// How long the message stays before the strip shrinks to the status bar.
   static const _messageTime = Duration(seconds: 5);
 
+  static const _backOnlineGreen = Color(0xFF4CD964);
+
   /// How long the status bar stays green once the connection is back.
   static const _backOnlineTime = Duration(seconds: 2);
 
@@ -100,51 +102,55 @@ class _OfflineBannerFrameState extends State<OfflineBannerFrame> {
     final mediaQuery = MediaQuery.of(context);
     final top = mediaQuery.padding.top;
     final showStrip = _showOffline || _backOnline;
+    // A soft amber that can sit there quietly for as long as they're
+    // offline; bright green for the moment the connection is back.
+    final stripColor = _backOnline
+        ? _backOnlineGreen
+        : Color.alphaBlend(
+            c.warningFill.withValues(alpha: c.isDark ? 0.18 : 0.30),
+            c.surface,
+          );
 
     return Column(
       children: [
         if (showStrip)
-          Material(
-            // The green is mixed in stronger than the amber: it's only up
-            // for a moment, so it has to read clearly as "back".
-            color: _backOnline
-                ? Color.alphaBlend(
-                    c.incomeFill.withValues(alpha: 0.38),
-                    c.surface,
-                  )
-                // Light mode's usual tint is close to cream, so the amber is
-                // mixed in a bit stronger there to still read as a sign.
-                : Color.alphaBlend(
-                    c.warningFill.withValues(alpha: c.isDark ? 0.18 : 0.30),
-                    c.surface,
-                  ),
-            // Shrunk to the status bar, it still tells screen readers.
-            child: Semantics(
-              container: true,
-              liveRegion: true,
-              label: _backOnline
-                  ? 'Back online'
-                  : _showMessage
-                  ? null
-                  : 'You\'re offline',
-              child: Padding(
-                padding: EdgeInsets.only(top: top),
-                child: AnimatedSize(
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOutCubic,
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: _showMessage
-                        ? Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                            child: Text(
-                              'You\'re offline. Changes will sync when '
-                              'you\'re back.',
-                              textAlign: TextAlign.center,
-                              style: AppText.caption.copyWith(color: c.warning),
-                            ),
-                          )
-                        : null,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            color: stripColor,
+            // Gives the message the app's text style (this sits above any
+            // screen, outside their Material).
+            child: Material(
+              type: MaterialType.transparency,
+              // Shrunk to the status bar, it still tells screen readers.
+              child: Semantics(
+                container: true,
+                liveRegion: true,
+                label: _backOnline
+                    ? 'Back online'
+                    : _showMessage
+                    ? null
+                    : 'You\'re offline',
+                child: Padding(
+                  padding: EdgeInsets.only(top: top),
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: _showMessage
+                          ? Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                              child: Text(
+                                'You\'re offline. Changes will sync when '
+                                'you\'re back.',
+                                textAlign: TextAlign.center,
+                                style: AppText.caption.copyWith(
+                                  color: c.warning,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
                   ),
                 ),
               ),

@@ -4,6 +4,13 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.14 (build 33) — 2026-10-11
+
+### Changed
+- When the connection comes back, the status bar turns a bright green
+  (#4CD964) for a moment, the same in light and dark mode, fading in from
+  the amber. The offline amber stays soft.
+
 ## 1.9.13 (build 32) — 2026-10-11
 
 ### Changed
