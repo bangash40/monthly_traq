@@ -10,12 +10,32 @@ import 'package:monthly_traq/services/goals_repository.dart';
 import 'package:monthly_traq/services/investments_repository.dart';
 import 'package:monthly_traq/services/repayments_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
+import 'package:monthly_traq/services/write_sync.dart';
+
+/// The app-wide snackbar host, for notes that come from outside any screen.
+final _messenger = GlobalKey<ScaffoldMessengerState>();
+
+/// "Saved on your phone…" after a save or delete made without a
+/// connection. It waits a moment so a screen's own message (a delete's
+/// "Undo") shows first and stays in reach.
+void _showSavedOfflineNote() {
+  Future.delayed(const Duration(milliseconds: 700), () {
+    _messenger.currentState?.showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Saved on your phone. It\'ll sync when you\'re back online.',
+        ),
+      ),
+    );
+  });
+}
 
 class MonthlyTraqApp extends StatelessWidget {
   const MonthlyTraqApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    onSavedOffline = _showSavedOfflineNote;
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => TransactionsRepository()),
@@ -37,6 +57,7 @@ class MonthlyTraqApp extends StatelessWidget {
           final theme = themeController.theme;
           return MaterialApp(
             title: 'MonthlyTraq',
+            scaffoldMessengerKey: _messenger,
             debugShowCheckedModeBanner: false,
             home: const OnboardingGate(),
             theme: theme.themeData(Brightness.light),

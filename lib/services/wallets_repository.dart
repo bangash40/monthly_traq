@@ -5,10 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/models/wallet_models.dart';
-import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/wallet_ledger.dart';
-
-const _writeTimeout = Duration(seconds: 10);
+import 'package:monthly_traq/services/write_sync.dart';
 
 /// The signed-in user's wallets, the people whose money they keep, and
 /// everything that happened in the wallets — mirrored live from
@@ -60,11 +58,6 @@ class WalletsRepository extends ChangeNotifier {
     final uid = _auth.currentUser?.uid;
     return uid == null ? null : _firestore.collection('users').doc(uid);
   }
-
-  Future<T> _withTimeout<T>(Future<T> future) => future.timeout(
-    _writeTimeout,
-    onTimeout: () => throw SyncTimeoutException(),
-  );
 
   void _changed() {
     _ledger = null;
@@ -152,7 +145,7 @@ class WalletsRepository extends ChangeNotifier {
       openingBalance: openingBalance,
       sortOrder: DateTime.now().millisecondsSinceEpoch,
     );
-    await _withTimeout(
+    await settleWrite(
       userDoc.collection('wallets').add({
         ...wallet.toMap(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -163,7 +156,7 @@ class WalletsRepository extends ChangeNotifier {
   Future<void> updateWallet(WalletModel wallet) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc
           .collection('wallets')
           .doc(wallet.id)
@@ -183,7 +176,7 @@ class WalletsRepository extends ChangeNotifier {
       batch.delete(userDoc.collection('walletEntries').doc(e.id));
     }
     batch.delete(userDoc.collection('wallets').doc(id));
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 
   // People
@@ -193,7 +186,7 @@ class WalletsRepository extends ChangeNotifier {
     final userDoc = _userDoc;
     if (userDoc == null) return null;
     final doc = userDoc.collection('people').doc();
-    await _withTimeout(
+    await settleWrite(
       doc.set({
         ...PersonModel(id: doc.id, name: name).toMap(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -205,7 +198,7 @@ class WalletsRepository extends ChangeNotifier {
   Future<void> renamePerson(String id, String name) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc.collection('people').doc(id).update({'name': name}),
     );
   }
@@ -219,7 +212,7 @@ class WalletsRepository extends ChangeNotifier {
       batch.delete(userDoc.collection('walletEntries').doc(e.id));
     }
     batch.delete(userDoc.collection('people').doc(id));
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 
   // Entries
@@ -229,7 +222,7 @@ class WalletsRepository extends ChangeNotifier {
     final userDoc = _userDoc;
     if (userDoc == null) return null;
     final doc = userDoc.collection('walletEntries').doc();
-    await _withTimeout(
+    await settleWrite(
       doc.set({...entry.toMap(), 'createdAt': FieldValue.serverTimestamp()}),
     );
     return doc.id;
@@ -238,7 +231,7 @@ class WalletsRepository extends ChangeNotifier {
   Future<void> updateEntry(WalletEntry entry) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc
           .collection('walletEntries')
           .doc(entry.id)
@@ -249,7 +242,7 @@ class WalletsRepository extends ChangeNotifier {
   Future<void> deleteEntry(String id) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(userDoc.collection('walletEntries').doc(id).delete());
+    await settleWrite(userDoc.collection('walletEntries').doc(id).delete());
   }
 
   /// Records the difference between what the app shows ([current]) and the

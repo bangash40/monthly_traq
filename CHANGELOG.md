@@ -4,6 +4,25 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.7 (build 26) — 2026-10-10
+
+### Fixed
+- Saving or deleting without internet no longer waits 10 seconds and then
+  says "Could not save" for something that was saved. The screen closes
+  right away, the change shows straight away, and it syncs once you're back
+  online — so tapping Save again no longer risks a duplicate. This covers
+  every save and delete: transactions, categories, budget settings,
+  wallets, repayments, goals and investments.
+
+### Added
+- A short note after saving or deleting offline: "Saved on your phone.
+  It'll sync when you're back online."
+
+### Changed
+- Deleting your account or all your data still needs a connection;
+  offline it now says "No internet connection. Try again when you're back
+  online."
+
 ## 1.9.6 (build 25) — 2026-10-10
 
 ### Fixed

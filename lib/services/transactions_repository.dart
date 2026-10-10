@@ -12,16 +12,16 @@ import 'package:monthly_traq/services/budget_cycle.dart';
 import 'package:monthly_traq/services/budget_win.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/services/daily_allowance.dart';
+import 'package:monthly_traq/services/write_sync.dart';
 
-/// Thrown when a Firestore write doesn't get an ack within [_writeTimeout] —
-/// almost always because the device is offline. The write itself is NOT
-/// cancelled: Firestore's own offline queue still holds it and will sync it
-/// once connectivity returns, so this just stops the UI from waiting
-/// forever with no feedback.
+/// Thrown when something that needs the server — deleting the account or
+/// all data, reading what a category delete affects — gets no answer within
+/// [_writeTimeout], almost always because the device is offline. Ordinary
+/// saves and deletes don't wait for the server (see settleWrite).
 class SyncTimeoutException implements Exception {
   @override
   String toString() =>
-      "No internet connection. This will be saved automatically once you're back online.";
+      "No internet connection. Try again when you're back online.";
 }
 
 const _writeTimeout = Duration(seconds: 10);
@@ -174,6 +174,7 @@ class TransactionsRepository extends ChangeNotifier {
           );
           isLoading = false;
           isOffline = snap.metadata.isFromCache;
+          firestoreOffline = isOffline;
           notifyListeners();
         });
 
@@ -413,7 +414,7 @@ class TransactionsRepository extends ChangeNotifier {
   Future<void> updateCurrency(CurrencyOption currency) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc.set({
         'currencySymbol': currency.symbol,
         'currencyCode': currency.code,
@@ -424,7 +425,7 @@ class TransactionsRepository extends ChangeNotifier {
   Future<void> updateMonthlyBudget(double budget) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc.set({'monthlyBudget': budget}, SetOptions(merge: true)),
     );
   }
@@ -432,7 +433,7 @@ class TransactionsRepository extends ChangeNotifier {
   Future<void> updateMonthStartDay(int day) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc.set({'monthStartDay': day}, SetOptions(merge: true)),
     );
   }
@@ -441,7 +442,7 @@ class TransactionsRepository extends ChangeNotifier {
   Future<void> updatePhotoBase64(String? base64) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc.set({'photoBase64': base64}, SetOptions(merge: true)),
     );
   }
@@ -469,7 +470,7 @@ class TransactionsRepository extends ChangeNotifier {
     // before the write finishes.
     final doc = userDoc.collection('transactions').doc();
     _markSaved(doc.id);
-    await _withTimeout(doc.set(transaction.toMap()));
+    await settleWrite(doc.set(transaction.toMap()));
     return doc.id;
   }
 
@@ -477,7 +478,7 @@ class TransactionsRepository extends ChangeNotifier {
     final userDoc = _userDoc;
     if (userDoc == null) return;
     _markSaved(transaction.id);
-    await _withTimeout(
+    await settleWrite(
       userDoc
           .collection('transactions')
           .doc(transaction.id)
@@ -488,7 +489,7 @@ class TransactionsRepository extends ChangeNotifier {
   Future<void> deleteTransaction(String id) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(userDoc.collection('transactions').doc(id).delete());
+    await settleWrite(userDoc.collection('transactions').doc(id).delete());
   }
 
   /// Permanently deletes every transaction on the account (categories and
@@ -540,7 +541,7 @@ class TransactionsRepository extends ChangeNotifier {
   Future<void> restoreTransaction(TransactionModel transaction) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc
           .collection('transactions')
           .doc(transaction.id)
@@ -581,11 +582,9 @@ class TransactionsRepository extends ChangeNotifier {
       sortOrder: sortOrder,
       excludeFromBudget: excludeFromBudget,
     );
-    final ref = await _withTimeout(
-      userDoc.collection('categories').add({
-        ...category.toMap(),
-        'createdAt': FieldValue.serverTimestamp(),
-      }),
+    final ref = userDoc.collection('categories').doc();
+    await settleWrite(
+      ref.set({...category.toMap(), 'createdAt': FieldValue.serverTimestamp()}),
     );
 
     return CategoryModel(
@@ -602,7 +601,7 @@ class TransactionsRepository extends ChangeNotifier {
   Future<void> updateCategory(CategoryModel category) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc
           .collection('categories')
           .doc(category.id)
@@ -623,7 +622,7 @@ class TransactionsRepository extends ChangeNotifier {
         {'sortOrder': i},
       );
     }
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 
   Future<void> deleteCategory(String id) async {
@@ -642,7 +641,7 @@ class TransactionsRepository extends ChangeNotifier {
       batch.update(doc.reference, {'categoryId': null});
     }
     batch.delete(userDoc.collection('categories').doc(id));
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 
   /// Seeds default categories and a starting budget for a brand-new
@@ -690,6 +689,6 @@ class TransactionsRepository extends ChangeNotifier {
       i++;
     }
 
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 }

@@ -5,9 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:monthly_traq/models/repayment_models.dart';
 import 'package:monthly_traq/services/repayment_schedule.dart';
-import 'package:monthly_traq/services/transactions_repository.dart';
-
-const _writeTimeout = Duration(seconds: 10);
+import 'package:monthly_traq/services/write_sync.dart';
 
 /// The signed-in user's repayments (money they owe and pay back over time)
 /// and the payments made on them — mirrored live from
@@ -51,11 +49,6 @@ class RepaymentsRepository extends ChangeNotifier {
     final uid = _auth.currentUser?.uid;
     return uid == null ? null : _firestore.collection('users').doc(uid);
   }
-
-  Future<T> _withTimeout<T>(Future<T> future) => future.timeout(
-    _writeTimeout,
-    onTimeout: () => throw SyncTimeoutException(),
-  );
 
   void _onAuthChanged(User? user) {
     for (final sub in _subs) {
@@ -107,7 +100,7 @@ class RepaymentsRepository extends ChangeNotifier {
   Future<void> addRepayment(RepaymentModel repayment) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc.collection('repayments').add({
         ...repayment.toMap(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -118,7 +111,7 @@ class RepaymentsRepository extends ChangeNotifier {
   Future<void> updateRepayment(RepaymentModel repayment) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc
           .collection('repayments')
           .doc(repayment.id)
@@ -136,7 +129,7 @@ class RepaymentsRepository extends ChangeNotifier {
       batch.delete(userDoc.collection('repaymentPayments').doc(p.id));
     }
     batch.delete(userDoc.collection('repayments').doc(id));
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 
   /// Records a payment. A full installment (or more) moves the due date on
@@ -183,7 +176,7 @@ class RepaymentsRepository extends ChangeNotifier {
         'categoryId': ?categoryId,
         'walletId': ?walletId,
       });
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 
   /// Deletes a payment. If it moved the due date on (and nothing moved it
@@ -202,6 +195,6 @@ class RepaymentsRepository extends ChangeNotifier {
         'nextDue': Timestamp.fromDate(from),
       });
     }
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 }

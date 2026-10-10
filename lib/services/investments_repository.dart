@@ -6,9 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/models/investment_models.dart';
 import 'package:monthly_traq/services/investment_math.dart';
-import 'package:monthly_traq/services/transactions_repository.dart';
-
-const _writeTimeout = Duration(seconds: 10);
+import 'package:monthly_traq/services/write_sync.dart';
 
 /// The signed-in user's investment accounts and what happened in them —
 /// mirrored live from `users/{uid}/investAccounts` and
@@ -54,11 +52,6 @@ class InvestmentsRepository extends ChangeNotifier {
     final uid = _auth.currentUser?.uid;
     return uid == null ? null : _firestore.collection('users').doc(uid);
   }
-
-  Future<T> _withTimeout<T>(Future<T> future) => future.timeout(
-    _writeTimeout,
-    onTimeout: () => throw SyncTimeoutException(),
-  );
 
   void _onAuthChanged(User? user) {
     for (final sub in _subs) {
@@ -143,13 +136,13 @@ class InvestmentsRepository extends ChangeNotifier {
       );
     }
     entry(InvestEntryKind.value, value, now);
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 
   Future<void> renameAccount(String id, String name) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc.collection('investAccounts').doc(id).update({'name': name}),
     );
   }
@@ -164,13 +157,13 @@ class InvestmentsRepository extends ChangeNotifier {
       batch.delete(userDoc.collection('investEntries').doc(e.id));
     }
     batch.delete(userDoc.collection('investAccounts').doc(id));
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 
   Future<void> addEntry(InvestEntry entry) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc.collection('investEntries').add({
         ...entry.toMap(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -181,6 +174,6 @@ class InvestmentsRepository extends ChangeNotifier {
   Future<void> deleteEntry(String id) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(userDoc.collection('investEntries').doc(id).delete());
+    await settleWrite(userDoc.collection('investEntries').doc(id).delete());
   }
 }

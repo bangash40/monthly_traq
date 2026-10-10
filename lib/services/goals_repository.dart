@@ -6,9 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/palette.dart';
 import 'package:monthly_traq/models/goal_models.dart';
 import 'package:monthly_traq/services/goal_progress.dart';
-import 'package:monthly_traq/services/transactions_repository.dart';
-
-const _writeTimeout = Duration(seconds: 10);
+import 'package:monthly_traq/services/write_sync.dart';
 
 /// The signed-in user's savings goals and the money added to or taken out
 /// of them — mirrored live from `users/{uid}/goals` and
@@ -51,11 +49,6 @@ class GoalsRepository extends ChangeNotifier {
     final uid = _auth.currentUser?.uid;
     return uid == null ? null : _firestore.collection('users').doc(uid);
   }
-
-  Future<T> _withTimeout<T>(Future<T> future) => future.timeout(
-    _writeTimeout,
-    onTimeout: () => throw SyncTimeoutException(),
-  );
 
   void _onAuthChanged(User? user) {
     for (final sub in _subs) {
@@ -107,7 +100,7 @@ class GoalsRepository extends ChangeNotifier {
   Future<void> addGoal(GoalModel goal) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc.collection('goals').add({
         ...goal.toMap(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -118,7 +111,7 @@ class GoalsRepository extends ChangeNotifier {
   Future<void> updateGoal(GoalModel goal) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc
           .collection('goals')
           .doc(goal.id)
@@ -130,7 +123,7 @@ class GoalsRepository extends ChangeNotifier {
   Future<void> setDone(GoalModel goal, bool done) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(
+    await settleWrite(
       userDoc.collection('goals').doc(goal.id).update({
         'doneAt': done ? Timestamp.fromDate(DateTime.now()) : null,
       }),
@@ -147,7 +140,7 @@ class GoalsRepository extends ChangeNotifier {
       batch.delete(userDoc.collection('goalEntries').doc(e.id));
     }
     batch.delete(userDoc.collection('goals').doc(id));
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 
   /// Records money added or taken out. Adding also remembers where it came
@@ -171,12 +164,12 @@ class GoalsRepository extends ChangeNotifier {
         'walletId': ?walletId,
       });
     }
-    await _withTimeout(batch.commit());
+    await settleWrite(batch.commit());
   }
 
   Future<void> deleteEntry(String id) async {
     final userDoc = _userDoc;
     if (userDoc == null) return;
-    await _withTimeout(userDoc.collection('goalEntries').doc(id).delete());
+    await settleWrite(userDoc.collection('goalEntries').doc(id).delete());
   }
 }
