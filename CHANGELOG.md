@@ -4,6 +4,16 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.1 (build 21) — 2026-10-10
+
+### Added
+- Wallets ask before saving Spent, Send back or Move for more than the
+  wallet has ("Easypaisa has Rs. 8,000. Saving this takes it to
+  −Rs. 1,000."), so a typo like 20,000 for 2,000 is caught.
+- Closing a wallet sheet after typing something asks "Discard changes?"
+  instead of losing it. These sheets no longer close with a swipe down.
+- A wallet or person with a name you already have asks before saving.
+
 ## 1.9.0 (build 20) — 2026-10-05
 
 ### Added
