@@ -10,7 +10,7 @@ enum HomeCard {
   ),
   wallets(
     'Wallets',
-    'What\'s in your wallets, and money you\'re holding for others. '
+    'What\'s in your wallets, and money you\'re keeping for others. '
         'Shows once you add a wallet.',
     Icons.account_balance_wallet,
   ),

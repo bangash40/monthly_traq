@@ -550,7 +550,7 @@ class _PersonPickerSheetState extends State<_PersonPickerSheet> {
                   onSubmitted: (_) => _addNew(),
                   onChanged: (_) => setState(() {}),
                   decoration: const InputDecoration(
-                    hintText: 'Someone new, e.g. Ahmed bhai',
+                    hintText: 'Someone new, e.g. Ahmed',
                     counterText: '',
                   ),
                 ),

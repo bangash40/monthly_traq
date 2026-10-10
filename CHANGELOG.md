@@ -4,6 +4,13 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.15 (build 34) — 2026-10-11
+
+### Changed
+- The Wallets card description in Home screen layout now says money
+  you're "keeping" for others, matching the rest of the app.
+- Adding a new person suggests "e.g. Ahmed" instead of "e.g. Ahmed bhai".
+
 ## 1.9.14 (build 33) — 2026-10-11
 
 ### Changed
