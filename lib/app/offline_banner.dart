@@ -102,7 +102,8 @@ class _OfflineBannerFrameState extends State<OfflineBannerFrame> {
                         child: Text(
                           _backOnline
                               ? 'Back online'
-                              : "You're offline — showing saved data",
+                              : 'You\'re offline. Changes will sync when '
+                                    'you\'re back.',
                           textAlign: TextAlign.center,
                           style: AppText.caption.copyWith(
                             color: _backOnline ? c.income : c.warning,

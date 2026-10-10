@@ -4,6 +4,12 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.10 (build 29) — 2026-10-11
+
+### Changed
+- New offline wording: "You're offline. Changes will sync when you're
+  back."
+
 ## 1.9.9 (build 28) — 2026-10-11
 
 ### Changed
