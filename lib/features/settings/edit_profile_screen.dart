@@ -12,6 +12,7 @@ import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 // Firestore documents cap out at 1 MiB total, and base64 inflates raw bytes
 // by ~4/3 — this leaves comfortable room for the rest of the user doc's
@@ -57,6 +58,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       imageQuality: 90,
     );
     if (picked == null || !mounted) return;
+    final l10n = context.l10n;
 
     // Let the user choose exactly which part of the photo becomes the
     // avatar, rather than always using its center.
@@ -66,12 +68,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       compressQuality: 85,
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'Choose photo frame',
+          toolbarTitle: l10n.choosePhotoFrame,
           cropStyle: CropStyle.circle,
           lockAspectRatio: true,
           hideBottomControls: true,
         ),
-        IOSUiSettings(title: 'Choose photo frame', cropStyle: CropStyle.circle),
+        IOSUiSettings(
+          title: l10n.choosePhotoFrame,
+          cropStyle: CropStyle.circle,
+        ),
       ],
     );
     if (cropped == null) return;
@@ -80,7 +85,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       final bytes = await File(cropped.path).readAsBytes();
       if (bytes.length > _maxPhotoBytes) {
-        _toast('That photo is too large — please choose one under 1MB.');
+        _toast(l10n.photoTooLarge);
         return;
       }
       if (!mounted) return;
@@ -88,18 +93,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         base64Encode(bytes),
       );
     } catch (e) {
-      _toast('Could not update photo: $e');
+      _toast(l10n.photoUpdateFailed(errorMessage(l10n, e)));
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
     }
   }
 
   Future<void> _removePhoto() async {
+    final l10n = context.l10n;
     setState(() => _isUploadingPhoto = true);
     try {
       await context.read<TransactionsRepository>().updatePhotoBase64(null);
     } catch (e) {
-      _toast('Could not remove photo: $e');
+      _toast(l10n.photoRemoveFailed(errorMessage(l10n, e)));
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
     }
@@ -119,24 +125,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               if (photo != null)
                 ListTile(
                   leading: const Icon(Icons.visibility_outlined),
-                  title: const Text('View photo'),
+                  title: Text(context.l10n.viewPhoto),
                   onTap: () => Navigator.pop(sheetContext, _PhotoAction.view),
                 ),
               ListTile(
                 leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('Take photo'),
+                title: Text(context.l10n.takePhoto),
                 onTap: () => Navigator.pop(sheetContext, _PhotoAction.camera),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Choose from gallery'),
+                title: Text(context.l10n.chooseFromGallery),
                 onTap: () => Navigator.pop(sheetContext, _PhotoAction.gallery),
               ),
               if (photo != null)
                 ListTile(
                   leading: Icon(Icons.delete_outline, color: c.spending),
                   title: Text(
-                    'Remove photo',
+                    context.l10n.removePhoto,
                     style: TextStyle(color: c.spending),
                   ),
                   onTap: () => Navigator.pop(sheetContext, _PhotoAction.remove),
@@ -170,9 +176,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _save() async {
+    final l10n = context.l10n;
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _nameError = 'Enter your name');
+      setState(() => _nameError = l10n.nameRequired);
       return;
     }
     setState(() {
@@ -184,12 +191,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         await _authService.updateDisplayName(name);
       }
       if (!mounted) return;
-      _toast('Profile saved');
+      _toast(l10n.profileSaved);
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSaving = false);
-      _toast('Could not save: $e');
+      _toast(l10n.couldNotSave(errorMessage(l10n, e)));
     }
   }
 
@@ -200,12 +207,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final photo = context.watch<TransactionsRepository>().photoBase64;
 
     return SubPageScaffold(
-      title: 'Edit profile',
+      title: context.l10n.editProfile,
       bottom: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
           onPressed: _isSaving ? null : _save,
-          child: ButtonLabel('Save changes', loading: _isSaving),
+          child: ButtonLabel(context.l10n.saveChanges, loading: _isSaving),
         ),
       ),
       body: ListView(
@@ -214,7 +221,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Center(
             child: Semantics(
               button: true,
-              label: 'Change photo',
+              label: context.l10n.changePhoto,
               child: GestureDetector(
                 onTap: _isUploadingPhoto ? null : _showPhotoOptions,
                 child: Stack(
@@ -262,17 +269,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Center(
             child: TextButton(
               onPressed: _isUploadingPhoto ? null : _showPhotoOptions,
-              child: const Text('Change photo'),
+              child: Text(context.l10n.changePhoto),
             ),
           ),
           const SizedBox(height: 16),
           LabeledField(
-            label: 'Name',
+            label: context.l10n.name,
             field: TextField(
               controller: _nameController,
               textCapitalization: TextCapitalization.words,
               decoration: InputDecoration(
-                hintText: 'Your name',
+                hintText: context.l10n.yourName,
                 errorText: _nameError,
               ),
               onChanged: (_) => setState(() {}),
@@ -280,7 +287,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           const SizedBox(height: 18),
           LabeledField(
-            label: 'Email',
+            label: context.l10n.email,
             field: TextField(
               controller: _emailController,
               readOnly: true,
@@ -303,7 +310,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Your sign-in email can\'t be changed here.',
+            context.l10n.emailCantChange,
             style: AppText.label.copyWith(color: c.muted),
           ),
         ],

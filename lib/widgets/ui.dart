@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/widgets/motion.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// The design's basic building blocks. Every screen is assembled from these
 /// so spacing, radii and colors stay consistent across themes and modes.
@@ -112,26 +113,31 @@ enum BadgeTone { neutral, warning, income, spending }
 
 /// A small pill label: "Soon", "PRO", "↓ 12% vs Aug".
 class TagBadge extends StatelessWidget {
-  final String label;
+  /// Null for the [TagBadge.soon] and [TagBadge.pro] badges, whose text
+  /// comes from the current language.
+  final String? label;
   final BadgeTone tone;
   final IconData? icon;
+  final bool _pro;
 
   const TagBadge(
-    this.label, {
+    String this.label, {
     super.key,
     this.tone = BadgeTone.neutral,
     this.icon,
-  });
+  }) : _pro = false;
 
   const TagBadge.soon({super.key})
-    : label = 'Soon',
+    : label = null,
       tone = BadgeTone.neutral,
-      icon = null;
+      icon = null,
+      _pro = false;
 
   const TagBadge.pro({super.key})
-    : label = 'PRO',
+    : label = null,
       tone = BadgeTone.warning,
-      icon = null;
+      icon = null,
+      _pro = true;
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +163,7 @@ class TagBadge extends StatelessWidget {
             const SizedBox(width: 3),
           ],
           Text(
-            label,
+            label ?? (_pro ? context.l10n.badgePro : context.l10n.badgeSoon),
             style: AppText.caption.copyWith(
               color: foreground,
               fontWeight: FontWeight.w800,
@@ -229,20 +235,22 @@ class OverlineLabel extends StatelessWidget {
 class BackCircleButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final IconData icon;
-  final String tooltip;
+
+  /// Defaults to "Back".
+  final String? tooltip;
 
   const BackCircleButton({
     super.key,
     this.onPressed,
     this.icon = Icons.arrow_back,
-    this.tooltip = 'Back',
+    this.tooltip,
   });
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     return Tooltip(
-      message: tooltip,
+      message: tooltip ?? context.l10n.back,
       child: Material(
         color: c.surfaceHigh,
         shape: const CircleBorder(),
@@ -685,7 +693,7 @@ class AppLogoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     return Semantics(
-      label: 'MonthlyTraq logo',
+      label: context.l10n.appLogo,
       image: true,
       child: Container(
         width: size,

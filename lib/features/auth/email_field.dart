@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/features/auth/auth_validation.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// The email field on the login and sign-up screens. If the address looks
 /// like a misspelled provider ("ali@gmial.com"), it offers a one-tap fix
@@ -14,14 +15,15 @@ class EmailField extends StatefulWidget {
   final bool showIcon;
 
   /// Sign-up passes [validateSignupEmail], which also turns away placeholder
-  /// and temporary addresses; login keeps the plain format check.
-  final FormFieldValidator<String> validator;
+  /// and temporary addresses; login keeps the plain format check
+  /// ([validateEmail], the default).
+  final FormFieldValidator<String>? validator;
 
   const EmailField({
     super.key,
     required this.controller,
     this.showIcon = false,
-    this.validator = validateEmail,
+    this.validator,
   });
 
   @override
@@ -29,6 +31,10 @@ class EmailField extends StatefulWidget {
 }
 
 class _EmailFieldState extends State<EmailField> {
+  String? _validate(String? value) => widget.validator != null
+      ? widget.validator!(value)
+      : validateEmail(context.l10n, value);
+
   static const _pause = Duration(milliseconds: 800);
 
   final _focusNode = FocusNode();
@@ -62,7 +68,7 @@ class _EmailFieldState extends State<EmailField> {
     var suggestion = emailTypoSuggestion(widget.controller.text);
     // Never suggest an address the form would refuse anyway, like
     // "test.om" → "test.com" on sign-up.
-    if (suggestion != null && widget.validator(suggestion) != null) {
+    if (suggestion != null && _validate(suggestion) != null) {
       suggestion = null;
     }
     if (suggestion != _suggestion) setState(() => _suggestion = suggestion);
@@ -95,15 +101,15 @@ class _EmailFieldState extends State<EmailField> {
           textInputAction: TextInputAction.next,
           onChanged: _onChanged,
           decoration: InputDecoration(
-            hintText: 'you@example.com',
+            hintText: context.l10n.emailHint,
             prefixIcon: widget.showIcon ? const Icon(Icons.mail_outline) : null,
           ),
-          validator: widget.validator,
+          validator: _validate,
         ),
         if (suggestion != null)
           Semantics(
             button: true,
-            label: 'Did you mean $suggestion? Tap to use it.',
+            label: context.l10n.emailSuggestionLabel(suggestion),
             excludeSemantics: true,
             child: InkWell(
               onTap: _applySuggestion,
@@ -113,7 +119,7 @@ class _EmailFieldState extends State<EmailField> {
                 child: Text.rich(
                   TextSpan(
                     children: [
-                      const TextSpan(text: 'Did you mean '),
+                      TextSpan(text: context.l10n.emailSuggestionBefore),
                       TextSpan(
                         text: suggestion,
                         style: TextStyle(
@@ -121,7 +127,7 @@ class _EmailFieldState extends State<EmailField> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const TextSpan(text: '?'),
+                      TextSpan(text: context.l10n.emailSuggestionAfter),
                     ],
                   ),
                   style: AppText.body.copyWith(fontSize: 15, color: c.muted),

@@ -10,6 +10,7 @@ import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/google_sign_in_button.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -51,6 +52,7 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
     setState(() => _isLoading = true);
+    final l10n = context.l10n;
     try {
       await _authService.signUp(
         name: _nameController.text.trim(),
@@ -61,7 +63,7 @@ class _SignupScreenState extends State<SignupScreen> {
       await context.read<TransactionsRepository>().seedDefaultsForNewUser();
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      _toast(authErrorMessage(e, AuthAction.signUp));
+      _toast(authErrorMessage(l10n, e, AuthAction.signUp));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -69,6 +71,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isGoogleLoading = true);
+    final l10n = context.l10n;
     try {
       final credential = await _authService.signInWithGoogle();
       if (credential == null) return; // cancelled the account picker
@@ -78,14 +81,16 @@ class _SignupScreenState extends State<SignupScreen> {
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      _toast(authErrorMessage(e, AuthAction.google));
+      _toast(authErrorMessage(l10n, e, AuthAction.google));
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
   Widget _visibilityToggle() => IconButton(
-    tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+    tooltip: _obscurePassword
+        ? context.l10n.showPassword
+        : context.l10n.hidePassword,
     icon: Icon(
       _obscurePassword
           ? Icons.visibility_outlined
@@ -115,39 +120,42 @@ class _SignupScreenState extends State<SignupScreen> {
                   child: BackCircleButton(),
                 ),
                 const SizedBox(height: 28),
-                const Text('Create your account', style: AppText.titleLarge),
+                Text(context.l10n.createYourAccount, style: AppText.titleLarge),
                 const SizedBox(height: 8),
                 Text(
-                  'It takes less than a minute.',
+                  context.l10n.signupSubtitle,
                   style: AppText.body.copyWith(fontSize: 17, color: c.muted),
                 ),
                 const SizedBox(height: 30),
                 LabeledField(
-                  label: 'Full name',
+                  label: context.l10n.fullName,
                   field: TextFormField(
                     controller: _nameController,
                     keyboardType: TextInputType.name,
                     textCapitalization: TextCapitalization.words,
                     autofillHints: const [AutofillHints.name],
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(hintText: 'Your name'),
+                    decoration: InputDecoration(
+                      hintText: context.l10n.yourName,
+                    ),
                     validator: (value) =>
                         (value == null || value.trim().isEmpty)
-                        ? 'Enter your name'
+                        ? context.l10n.nameRequired
                         : null,
                   ),
                 ),
                 const SizedBox(height: 18),
                 LabeledField(
-                  label: 'Email',
+                  label: context.l10n.email,
                   field: EmailField(
                     controller: _emailController,
-                    validator: validateSignupEmail,
+                    validator: (value) =>
+                        validateSignupEmail(context.l10n, value),
                   ),
                 ),
                 const SizedBox(height: 18),
                 LabeledField(
-                  label: 'Password',
+                  label: context.l10n.password,
                   field: TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
@@ -156,10 +164,11 @@ class _SignupScreenState extends State<SignupScreen> {
                     // Rebuild so the strength bar below updates as they type.
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      hintText: 'Create a password',
+                      hintText: context.l10n.passwordRequired,
                       suffixIcon: _visibilityToggle(),
                     ),
                     validator: (value) => validateNewPassword(
+                      context.l10n,
                       value,
                       name: _nameController.text,
                       email: _emailController.text,
@@ -169,6 +178,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 12),
                 _PasswordStrengthMeter(
                   check: checkNewPassword(
+                    context.l10n,
                     _passwordController.text,
                     name: _nameController.text,
                     email: _emailController.text,
@@ -179,7 +189,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 18),
                 LabeledField(
-                  label: 'Confirm password',
+                  label: context.l10n.confirmPassword,
                   field: TextFormField(
                     controller: _confirmController,
                     obscureText: _obscurePassword,
@@ -187,15 +197,15 @@ class _SignupScreenState extends State<SignupScreen> {
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _signUp(),
                     decoration: InputDecoration(
-                      hintText: 'Type your password again',
+                      hintText: context.l10n.passwordAgain,
                       suffixIcon: _visibilityToggle(),
                     ),
                     validator: (value) {
                       if ((value ?? '').isEmpty) {
-                        return 'Type your password again';
+                        return context.l10n.passwordAgain;
                       }
                       if (value != _passwordController.text) {
-                        return 'Passwords don\'t match';
+                        return context.l10n.passwordsDontMatch;
                       }
                       return null;
                     },
@@ -204,18 +214,21 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 28),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _signUp,
-                  child: ButtonLabel('Create account', loading: _isLoading),
+                  child: ButtonLabel(
+                    context.l10n.createAccount,
+                    loading: _isLoading,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 GoogleSignInButton(
-                  label: 'Sign up with Google',
+                  label: context.l10n.signUpWithGoogle,
                   loading: _isGoogleLoading,
                   onPressed: _signInWithGoogle,
                 ),
                 const SizedBox(height: 28),
                 AuthFooterLink(
-                  prompt: 'Already have an account?',
-                  action: 'Log in',
+                  prompt: context.l10n.alreadyHaveAccount,
+                  action: context.l10n.logIn,
                   onTap: () => Navigator.pop(context),
                 ),
               ],
@@ -246,28 +259,32 @@ class _PasswordStrengthMeter extends StatelessWidget {
         0,
         c.faint,
         null,
-        'Use $minPasswordLength or more characters. A short phrase is easy '
-            'to remember and hard to guess.',
+        context.l10n.passwordStrengthEmpty(minPasswordLength),
       ),
       PasswordStrength.weak => (
         1,
         c.spending,
-        'Weak',
+        context.l10n.passwordWeak,
         showProblem ? check.problem : null,
       ),
       PasswordStrength.okay => (
         2,
         c.warning,
-        'Okay',
-        'Good. A longer password is even stronger.',
+        context.l10n.passwordOkay,
+        context.l10n.passwordOkayHint,
       ),
-      PasswordStrength.strong => (3, c.income, 'Strong', 'Great password.'),
+      PasswordStrength.strong => (
+        3,
+        c.income,
+        context.l10n.passwordStrong,
+        context.l10n.passwordStrongHint,
+      ),
     };
 
     return Semantics(
       label: label == null
           ? hint
-          : 'Password strength: $label.${hint == null ? '' : ' $hint'}',
+          : context.l10n.passwordStrengthLabel(label, hint ?? ''),
       excludeSemantics: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

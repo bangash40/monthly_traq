@@ -9,6 +9,7 @@ import 'package:monthly_traq/widgets/budget_sheet.dart';
 import 'package:monthly_traq/widgets/settings_rows.dart';
 import 'package:monthly_traq/widgets/transaction_rows.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/app_localizations.dart';
 
 /// Pumps [child] inside the app's theme with a money formatter, the same
 /// way the real app provides them — no Firebase needed.
@@ -22,6 +23,8 @@ Future<void> pumpInApp(
     Provider<MoneyFormatter>.value(
       value: money,
       child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: themeById('indigo').themeData(brightness),
         home: Scaffold(body: ListView(children: [child])),
       ),
@@ -47,6 +50,8 @@ TransactionModel tx(double amount, TransactionType type, {String title = ''}) =>
     );
 
 void main() {
+  final en = lookupAppLocalizations(const Locale('en'));
+
   group('TransactionRow', () {
     testWidgets('shows spending with a minus and income with a plus', (
       tester,
@@ -107,6 +112,8 @@ void main() {
     var selected = 'a';
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: themeById('indigo').themeData(Brightness.light),
         home: Scaffold(
           body: StatefulBuilder(
@@ -230,10 +237,10 @@ void main() {
 
   test('dayLabel', () {
     final now = DateTime(2026, 9, 28, 15);
-    expect(dayLabel(DateTime(2026, 9, 28, 8), now: now), 'Today');
-    expect(dayLabel(DateTime(2026, 9, 27), now: now), 'Yesterday');
-    expect(dayLabel(DateTime(2026, 9, 22), now: now), 'Tue, Sep 22');
-    expect(dayLabel(DateTime(2025, 12, 31), now: now), 'Wed, Dec 31, 2025');
+    expect(dayLabel(en, DateTime(2026, 9, 28, 8), now: now), 'Today');
+    expect(dayLabel(en, DateTime(2026, 9, 27), now: now), 'Yesterday');
+    expect(dayLabel(en, DateTime(2026, 9, 22), now: now), 'Tue, Sep 22');
+    expect(dayLabel(en, DateTime(2025, 12, 31), now: now), 'Wed, Dec 31, 2025');
   });
 
   test('groupByDay keeps order and nets each day', () {

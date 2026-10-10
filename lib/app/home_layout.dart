@@ -1,59 +1,48 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:monthly_traq/l10n/app_localizations.dart';
 
 /// A card the Home screen can show, in its default order.
 enum HomeCard {
-  balance(
-    'Balance',
-    'Your balance, with this month\'s income and spending',
-    Icons.account_balance_wallet_outlined,
-  ),
-  wallets(
-    'Wallets',
-    'What\'s in your wallets, and money you\'re keeping for others. '
-        'Shows once you add a wallet.',
-    Icons.account_balance_wallet,
-  ),
-  repayments(
-    'Repayments',
-    'What\'s due next on money you owe. Shows once you add a repayment.',
-    Icons.event_repeat,
-  ),
-  goals(
-    'Savings goals',
-    'How close you are to what you\'re saving for. Shows once you add a '
-        'goal.',
-    Icons.savings_outlined,
-  ),
-  netWorth(
-    'Net worth',
-    'What you own minus what you owe: wallets, goals, investments and '
-        'repayments together.',
-    Icons.account_balance_outlined,
-  ),
-  budget(
-    'Monthly budget',
-    'How much of your budget is left',
-    Icons.pie_chart_outline,
-  ),
-  dailyAllowance(
-    'Daily allowance',
-    'How much you can spend today and stay on budget. Needs a monthly '
-        'budget.',
-    Icons.today_outlined,
-  ),
-  topSpending(
-    'Top spending',
-    'Your three biggest categories this month',
-    Icons.leaderboard_outlined,
-  ),
-  recent('Recent', 'Your latest transactions', Icons.receipt_long_outlined);
+  balance(Icons.account_balance_wallet_outlined),
+  wallets(Icons.account_balance_wallet),
+  repayments(Icons.event_repeat),
+  goals(Icons.savings_outlined),
+  netWorth(Icons.account_balance_outlined),
+  budget(Icons.pie_chart_outline),
+  dailyAllowance(Icons.today_outlined),
+  topSpending(Icons.leaderboard_outlined),
+  recent(Icons.receipt_long_outlined);
 
-  final String label;
-  final String description;
   final IconData icon;
 
-  const HomeCard(this.label, this.description, this.icon);
+  const HomeCard(this.icon);
+
+  /// The card's name in the current language.
+  String label(AppLocalizations l10n) => switch (this) {
+    balance => l10n.homeCardBalance,
+    wallets => l10n.homeCardWallets,
+    repayments => l10n.homeCardRepayments,
+    goals => l10n.homeCardGoals,
+    netWorth => l10n.homeCardNetWorth,
+    budget => l10n.homeCardBudget,
+    dailyAllowance => l10n.homeCardDailyAllowance,
+    topSpending => l10n.homeCardTopSpending,
+    recent => l10n.homeCardRecent,
+  };
+
+  /// What the card shows, for the Home screen layout settings.
+  String description(AppLocalizations l10n) => switch (this) {
+    balance => l10n.homeCardBalanceAbout,
+    wallets => l10n.homeCardWalletsAbout,
+    repayments => l10n.homeCardRepaymentsAbout,
+    goals => l10n.homeCardGoalsAbout,
+    netWorth => l10n.homeCardNetWorthAbout,
+    budget => l10n.homeCardBudgetAbout,
+    dailyAllowance => l10n.homeCardDailyAllowanceAbout,
+    topSpending => l10n.homeCardTopSpendingAbout,
+    recent => l10n.homeCardRecentAbout,
+  };
 }
 
 /// Which Home cards show, and in what order. Every card is always in

@@ -10,6 +10,7 @@ import 'package:monthly_traq/models/onboarding_slide.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/widgets/charts.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 class OnboardingScreen extends StatefulWidget {
   /// Called when onboarding ends: [signUp] is true for Continue/Skip (a new
@@ -65,7 +66,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 Expanded(
                   child: Semantics(
-                    label: 'Step ${_index + 1} of ${onboardingSlides.length}',
+                    label: context.l10n.onboardingStep(
+                      _index + 1,
+                      onboardingSlides.length,
+                    ),
                     child: Row(
                       children: [
                         for (var i = 0; i < onboardingSlides.length; i++) ...[
@@ -89,7 +93,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 TextButton(
                   onPressed: () => widget.onDone(signUp: true),
                   style: TextButton.styleFrom(foregroundColor: c.muted),
-                  child: const Text('Skip'),
+                  child: Text(context.l10n.skip),
                 ),
               ],
             ),
@@ -113,7 +117,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _next,
-                      child: Text(_isLast ? 'Get started' : 'Continue'),
+                      child: Text(
+                        _isLast
+                            ? context.l10n.getStarted
+                            : context.l10n.continueButton,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -121,7 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Already have an account?',
+                        context.l10n.alreadyHaveAccount,
                         style: AppText.body.copyWith(
                           fontSize: 16,
                           color: c.muted,
@@ -132,9 +140,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 6),
                         ),
-                        child: const Text(
-                          'Log in',
-                          style: TextStyle(fontSize: 16),
+                        child: Text(
+                          context.l10n.logIn,
+                          style: const TextStyle(fontSize: 16),
                         ),
                       ),
                     ],
@@ -176,10 +184,13 @@ class _SlideView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          Text(slide.title, style: AppText.titleLarge.copyWith(fontSize: 32)),
+          Text(
+            slide.title(context.l10n),
+            style: AppText.titleLarge.copyWith(fontSize: 32),
+          ),
           const SizedBox(height: 10),
           Text(
-            slide.body,
+            slide.body(context.l10n),
             style: AppText.body.copyWith(
               fontSize: 18,
               height: 1.4,
@@ -192,6 +203,16 @@ class _SlideView extends StatelessWidget {
     );
   }
 }
+
+/// The illustration categories' names in the current language.
+String _artName(AppLocalizations l10n, CategoryModel category) =>
+    switch (category.id) {
+      'food' => l10n.sampleFood,
+      'shopping' => l10n.sampleShopping,
+      'fun' => l10n.sampleEntertainment,
+      'transport' => l10n.sampleTransport,
+      _ => category.name,
+    };
 
 /// A small, real-looking piece of the app for each slide.
 class _Art extends StatelessWidget {
@@ -276,14 +297,14 @@ class _Art extends StatelessWidget {
               row(
                 Icons.restaurant,
                 AppPalette.categorical[1],
-                'Groceries',
+                context.l10n.sampleGroceries,
                 '${kMinus}3,450',
               ),
               const Divider(height: 1),
               row(
                 Icons.work,
                 const Color(0xFF16A05E),
-                'Salary',
+                context.l10n.sampleSalary,
                 '+120,000',
                 income: true,
               ),
@@ -291,7 +312,7 @@ class _Art extends StatelessWidget {
               row(
                 Icons.directions_bus,
                 AppPalette.categorical[0],
-                'Bus pass',
+                context.l10n.sampleBusPass,
                 '${kMinus}850',
               ),
             ],
@@ -341,7 +362,7 @@ class _Art extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                cat.name,
+                                _artName(context.l10n, cat),
                                 style: AppText.label.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -372,7 +393,7 @@ class _Art extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Monthly budget', style: AppText.section),
+              Text(context.l10n.monthlyBudget, style: AppText.section),
               const SizedBox(height: 8),
               Text.rich(
                 TextSpan(
@@ -382,7 +403,7 @@ class _Art extends StatelessWidget {
                       style: AppText.amountLarge,
                     ),
                     TextSpan(
-                      text: '  left',
+                      text: '  ${context.l10n.sampleLeft}',
                       style: AppText.label.copyWith(
                         fontSize: 15,
                         color: c.muted,
@@ -405,7 +426,7 @@ class _Art extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '64% used',
+                    context.l10n.percentUsed(64),
                     style: AppText.caption.copyWith(
                       fontSize: 13,
                       color: c.muted,
@@ -413,7 +434,7 @@ class _Art extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    '4 days left',
+                    context.l10n.daysLeft(4),
                     style: AppText.caption.copyWith(
                       fontSize: 13,
                       color: c.muted,
@@ -467,8 +488,11 @@ class _Art extends StatelessWidget {
                 child: Icon(Icons.cloud_done, color: c.income, size: 38),
               ),
               const SizedBox(height: 14),
-              const Text('Backed up', style: AppText.section),
-              Text('Just now', style: AppText.label.copyWith(color: c.muted)),
+              Text(context.l10n.sampleBackedUp, style: AppText.section),
+              Text(
+                context.l10n.sampleJustNow,
+                style: AppText.label.copyWith(color: c.muted),
+              ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

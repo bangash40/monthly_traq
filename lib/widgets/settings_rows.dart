@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// How a settings row behaves and looks.
 enum SettingsRowKind {
@@ -129,7 +130,7 @@ class SettingsRow extends StatelessWidget {
     );
 
     if (isSoon) {
-      return Semantics(label: '$label, coming soon', child: row);
+      return Semantics(label: context.l10n.comingSoonLabel(label), child: row);
     }
     if (isToggle) {
       return InkWell(onTap: () => onToggle?.call(!toggleValue), child: row);

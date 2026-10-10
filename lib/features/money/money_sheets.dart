@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/app_settings.dart';
 import 'package:monthly_traq/app/category_icons.dart';
@@ -12,6 +11,7 @@ import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/budget_sheet.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Icons that suit a wallet: mobile wallets, banks, cash, cards…
 const _walletIconKeys = [
@@ -34,8 +34,8 @@ void _toastError(BuildContext context, Object error) {
     SnackBar(
       content: Text(
         error is SyncTimeoutException
-            ? error.toString()
-            : 'Couldn\'t save. Please try again.',
+            ? context.l10n.noInternetTryAgain
+            : context.l10n.couldntSaveTryAgain,
       ),
     ),
   );
@@ -103,10 +103,8 @@ class _WalletEditorState extends State<_WalletEditor> {
         ? 0.0
         : parseAmount(_opening.text);
     setState(() {
-      _nameError = name.isEmpty ? 'Give the wallet a name' : null;
-      _amountError = opening == null
-          ? 'Enter an amount, or leave it empty'
-          : null;
+      _nameError = name.isEmpty ? context.l10n.walletNameError : null;
+      _amountError = opening == null ? context.l10n.amountOrEmpty : null;
     });
     if (_nameError != null || _amountError != null) return;
 
@@ -119,12 +117,14 @@ class _WalletEditorState extends State<_WalletEditor> {
     if (sameName) {
       final proceed = await confirmDialog(
         context,
-        title: 'You already have $name',
+        title: context.l10n.youAlreadyHave(name),
         message: _isEditing
-            ? 'Another wallet is called $name. Use the same name for both?'
-            : 'Add another wallet with the same name?',
-        confirmLabel: _isEditing ? 'Save anyway' : 'Add anyway',
-        cancelLabel: 'Go back',
+            ? context.l10n.walletSameNameEdit(name)
+            : context.l10n.walletSameNameAdd,
+        confirmLabel: _isEditing
+            ? context.l10n.saveAnyway
+            : context.l10n.addAnyway,
+        cancelLabel: context.l10n.goBack,
       );
       if (proceed != true || !mounted) return;
     }
@@ -158,10 +158,8 @@ class _WalletEditorState extends State<_WalletEditor> {
     final existing = widget.existing!;
     final confirmed = await _confirmDelete(
       context,
-      title: 'Delete ${existing.name}?',
-      message:
-          'Everything recorded in it is deleted too, including money you '
-          'received in it from others and moves to or from it.',
+      title: context.l10n.deleteNamed(existing.name),
+      message: context.l10n.deleteWalletBody,
     );
     if (confirmed != true || !mounted) return;
     final navigator = Navigator.of(context);
@@ -177,11 +175,11 @@ class _WalletEditorState extends State<_WalletEditor> {
   Widget build(BuildContext context) {
     final c = context.colors;
     return MoneySheet(
-      title: _isEditing ? 'Edit wallet' : 'New wallet',
+      title: _isEditing ? context.l10n.editWallet : context.l10n.newWallet,
       isDirty: _isDirty,
       trailing: _isEditing
           ? IconButton(
-              tooltip: 'Delete wallet',
+              tooltip: context.l10n.deleteWallet,
               onPressed: _delete,
               icon: Icon(Icons.delete_outline, color: c.spending),
             )
@@ -189,20 +187,20 @@ class _WalletEditorState extends State<_WalletEditor> {
       button: ElevatedButton(
         onPressed: _saving ? null : _save,
         child: ButtonLabel(
-          _isEditing ? 'Save changes' : 'Add wallet',
+          _isEditing ? context.l10n.saveChanges : context.l10n.addWalletButton,
           loading: _saving,
         ),
       ),
       children: [
         LabeledField(
-          label: 'Name',
+          label: context.l10n.name,
           field: TextField(
             controller: _name,
             autofocus: !_isEditing,
             textCapitalization: TextCapitalization.words,
             maxLength: 40,
             decoration: InputDecoration(
-              hintText: 'e.g. JazzCash',
+              hintText: context.l10n.walletNameHint,
               errorText: _nameError,
               counterText: '',
             ),
@@ -211,19 +209,18 @@ class _WalletEditorState extends State<_WalletEditor> {
         const SizedBox(height: 16),
         LabeledField(
           label: _isEditing
-              ? 'Your own money when added'
-              : 'Your own money in it now',
+              ? context.l10n.ownMoneyWhenAdded
+              : context.l10n.ownMoneyNow,
           field: AmountField(controller: _opening, errorText: _amountError),
         ),
         const SizedBox(height: 6),
         Text(
-          'Only what\'s yours. Money you\'re keeping for someone is added '
-          'next with "Received", on top of this.',
+          context.l10n.ownMoneyHelp,
           style: AppText.label.copyWith(color: c.muted),
         ),
         const SizedBox(height: 16),
         Text(
-          'Icon',
+          context.l10n.icon,
           style: AppText.rowTitle.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 10),
@@ -256,16 +253,6 @@ class _WalletEditorState extends State<_WalletEditor> {
 }
 
 // Wallet entries: spent, add money, received, send back, move
-
-String _dateLabel(DateTime date) {
-  final now = DateTime.now();
-  if (DateUtils.isSameDay(date, now)) return 'Today';
-  if (DateUtils.isSameDay(date, now.subtract(const Duration(days: 1)))) {
-    return 'Yesterday';
-  }
-  return DateFormat(date.year == now.year ? 'EEE, d MMM' : 'd MMM y')
-      .format(date);
-}
 
 /// Adds an entry of [kind] (starting on [walletId] / [personId] when
 /// given), or edits [existing].
@@ -300,10 +287,8 @@ Future<void> _confirmDeleteCorrection(
 ) async {
   final confirmed = await _confirmDelete(
     context,
-    title: 'Delete this correction?',
-    message:
-        'The wallet goes back to the balance it showed before you corrected '
-        'it.',
+    title: context.l10n.deleteCorrectionTitle,
+    message: context.l10n.deleteCorrectionBody,
   );
   if (confirmed != true || !context.mounted) return;
   try {
@@ -321,7 +306,7 @@ Future<bool?> _confirmDelete(
   context,
   title: title,
   message: message,
-  confirmLabel: 'Delete',
+  confirmLabel: context.l10n.delete,
   destructive: true,
 );
 
@@ -481,26 +466,25 @@ class _EntrySheetState extends State<_EntrySheet> {
     final amount = parseAmount(_amount.text);
     final name = _personName(repo);
     final canGiveBack = _canGiveBack(repo);
+    final l10n = context.l10n;
     setState(() {
-      _personError = _hasPerson && _person == null
-          ? 'Pick whose money it is'
-          : null;
-      _walletError = _walletId == null ? 'Pick a wallet' : null;
+      _personError = _hasPerson && _person == null ? l10n.pickWhoseMoney : null;
+      _walletError = _walletId == null ? l10n.pickWallet : null;
       _toWalletError = _kind == WalletEntryKind.transfer
           ? _toWalletId == null
-                ? 'Pick where it went'
+                ? l10n.pickWhereItWent
                 : _toWalletId == _walletId
-                ? 'Pick a different wallet'
+                ? l10n.pickDifferentWallet
                 : null
           : null;
       _amountError = amount == null || amount <= 0
-          ? 'Enter an amount above zero'
+          ? l10n.amountAboveZero
           : _kind == WalletEntryKind.giveBack &&
                 _person != null &&
                 amount > canGiveBack + 0.005
           ? canGiveBack <= 0
-                ? 'You aren\'t keeping any of $name\'s money'
-                : 'You\'re keeping ${money.format(canGiveBack)} for $name'
+                ? l10n.notKeepingAny(name ?? '')
+                : l10n.keepingFor(money.format(canGiveBack), name ?? '')
           : null;
     });
     if (_personError != null ||
@@ -513,15 +497,17 @@ class _EntrySheetState extends State<_EntrySheet> {
     if (_takesOut) {
       final available = _available(repo);
       if (amount! > available + 0.005) {
-        final walletName = repo.walletById(_walletId)?.name ?? 'This wallet';
+        final walletName = repo.walletById(_walletId)?.name ?? l10n.thisWallet;
         final proceed = await confirmDialog(
           context,
-          title: 'More than $walletName has',
-          message:
-              '$walletName has ${signedMoney(money, available)}. Saving '
-              'this takes it to ${signedMoney(money, available - amount)}.',
-          confirmLabel: 'Save anyway',
-          cancelLabel: 'Go back',
+          title: l10n.moreThanWalletHas(walletName),
+          message: l10n.moreThanWalletBody(
+            walletName,
+            signedMoney(money, available),
+            signedMoney(money, available - amount),
+          ),
+          confirmLabel: l10n.saveAnyway,
+          cancelLabel: l10n.goBack,
         );
         if (proceed != true || !mounted) return;
       }
@@ -563,10 +549,8 @@ class _EntrySheetState extends State<_EntrySheet> {
   Future<void> _delete() async {
     final confirmed = await _confirmDelete(
       context,
-      title: 'Delete this entry?',
-      message:
-          'Only for an entry made by mistake. The wallet changes as if it '
-          'never happened.',
+      title: context.l10n.deleteEntryTitle,
+      message: context.l10n.deleteEntryBody,
     );
     if (confirmed != true || !mounted) return;
     final navigator = Navigator.of(context);
@@ -584,7 +568,7 @@ class _EntrySheetState extends State<_EntrySheet> {
     required String? error,
     required ValueChanged<String> onPicked,
     String? excludeId,
-    String pickerTitle = 'Which wallet?',
+    String? pickerTitle,
   }) {
     final c = context.colors;
     final wallet = context.watch<WalletsRepository>().walletById(walletId);
@@ -594,7 +578,7 @@ class _EntrySheetState extends State<_EntrySheet> {
         leading: wallet != null
             ? IconTile(icon: wallet.icon, color: wallet.color, size: 36)
             : Icon(Icons.account_balance_wallet_outlined, color: c.muted),
-        label: wallet?.name ?? 'Choose a wallet',
+        label: wallet?.name ?? context.l10n.chooseWallet,
         empty: wallet == null,
         error: error,
         onTap: () async {
@@ -617,45 +601,43 @@ class _EntrySheetState extends State<_EntrySheet> {
     final repo = context.watch<WalletsRepository>();
     final name = _personName(repo);
     final canGiveBack = _canGiveBack(repo);
+    final l10n = context.l10n;
 
     final (String title, String? subtitle) = switch (_kind) {
       WalletEntryKind.spend => (
-        _isEditing ? 'Edit spending' : 'Spent',
-        _isEditing ? null : 'Money you spent from a wallet.',
+        _isEditing ? l10n.editSpending : l10n.spent,
+        _isEditing ? null : l10n.spentHelp,
       ),
       WalletEntryKind.add => (
-        _isEditing ? 'Edit added money' : 'Add your money',
-        _isEditing ? null : 'Money of your own you put into a wallet.',
+        _isEditing ? l10n.editAddedMoney : l10n.addYourMoney,
+        _isEditing ? null : l10n.addYourMoneyHelp,
       ),
       WalletEntryKind.receive => (
-        _isEditing ? 'Edit received money' : 'Received to keep',
-        _isEditing
-            ? null
-            : 'Money someone gave you to keep. It\'s theirs, not yours, '
-                  'until you send it back.',
+        _isEditing ? l10n.editReceivedMoney : l10n.receivedToKeep,
+        _isEditing ? null : l10n.receivedToKeepHelp,
       ),
       WalletEntryKind.giveBack => (
-        _isEditing ? 'Edit money sent back' : 'Send back',
+        _isEditing ? l10n.editMoneySentBack : l10n.sendBack,
         name == null
-            ? 'Money you returned to someone.'
+            ? l10n.sendBackHelp
             : canGiveBack > 0
-            ? 'You\'re keeping ${money.format(canGiveBack)} for $name.'
-            : 'You aren\'t keeping any of $name\'s money.',
+            ? l10n.keepingForSentence(money.format(canGiveBack), name)
+            : l10n.notKeepingAnySentence(name),
       ),
       WalletEntryKind.transfer => (
-        _isEditing ? 'Edit move' : 'Move money',
-        _isEditing ? null : 'From one of your wallets to another.',
+        _isEditing ? l10n.editMove : l10n.moveMoney,
+        _isEditing ? null : l10n.moveMoneyHelp,
       ),
-      WalletEntryKind.adjust => ('Correction', null),
+      WalletEntryKind.adjust => (l10n.correction, null),
     };
 
     final personField = LabeledField(
-      label: _kind == WalletEntryKind.receive ? 'From' : 'To',
+      label: _kind == WalletEntryKind.receive ? l10n.from : l10n.to,
       field: FieldButton(
         leading: name != null
             ? PersonAvatar(name: name, radius: 18)
             : Icon(Icons.person_outline, color: c.muted),
-        label: name ?? 'Choose someone',
+        label: name ?? l10n.chooseSomeone,
         empty: name == null,
         error: _personError,
         onTap: () async {
@@ -663,8 +645,8 @@ class _EntrySheetState extends State<_EntrySheet> {
             context,
             selectedId: _person?.personId,
             title: _kind == WalletEntryKind.receive
-                ? 'Whose money?'
-                : 'Send back to',
+                ? l10n.whoseMoney
+                : l10n.sendBackTo,
           );
           if (choice == null) return;
           setState(() {
@@ -679,7 +661,7 @@ class _EntrySheetState extends State<_EntrySheet> {
     );
 
     final amountField = LabeledField(
-      label: 'Amount',
+      label: l10n.amount,
       field: AmountField(
         controller: _amount,
         errorText: _amountError,
@@ -689,10 +671,10 @@ class _EntrySheetState extends State<_EntrySheet> {
 
     final walletField = switch (_kind) {
       WalletEntryKind.transfer => _walletField(
-        label: 'From',
+        label: l10n.from,
         walletId: _walletId,
         error: _walletError,
-        pickerTitle: 'Move from',
+        pickerTitle: l10n.moveFrom,
         onPicked: (id) => setState(() {
           _walletId = id;
           _walletError = null;
@@ -700,8 +682,8 @@ class _EntrySheetState extends State<_EntrySheet> {
       ),
       _ => _walletField(
         label: switch (_kind) {
-          WalletEntryKind.spend || WalletEntryKind.giveBack => 'From wallet',
-          _ => 'Into wallet',
+          WalletEntryKind.spend || WalletEntryKind.giveBack => l10n.fromWallet,
+          _ => l10n.intoWallet,
         },
         walletId: _walletId,
         error: _walletError,
@@ -718,7 +700,7 @@ class _EntrySheetState extends State<_EntrySheet> {
       isDirty: _isDirty,
       trailing: _isEditing
           ? IconButton(
-              tooltip: 'Delete entry',
+              tooltip: l10n.deleteEntry,
               onPressed: _delete,
               icon: Icon(Icons.delete_outline, color: c.spending),
             )
@@ -726,7 +708,7 @@ class _EntrySheetState extends State<_EntrySheet> {
       button: ElevatedButton(
         onPressed: _saving ? null : _save,
         child: ButtonLabel(
-          _isEditing ? 'Save changes' : 'Save',
+          _isEditing ? l10n.saveChanges : l10n.save,
           loading: _saving,
         ),
       ),
@@ -738,10 +720,10 @@ class _EntrySheetState extends State<_EntrySheet> {
         if (_kind == WalletEntryKind.transfer) ...[
           const SizedBox(height: 16),
           _walletField(
-            label: 'To',
+            label: l10n.to,
             walletId: _toWalletId,
             error: _toWalletError,
-            pickerTitle: 'Move to',
+            pickerTitle: l10n.moveTo,
             excludeId: _walletId,
             onPicked: (id) => setState(() {
               _toWalletId = id;
@@ -751,26 +733,26 @@ class _EntrySheetState extends State<_EntrySheet> {
         ],
         const SizedBox(height: 16),
         LabeledField(
-          label: 'Date',
+          label: l10n.date,
           field: FieldButton(
             leading: Icon(Icons.calendar_today_outlined, color: c.muted),
-            label: _dateLabel(_date),
+            label: friendlyDate(context.l10n, _date),
             onTap: _pickDate,
           ),
         ),
         const SizedBox(height: 16),
         LabeledField(
           label: _kind == WalletEntryKind.spend
-              ? 'What for (optional)'
-              : 'Note (optional)',
+              ? l10n.whatForOptional
+              : l10n.noteOptional,
           field: TextField(
             controller: _note,
             maxLength: 200,
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
               hintText: switch (_kind) {
-                WalletEntryKind.spend => 'e.g. Bike repair',
-                WalletEntryKind.receive => 'e.g. Keep it until he asks',
+                WalletEntryKind.spend => l10n.spentNoteHint,
+                WalletEntryKind.receive => l10n.receivedNoteHint,
                 _ => null,
               },
               counterText: '',
@@ -809,7 +791,7 @@ class _PersonEditorState extends State<_PersonEditor> {
 
   Future<void> _save() async {
     final name = _name.text.trim();
-    setState(() => _error = name.isEmpty ? 'Enter a name' : null);
+    setState(() => _error = name.isEmpty ? context.l10n.enterName : null);
     if (_error != null) return;
 
     final sameName = context.read<WalletsRepository>().people.any(
@@ -820,12 +802,10 @@ class _PersonEditorState extends State<_PersonEditor> {
     if (sameName) {
       final proceed = await confirmDialog(
         context,
-        title: '$name is already in your list',
-        message:
-            'Two people with the same name are easy to mix up. Use it '
-            'anyway?',
-        confirmLabel: 'Save anyway',
-        cancelLabel: 'Go back',
+        title: context.l10n.alreadyInList(name),
+        message: context.l10n.samePersonNameBody,
+        confirmLabel: context.l10n.saveAnyway,
+        cancelLabel: context.l10n.goBack,
       );
       if (proceed != true || !mounted) return;
     }
@@ -848,10 +828,8 @@ class _PersonEditorState extends State<_PersonEditor> {
     final person = widget.person;
     final confirmed = await _confirmDelete(
       context,
-      title: 'Delete ${person.name}?',
-      message:
-          'Everything received from and sent back to ${person.name} is '
-          'deleted too, and your wallets change as if none of it happened.',
+      title: context.l10n.deleteNamed(person.name),
+      message: context.l10n.deletePersonBody(person.name),
     );
     if (confirmed != true || !mounted) return;
     final navigator = Navigator.of(context);
@@ -867,20 +845,20 @@ class _PersonEditorState extends State<_PersonEditor> {
   Widget build(BuildContext context) {
     final c = context.colors;
     return MoneySheet(
-      title: 'Edit person',
+      title: context.l10n.editPerson,
       isDirty: () => _name.text != widget.person.name,
       trailing: IconButton(
-        tooltip: 'Delete person',
+        tooltip: context.l10n.deletePerson,
         onPressed: _delete,
         icon: Icon(Icons.delete_outline, color: c.spending),
       ),
       button: ElevatedButton(
         onPressed: _saving ? null : _save,
-        child: ButtonLabel('Save changes', loading: _saving),
+        child: ButtonLabel(context.l10n.saveChanges, loading: _saving),
       ),
       children: [
         LabeledField(
-          label: 'Name',
+          label: context.l10n.name,
           field: TextField(
             controller: _name,
             autofocus: true,
@@ -929,7 +907,7 @@ class _CorrectBalanceSheetState extends State<_CorrectBalanceSheet> {
 
   Future<void> _save() async {
     final actual = parseAmount(_actual.text);
-    setState(() => _error = actual == null ? 'Enter the balance' : null);
+    setState(() => _error = actual == null ? context.l10n.enterBalance : null);
     if (_error != null) return;
     setState(() => _saving = true);
     try {
@@ -950,18 +928,19 @@ class _CorrectBalanceSheetState extends State<_CorrectBalanceSheet> {
   Widget build(BuildContext context) {
     final money = context.money;
     return MoneySheet(
-      title: 'Correct ${widget.wallet.name}',
+      title: context.l10n.correctWallet(widget.wallet.name),
       isDirty: () => _actual.text != _plain(widget.current),
-      subtitle:
-          'The app shows ${money.format(widget.current)}. Enter what your '
-          '${widget.wallet.name} actually has, and the difference is recorded.',
+      subtitle: context.l10n.correctBalanceHelp(
+        money.format(widget.current),
+        widget.wallet.name,
+      ),
       button: ElevatedButton(
         onPressed: _saving ? null : _save,
-        child: ButtonLabel('Save balance', loading: _saving),
+        child: ButtonLabel(context.l10n.saveBalance, loading: _saving),
       ),
       children: [
         LabeledField(
-          label: 'Real balance now',
+          label: context.l10n.realBalanceNow,
           field: AmountField(
             controller: _actual,
             errorText: _error,

@@ -8,6 +8,7 @@ import 'package:monthly_traq/models/category_model.dart';
 import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Creates a category, or — given [existing] — renames it and changes its
 /// icon. Returns the saved category, or null if cancelled.
@@ -18,9 +19,9 @@ Future<CategoryModel?> showCategoryEditor(
 }) {
   final repo = context.read<TransactionsRepository>();
   if (existing == null && !repo.canAddCategory) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You\'ve reached the category limit')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.categoryLimitReached)));
     return Future.value(null);
   }
   return showModalBottomSheet<CategoryModel>(
@@ -30,6 +31,22 @@ Future<CategoryModel?> showCategoryEditor(
     builder: (context) => _CategoryEditor(type: type, existing: existing),
   );
 }
+
+/// An icon group's name in the current language.
+String iconGroupLabel(AppLocalizations l10n, CategoryIconGroup group) =>
+    switch (group.label) {
+      'General' => l10n.iconGroupGeneral,
+      'Food & drink' => l10n.iconGroupFood,
+      'Groceries & shopping' => l10n.iconGroupShopping,
+      'Transport' => l10n.iconGroupTransport,
+      'Bills & home' => l10n.iconGroupBills,
+      'Health & care' => l10n.iconGroupHealth,
+      'Family & giving' => l10n.iconGroupFamily,
+      'Education & work' => l10n.iconGroupWork,
+      'Fun & travel' => l10n.iconGroupFun,
+      'Money' => l10n.iconGroupMoney,
+      _ => group.label,
+    };
 
 class _CategoryEditor extends StatefulWidget {
   final TransactionType type;
@@ -77,7 +94,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
   Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'Give the category a name');
+      setState(() => _error = context.l10n.categoryNameError);
       return;
     }
     setState(() {
@@ -115,7 +132,9 @@ class _CategoryEditorState extends State<_CategoryEditor> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Could not ${_isEditing ? 'save' : 'add'} category: $e',
+            _isEditing
+                ? context.l10n.categorySaveFailed(errorMessage(context.l10n, e))
+                : context.l10n.categoryAddFailed(errorMessage(context.l10n, e)),
           ),
         ),
       );
@@ -157,7 +176,9 @@ class _CategoryEditorState extends State<_CategoryEditor> {
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  _isEditing ? 'Edit category' : 'New category',
+                  _isEditing
+                      ? context.l10n.editCategory
+                      : context.l10n.newCategory,
                   style: AppText.section.copyWith(fontSize: 24),
                 ),
               ),
@@ -173,7 +194,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   LabeledField(
-                    label: 'Name',
+                    label: context.l10n.name,
                     field: TextField(
                       controller: _nameController,
                       autofocus: !_isEditing,
@@ -181,8 +202,8 @@ class _CategoryEditorState extends State<_CategoryEditor> {
                       maxLength: 40,
                       decoration: InputDecoration(
                         hintText: widget.type == TransactionType.income
-                            ? 'e.g. Freelance'
-                            : 'e.g. Groceries',
+                            ? context.l10n.categoryNameHintIncome
+                            : context.l10n.categoryNameHintExpense,
                         errorText: _error,
                         counterText: '',
                       ),
@@ -199,7 +220,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Count toward monthly budget',
+                                context.l10n.countTowardBudget,
                                 style: AppText.rowTitle.copyWith(
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -207,11 +228,8 @@ class _CategoryEditorState extends State<_CategoryEditor> {
                               const SizedBox(height: 2),
                               Text(
                                 _countsTowardBudget
-                                    ? 'Spending here uses up your monthly '
-                                          'budget.'
-                                    : 'Not in budget — for loan repayments, '
-                                          'savings and the like. Still lowers '
-                                          'your balance.',
+                                    ? context.l10n.countTowardBudgetOn
+                                    : context.l10n.countTowardBudgetOff,
                                 style: AppText.label.copyWith(color: c.muted),
                               ),
                             ],
@@ -228,7 +246,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
                   ],
                   const SizedBox(height: 18),
                   Text(
-                    'Icon',
+                    context.l10n.icon,
                     style: AppText.rowTitle.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -236,7 +254,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
                   for (final group in categoryIconGroups) ...[
                     const SizedBox(height: 14),
                     Text(
-                      group.label.toUpperCase(),
+                      iconGroupLabel(context.l10n, group).toUpperCase(),
                       style: AppText.overline.copyWith(color: c.muted),
                     ),
                     const SizedBox(height: 8),
@@ -261,7 +279,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
           ElevatedButton(
             onPressed: _isSaving ? null : _save,
             child: ButtonLabel(
-              _isEditing ? 'Save changes' : 'Add category',
+              _isEditing ? context.l10n.saveChanges : context.l10n.addCategory,
               loading: _isSaving,
             ),
           ),

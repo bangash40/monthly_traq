@@ -6,6 +6,7 @@ import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/budget_cycle.dart';
 import 'package:monthly_traq/services/budget_win.dart';
 import 'package:monthly_traq/widgets/motion.dart';
+import 'package:monthly_traq/l10n/app_localizations.dart';
 
 void main() {
   group('BudgetWin', () {
@@ -100,6 +101,8 @@ void main() {
 
   group('CountUp', () {
     Widget host(double value) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: CountUp(
         value: value,
         builder: (context, v) => Text(v.toStringAsFixed(2)),
@@ -122,6 +125,8 @@ void main() {
 
     testWidgets('counts up again when its tab is first opened', (tester) async {
       Widget tab(int visit) => MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: TabVisit(
           visit: visit,
           child: CountUp(

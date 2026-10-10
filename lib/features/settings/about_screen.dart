@@ -4,6 +4,7 @@ import 'package:monthly_traq/app/app_info.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Profile → More → About: the app logo (in the current theme's color), its
 /// name, and the full version with the build number, e.g. "Version 1.4.4 (9)".
@@ -15,7 +16,7 @@ class AboutScreen extends StatelessWidget {
     final c = context.colors;
 
     return SubPageScaffold(
-      title: 'About',
+      title: context.l10n.about,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(24, 48, 24, 40),
         children: [
@@ -34,7 +35,7 @@ class AboutScreen extends StatelessWidget {
               return Text(
                 info == null
                     ? ''
-                    : 'Version ${info.version} (${info.buildNumber})',
+                    : context.l10n.aboutVersion(info.version, info.buildNumber),
                 textAlign: TextAlign.center,
                 style: AppText.body.copyWith(
                   fontSize: 16,
@@ -46,7 +47,7 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            'Track your income, expenses and monthly budget.',
+            context.l10n.aboutTagline,
             textAlign: TextAlign.center,
             style: AppText.body.copyWith(fontSize: 16, color: c.muted),
           ),

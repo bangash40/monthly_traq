@@ -3,6 +3,7 @@ import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/features/settings/privacy_policy.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
@@ -17,7 +18,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     );
 
     return SubPageScaffold(
-      title: 'Privacy policy',
+      title: context.l10n.privacyPolicy,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
         children: [

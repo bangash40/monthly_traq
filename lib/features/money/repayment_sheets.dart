@@ -13,6 +13,7 @@ import 'package:monthly_traq/services/repayments_repository.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 // Repayment: add / edit / delete
 
@@ -107,7 +108,7 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
       initialDate: initial,
       firstDate: DateTime(now.year - 5),
       lastDate: DateTime(now.year + 10),
-      helpText: 'Next payment due',
+      helpText: context.l10n.nextPaymentDue,
     );
     if (picked != null) {
       setState(() {
@@ -126,23 +127,20 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
         ? 0.0
         : parseAmount(_paidBefore.text);
     final installment = parseAmount(_installment.text);
+    final l10n = context.l10n;
     setState(() {
-      _nameError = name.isEmpty ? 'Give it a name' : null;
-      _totalError = total == null || total <= 0
-          ? 'Enter the total you owe'
-          : null;
+      _nameError = name.isEmpty ? l10n.giveItName : null;
+      _totalError = total == null || total <= 0 ? l10n.enterTotalOwed : null;
       _paidBeforeError = paidBefore == null || paidBefore < 0
-          ? 'Enter an amount, or leave it empty'
+          ? l10n.amountOrEmpty
           : total != null && paidBefore > total
-          ? 'More than the total of ${money.format(total)}'
+          ? l10n.moreThanTotal(money.format(total))
           : null;
       _installmentError =
           _scheduled && (installment == null || installment <= 0)
-          ? 'Enter how much you pay each time'
+          ? l10n.enterEachPayment
           : null;
-      _dueError = _scheduled && _nextDue == null
-          ? 'Pick when the next payment is due'
-          : null;
+      _dueError = _scheduled && _nextDue == null ? l10n.pickNextDue : null;
     });
     if (_nameError != null ||
         _totalError != null ||
@@ -160,12 +158,10 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
     if (sameName) {
       final proceed = await confirmDialog(
         context,
-        title: 'You already have $name',
-        message:
-            'Two repayments with the same name are easy to mix up. '
-            'Save anyway?',
-        confirmLabel: 'Save anyway',
-        cancelLabel: 'Go back',
+        title: l10n.youAlreadyHave(name),
+        message: l10n.sameRepaymentNameBody,
+        confirmLabel: l10n.saveAnyway,
+        cancelLabel: l10n.goBack,
       );
       if (proceed != true || !mounted) return;
     }
@@ -206,11 +202,9 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
     final existing = _e!;
     final confirmed = await confirmDialog(
       context,
-      title: 'Delete ${existing.name}?',
-      message:
-          'Its payment history is deleted. Expenses and wallet entries its '
-          'payments added are kept.',
-      confirmLabel: 'Delete',
+      title: context.l10n.deleteNamed(existing.name),
+      message: context.l10n.deleteRepaymentBody,
+      confirmLabel: context.l10n.delete,
       destructive: true,
     );
     if (confirmed != true || !mounted) return;
@@ -227,15 +221,14 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
   Widget build(BuildContext context) {
     final c = context.colors;
     return MoneySheet(
-      title: _isEditing ? 'Edit repayment' : 'New repayment',
-      subtitle: _isEditing
-          ? null
-          : 'Money you owe and pay back over time: an installment, a loan, '
-                'a qisht.',
+      title: _isEditing
+          ? context.l10n.editRepayment
+          : context.l10n.newRepayment,
+      subtitle: _isEditing ? null : context.l10n.newRepaymentHelp,
       isDirty: _isDirty,
       trailing: _isEditing
           ? IconButton(
-              tooltip: 'Delete repayment',
+              tooltip: context.l10n.deleteRepayment,
               onPressed: _delete,
               icon: Icon(Icons.delete_outline, color: c.spending),
             )
@@ -243,20 +236,22 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
       button: ElevatedButton(
         onPressed: _saving ? null : _save,
         child: ButtonLabel(
-          _isEditing ? 'Save changes' : 'Add repayment',
+          _isEditing
+              ? context.l10n.saveChanges
+              : context.l10n.addRepaymentButton,
           loading: _saving,
         ),
       ),
       children: [
         LabeledField(
-          label: 'Name',
+          label: context.l10n.name,
           field: TextField(
             controller: _name,
             autofocus: !_isEditing,
             textCapitalization: TextCapitalization.sentences,
             maxLength: 60,
             decoration: InputDecoration(
-              hintText: 'e.g. Bike installment',
+              hintText: context.l10n.repaymentNameHint,
               errorText: _nameError,
               counterText: '',
             ),
@@ -264,25 +259,25 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
         ),
         const SizedBox(height: 16),
         LabeledField(
-          label: 'Who it\'s to (optional)',
+          label: context.l10n.lenderOptional,
           field: TextField(
             controller: _lender,
             textCapitalization: TextCapitalization.words,
             maxLength: 60,
-            decoration: const InputDecoration(
-              hintText: 'e.g. Honda dealer',
+            decoration: InputDecoration(
+              hintText: context.l10n.lenderHint,
               counterText: '',
             ),
           ),
         ),
         const SizedBox(height: 16),
         LabeledField(
-          label: 'Total you owe',
+          label: context.l10n.totalYouOwe,
           field: AmountField(controller: _total, errorText: _totalError),
         ),
         const SizedBox(height: 16),
         LabeledField(
-          label: 'Already paid (optional)',
+          label: context.l10n.alreadyPaidOptional,
           field: AmountField(
             controller: _paidBefore,
             errorText: _paidBeforeError,
@@ -290,17 +285,20 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
         ),
         const SizedBox(height: 6),
         Text(
-          'What you paid before adding it here.',
+          context.l10n.alreadyPaidHelp,
           style: AppText.label.copyWith(color: c.muted),
         ),
         const SizedBox(height: 16),
         Text(
-          'How often',
+          context.l10n.howOften,
           style: AppText.rowTitle.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 10),
         ChoicePills<RepaymentFrequency>(
-          options: [for (final f in RepaymentFrequency.values) (f, f.label)],
+          options: [
+            for (final f in RepaymentFrequency.values)
+              (f, f.label(context.l10n)),
+          ],
           value: _frequency,
           onChanged: (f) => setState(() => _frequency = f),
         ),
@@ -310,12 +308,12 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
             children: [
               Expanded(
                 child: Text(
-                  'Every $_everyMonths months',
+                  context.l10n.everyNMonths(_everyMonths),
                   style: AppText.rowTitle.copyWith(fontSize: 16),
                 ),
               ),
               IconButton.filledTonal(
-                tooltip: 'Fewer months',
+                tooltip: context.l10n.fewerMonths,
                 onPressed: _everyMonths > 2
                     ? () => setState(() => _everyMonths--)
                     : null,
@@ -323,7 +321,7 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
               ),
               const SizedBox(width: 8),
               IconButton.filledTonal(
-                tooltip: 'More months',
+                tooltip: context.l10n.moreMonths,
                 onPressed: _everyMonths < 24
                     ? () => setState(() => _everyMonths++)
                     : null,
@@ -335,7 +333,7 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
         if (_scheduled) ...[
           const SizedBox(height: 16),
           LabeledField(
-            label: 'Each payment',
+            label: context.l10n.eachPayment,
             field: AmountField(
               controller: _installment,
               errorText: _installmentError,
@@ -343,10 +341,12 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
           ),
           const SizedBox(height: 16),
           LabeledField(
-            label: 'Next payment due',
+            label: context.l10n.nextPaymentDue,
             field: FieldButton(
               leading: Icon(Icons.event_outlined, color: c.muted),
-              label: _nextDue == null ? 'Pick a date' : friendlyDate(_nextDue!),
+              label: _nextDue == null
+                  ? context.l10n.pickDate
+                  : friendlyDate(context.l10n, _nextDue!),
               empty: _nextDue == null,
               error: _dueError,
               onTap: _pickDue,
@@ -355,7 +355,7 @@ class _RepaymentEditorState extends State<_RepaymentEditor> {
         ] else ...[
           const SizedBox(height: 10),
           Text(
-            'No schedule: pay whatever you can, whenever you can.',
+            context.l10n.noScheduleHelp,
             style: AppText.label.copyWith(color: c.muted),
           ),
         ],
@@ -474,17 +474,18 @@ class _PaySheetState extends State<_PaySheet> {
     final walletsRepo = context.read<WalletsRepository>();
     final remaining = repo.progressOf(_r).remaining;
     final amount = parseAmount(_amount.text);
+    final l10n = context.l10n;
     setState(() {
       _amountError = amount == null || amount <= 0
-          ? 'Enter an amount above zero'
+          ? l10n.amountAboveZero
           : amount > remaining + 0.005
-          ? 'Only ${money.format(remaining)} is left to pay'
+          ? l10n.onlyLeftToPay(money.format(remaining))
           : null;
       _categoryError = _source == PaymentSource.budget && _categoryId == null
-          ? 'Pick a category for the expense'
+          ? l10n.pickExpenseCategory
           : null;
       _walletError = _source == PaymentSource.wallet && _walletId == null
-          ? 'Pick a wallet'
+          ? l10n.pickWallet
           : null;
     });
     if (_amountError != null ||
@@ -496,15 +497,17 @@ class _PaySheetState extends State<_PaySheet> {
     if (_source == PaymentSource.wallet) {
       final balance = walletsRepo.ledger.of(_walletId!).total;
       if (amount! > balance + 0.005) {
-        final name = walletsRepo.walletById(_walletId)?.name ?? 'This wallet';
+        final name = walletsRepo.walletById(_walletId)?.name ?? l10n.thisWallet;
         final proceed = await confirmDialog(
           context,
-          title: 'More than $name has',
-          message:
-              '$name has ${signedMoney(money, balance)}. Saving this takes '
-              'it to ${signedMoney(money, balance - amount)}.',
-          confirmLabel: 'Save anyway',
-          cancelLabel: 'Go back',
+          title: l10n.moreThanWalletHas(name),
+          message: l10n.moreThanWalletBody(
+            name,
+            signedMoney(money, balance),
+            signedMoney(money, balance - amount),
+          ),
+          confirmLabel: l10n.saveAnyway,
+          cancelLabel: l10n.goBack,
         );
         if (proceed != true || !mounted) return;
       }
@@ -571,20 +574,20 @@ class _PaySheetState extends State<_PaySheet> {
     final due = _r.nextDue;
 
     return MoneySheet(
-      title: 'Pay ${_r.name}',
+      title: context.l10n.payNamed(_r.name),
       subtitle: [
-        '${money.format(remaining)} left to pay.',
+        context.l10n.leftToPaySentence(money.format(remaining)),
         if (_r.hasSchedule && due != null)
-          'Next due ${DateFormat('d MMM').format(due)}.',
+          context.l10n.nextDueSentence(DateFormat('d MMM').format(due)),
       ].join(' '),
       isDirty: _isDirty,
       button: ElevatedButton(
         onPressed: _saving ? null : _save,
-        child: ButtonLabel('Save payment', loading: _saving),
+        child: ButtonLabel(context.l10n.savePayment, loading: _saving),
       ),
       children: [
         LabeledField(
-          label: 'Amount',
+          label: context.l10n.amount,
           field: AmountField(
             controller: _amount,
             errorText: _amountError,
@@ -594,22 +597,22 @@ class _PaySheetState extends State<_PaySheet> {
         if (_r.installment != null) ...[
           const SizedBox(height: 6),
           Text(
-            'A full payment moves the due date to the next one. Less than '
-            '${money.format(_r.installment!)} keeps it.',
+            context.l10n.fullPaymentHelp(money.format(_r.installment!)),
             style: AppText.label.copyWith(color: c.muted),
           ),
         ],
         const SizedBox(height: 16),
         Text(
-          'Paid from',
+          context.l10n.paidFrom,
           style: AppText.rowTitle.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 10),
         ChoicePills<PaymentSource>(
           options: [
-            (PaymentSource.budget, 'Monthly money'),
-            if (wallets.hasWallets) (PaymentSource.wallet, 'A wallet'),
-            (PaymentSource.none, 'Just record it'),
+            (PaymentSource.budget, context.l10n.monthlyMoney),
+            if (wallets.hasWallets)
+              (PaymentSource.wallet, context.l10n.aWalletOption),
+            (PaymentSource.none, context.l10n.justRecordIt),
           ],
           value: _source,
           onChanged: (s) => setState(() => _source = s),
@@ -627,7 +630,7 @@ class _PaySheetState extends State<_PaySheet> {
                         size: 36,
                       )
                     : Icon(Icons.category_outlined, color: c.muted),
-                label: category?.name ?? 'Choose a category',
+                label: category?.name ?? context.l10n.chooseCategory,
                 empty: category == null,
                 error: _categoryError,
                 onTap: _pickCategory,
@@ -635,12 +638,10 @@ class _PaySheetState extends State<_PaySheet> {
               const SizedBox(height: 6),
               Text(
                 category == null
-                    ? 'Adds an expense in this category.'
+                    ? context.l10n.addsExpenseHere
                     : category.excludeFromBudget
-                    ? 'Adds an expense in ${category.name}. Not counted in '
-                          'your monthly budget.'
-                    : 'Adds an expense in ${category.name}. Counts toward '
-                          'your monthly budget.',
+                    ? context.l10n.addsExpenseNotCounted(category.name)
+                    : context.l10n.addsExpenseCounted(category.name),
                 style: AppText.label.copyWith(color: c.muted),
               ),
             ],
@@ -655,14 +656,14 @@ class _PaySheetState extends State<_PaySheet> {
                         Icons.account_balance_wallet_outlined,
                         color: c.muted,
                       ),
-                label: wallet?.name ?? 'Choose a wallet',
+                label: wallet?.name ?? context.l10n.chooseWallet,
                 empty: wallet == null,
                 error: _walletError,
                 onTap: () async {
                   final choice = await pickWallet(
                     context,
                     selectedId: _walletId,
-                    title: 'Paid from',
+                    title: context.l10n.paidFrom,
                   );
                   if (choice?.walletId != null) {
                     setState(() {
@@ -674,24 +675,22 @@ class _PaySheetState extends State<_PaySheet> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Adds a "Spent" entry in the wallet. Your monthly budget '
-                'isn\'t touched.',
+                context.l10n.addsSpentEntry,
                 style: AppText.label.copyWith(color: c.muted),
               ),
             ],
           ),
           PaymentSource.none => Text(
-            'Only updates this repayment. Nothing is added to your '
-            'transactions or wallets.',
+            context.l10n.onlyUpdatesRepayment,
             style: AppText.label.copyWith(color: c.muted),
           ),
         },
         const SizedBox(height: 16),
         LabeledField(
-          label: 'Date',
+          label: context.l10n.date,
           field: FieldButton(
             leading: Icon(Icons.calendar_today_outlined, color: c.muted),
-            label: friendlyDate(_date),
+            label: friendlyDate(context.l10n, _date),
             onTap: _pickDate,
           ),
         ),
@@ -707,6 +706,7 @@ Future<void> confirmDeletePayment(
   RepaymentPayment payment,
 ) async {
   final money = context.moneyNow;
+  final l10n = context.l10n;
   final repo = context.read<RepaymentsRepository>();
   final txRepo = context.read<TransactionsRepository>();
   final walletsRepo = context.read<WalletsRepository>();
@@ -723,18 +723,17 @@ Future<void> confirmDeletePayment(
 
   final confirmed = await confirmDialog(
     context,
-    title: 'Delete this payment?',
+    title: l10n.deletePaymentTitle,
     message: [
-      'The ${money.format(payment.amount)} goes back to what you owe.',
-      if (linkedTx) 'The expense it added is deleted too.',
+      l10n.paymentGoesBack(money.format(payment.amount)),
+      if (linkedTx) l10n.expenseDeletedToo,
       if (linkedEntry != null)
-        'The "Spent" entry it added in '
-            '${walletsRepo.walletById(linkedEntry.walletId)?.name ?? 'the wallet'} '
-            'is deleted too.',
-      if (movesBack)
-        'The due date goes back to ${DateFormat('d MMM').format(from)}.',
+        l10n.spentEntryDeletedToo(
+          walletsRepo.walletById(linkedEntry.walletId)?.name ?? l10n.theWallet,
+        ),
+      if (movesBack) l10n.dueDateGoesBack(DateFormat('d MMM').format(from)),
     ].join(' '),
-    confirmLabel: 'Delete',
+    confirmLabel: l10n.delete,
     destructive: true,
   );
   if (confirmed != true) return;

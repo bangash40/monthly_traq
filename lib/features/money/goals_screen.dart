@@ -13,6 +13,7 @@ import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 void _open(BuildContext context, Widget screen) =>
     Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
@@ -32,11 +33,11 @@ class GoalBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (progress.goal.isDone) {
-      return const TagBadge('Done', tone: BadgeTone.income);
+      return TagBadge(context.l10n.goalDone, tone: BadgeTone.income);
     }
     final status = progress.status(DateTime.now());
     return TagBadge(
-      status.label,
+      status.label(context.l10n),
       tone: switch (status) {
         GoalStatus.reached || GoalStatus.onTrack => BadgeTone.income,
         GoalStatus.behind => BadgeTone.warning,
@@ -49,19 +50,21 @@ class GoalBadge extends StatelessWidget {
 
 /// "Save Rs. 15,000 a month to reach it by Mar 2027", or "Rs. 90,000 to
 /// go" without a date.
-String goalPace(GoalProgress p, MoneyFormatter money) {
+String goalPace(AppLocalizations l10n, GoalProgress p, MoneyFormatter money) {
   final g = p.goal;
   if (g.isDone) {
-    return 'Done ${DateFormat('d MMM y').format(g.doneAt!)}';
+    return l10n.doneOn(DateFormat('d MMM y').format(g.doneAt!));
   }
-  if (p.isReached) return 'Reached — mark it done when you buy it';
+  if (p.isReached) return l10n.reachedMarkDone;
   final perMonth = p.perMonth(DateTime.now());
   final date = g.targetDate;
   if (perMonth != null && date != null) {
-    return 'Save ${money.format(perMonth.ceilToDouble())} a month to reach it '
-        'by ${DateFormat('MMM y').format(date)}';
+    return l10n.saveAMonthToReach(
+      money.format(perMonth.ceilToDouble()),
+      DateFormat('MMM y').format(date),
+    );
   }
-  return '${money.format(p.remaining)} to go';
+  return l10n.amountToGo(money.format(p.remaining));
 }
 
 /// Profile → Savings goals: everything being saved for, and what's done.
@@ -87,18 +90,16 @@ class GoalsScreen extends StatelessWidget {
     }
 
     return SubPageScaffold(
-      title: 'Savings goals',
+      title: context.l10n.savingsGoals,
       body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
         children: [
           if (!repo.hasGoals)
             EmptyState(
               icon: Icons.savings_outlined,
-              title: 'Save up for something',
-              message:
-                  'Add a goal — a new mobile, a bike, a trip — and see how '
-                  'close you are and how much to save each month.',
-              actionLabel: 'Add a goal',
+              title: context.l10n.saveUpForSomething,
+              message: context.l10n.saveUpForSomethingHelp,
+              actionLabel: context.l10n.addAGoal,
               onAction: () => showGoalEditor(context),
             )
           else ...[
@@ -108,7 +109,7 @@ class GoalsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Saved for goals',
+                    context.l10n.savedForGoals,
                     style: AppText.body.copyWith(color: c.muted),
                   ),
                   const SizedBox(height: 6),
@@ -125,12 +126,15 @@ class GoalsScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _Stat(
-                          label: 'Still to save',
+                          label: context.l10n.stillToSave,
                           value: money.format(toGo),
                         ),
                       ),
                       Expanded(
-                        child: _Stat(label: 'Goals', value: '${active.length}'),
+                        child: _Stat(
+                          label: context.l10n.goals,
+                          value: '${active.length}',
+                        ),
                       ),
                     ],
                   ),
@@ -139,21 +143,21 @@ class GoalsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             SectionHeader(
-              'Saving for',
-              actionLabel: 'Add',
+              context.l10n.savingFor,
+              actionLabel: context.l10n.add,
               onAction: () => showGoalEditor(context),
             ),
             const SizedBox(height: 8),
             if (active.isEmpty)
               Text(
-                'All your goals are done.',
+                context.l10n.allGoalsDone,
                 style: AppText.body.copyWith(color: c.muted),
               )
             else
               GroupCard(children: [for (final g in active) GoalRow(goal: g)]),
             if (done.isNotEmpty) ...[
               const SizedBox(height: 24),
-              const SectionHeader('Done'),
+              SectionHeader(context.l10n.done),
               const SizedBox(height: 8),
               GroupCard(children: [for (final g in done) GoalRow(goal: g)]),
             ],
@@ -232,7 +236,7 @@ class GoalRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${money.format(p.saved)} of ${money.format(goal.target)}'
+                    '${context.l10n.amountOfTotal(money.format(p.saved), money.format(goal.target))}'
                     ' · $percent%',
                     style: AppText.label.copyWith(
                       color: c.ink,
@@ -243,7 +247,7 @@ class GoalRow extends StatelessWidget {
                   MeterBar(value: p.fraction, color: goal.color, height: 6),
                   const SizedBox(height: 6),
                   Text(
-                    goalPace(p, money),
+                    goalPace(context.l10n, p, money),
                     style: AppText.label.copyWith(color: c.muted),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -303,7 +307,7 @@ class GoalScreen extends StatelessWidget {
     return SubPageScaffold(
       title: g.name,
       trailing: IconButton(
-        tooltip: 'Edit goal',
+        tooltip: context.l10n.editGoal,
         onPressed: () => showGoalEditor(context, existing: g),
         icon: Icon(Icons.edit_outlined, color: c.ink),
       ),
@@ -321,7 +325,7 @@ class GoalScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Saved',
+                        context.l10n.saved,
                         style: AppText.body.copyWith(color: c.muted),
                       ),
                     ),
@@ -341,7 +345,7 @@ class GoalScreen extends StatelessWidget {
                 MeterBar(value: p.fraction, color: g.color),
                 const SizedBox(height: 10),
                 Text(
-                  'of ${money.format(g.target)} · '
+                  '${context.l10n.ofTotal(money.format(g.target))} · '
                   '${(p.fraction * 100).floor()}%',
                   style: AppText.label.copyWith(color: c.muted),
                 ),
@@ -351,15 +355,15 @@ class GoalScreen extends StatelessWidget {
           const SizedBox(height: 16),
           GroupCard(
             children: [
-              info('To go', infoText(money.format(p.remaining))),
+              info(context.l10n.toGo, infoText(money.format(p.remaining))),
               if (g.targetDate != null)
                 info(
-                  'Reach it by',
+                  context.l10n.reachItBy,
                   infoText(DateFormat('d MMM y').format(g.targetDate!)),
                 ),
               if (perMonth != null)
                 info(
-                  'Save each month',
+                  context.l10n.saveEachMonth,
                   infoText(money.format(perMonth.ceilToDouble())),
                 ),
             ],
@@ -369,7 +373,7 @@ class GoalScreen extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: () => repo.setDone(g, false),
               icon: const Icon(Icons.undo),
-              label: const Text('Not done yet'),
+              label: Text(context.l10n.notDoneYet),
             )
           else ...[
             Row(
@@ -384,7 +388,7 @@ class GoalScreen extends StatelessWidget {
                           )
                         : null,
                     icon: const Icon(Icons.remove),
-                    label: const Text('Take out'),
+                    label: Text(context.l10n.takeOut),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -393,7 +397,7 @@ class GoalScreen extends StatelessWidget {
                     onPressed: () =>
                         showGoalMoneySheet(context, g, GoalEntryKind.add),
                     icon: const Icon(Icons.add),
-                    label: const Text('Add money'),
+                    label: Text(context.l10n.addMoney),
                   ),
                 ),
               ],
@@ -403,16 +407,16 @@ class GoalScreen extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: () => repo.setDone(g, true),
                 icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Mark as done'),
+                label: Text(context.l10n.markAsDone),
               ),
             ],
           ],
           const SizedBox(height: 24),
-          const SectionHeader('History'),
+          SectionHeader(context.l10n.history),
           const SizedBox(height: 8),
           if (history.isEmpty && g.savedBefore <= 0)
             Text(
-              'Money you add or take out shows up here.',
+              context.l10n.goalHistoryEmpty,
               style: AppText.body.copyWith(color: c.muted),
             )
           else
@@ -431,7 +435,7 @@ class GoalScreen extends StatelessWidget {
                         const SizedBox(width: 14),
                         Expanded(
                           child: Text(
-                            'Saved before tracking',
+                            context.l10n.savedBeforeTracking,
                             style: AppText.rowTitle.copyWith(fontSize: 16),
                           ),
                         ),
@@ -470,17 +474,20 @@ class _EntryRow extends StatelessWidget {
             .firstOrNull;
         final category = txRepo.categoryById(tx?.categoryId);
         return category == null
-            ? 'Monthly money'
-            : 'Monthly money · ${category.name}';
+            ? context.l10n.monthlyMoney
+            : '${context.l10n.monthlyMoney} · ${category.name}';
       }(),
       PaymentSource.wallet => () {
         final entry = wallets.entries
             .where((w) => w.id == e.walletEntryId)
             .firstOrNull;
-        final name = wallets.walletById(entry?.walletId)?.name ?? 'a wallet';
-        return adding ? 'From $name' : 'Into $name';
+        final name =
+            wallets.walletById(entry?.walletId)?.name ?? context.l10n.aWallet;
+        return adding
+            ? context.l10n.fromWalletNamed(name)
+            : context.l10n.intoWalletNamed(name);
       }(),
-      PaymentSource.none => 'Recorded only',
+      PaymentSource.none => context.l10n.recordedOnly,
     };
 
     return InkWell(
@@ -500,7 +507,7 @@ class _EntryRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${adding ? 'Added' : 'Took out'} · '
+                    '${adding ? context.l10n.added : context.l10n.tookOut} · '
                     '${DateFormat(e.date.year == DateTime.now().year ? 'd MMM' : 'd MMM y').format(e.date)}',
                     style: AppText.rowTitle.copyWith(fontSize: 16),
                   ),
@@ -553,11 +560,11 @@ class GoalsHomeCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
-                child: Text('Savings goals', style: AppText.section),
+              Expanded(
+                child: Text(context.l10n.savingsGoals, style: AppText.section),
               ),
               Text(
-                '${money.format(saved)} saved',
+                context.l10n.amountSaved(money.format(saved)),
                 style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
               ),
               Icon(Icons.chevron_right, color: c.faint),
@@ -568,7 +575,7 @@ class GoalsHomeCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Text(
-                'All your goals are done.',
+                context.l10n.allGoalsDone,
                 style: AppText.body.copyWith(color: c.muted),
               ),
             )

@@ -5,6 +5,7 @@ import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 class CurrencyPickerScreen extends StatefulWidget {
   const CurrencyPickerScreen({super.key});
@@ -27,11 +28,14 @@ class _CurrencyPickerScreenState extends State<CurrencyPickerScreen> {
     final repo = context.read<TransactionsRepository>();
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final l10n = context.l10n;
     try {
       await repo.updateCurrency(currency);
       navigator.pop();
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.couldNotSave(errorMessage(l10n, e)))),
+      );
     }
   }
 
@@ -54,7 +58,7 @@ class _CurrencyPickerScreenState extends State<CurrencyPickerScreen> {
               .toList();
 
     return SubPageScaffold(
-      title: 'Currency',
+      title: context.l10n.currency,
       body: Column(
         children: [
           Padding(
@@ -62,13 +66,13 @@ class _CurrencyPickerScreenState extends State<CurrencyPickerScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search by name, code or country',
+                hintText: context.l10n.currencySearchHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
                         icon: const Icon(Icons.close),
-                        tooltip: 'Clear search',
+                        tooltip: context.l10n.clearSearch,
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _query = '');
@@ -82,10 +86,10 @@ class _CurrencyPickerScreenState extends State<CurrencyPickerScreen> {
             child: results.isEmpty
                 ? ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    children: const [
+                    children: [
                       EmptyState(
                         icon: Icons.search_off,
-                        title: 'No matching currency',
+                        title: context.l10n.noMatchingCurrency,
                       ),
                     ],
                   )

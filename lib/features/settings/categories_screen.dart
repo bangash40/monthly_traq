@@ -7,6 +7,7 @@ import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/category_editor_sheet.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Add, rename, delete and reorder categories. The order here is the order
 /// on the Add screen.
@@ -30,25 +31,23 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Future<void> _delete(CategoryModel category) async {
     final repo = context.read<TransactionsRepository>();
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Delete ${category.name}?'),
-        content: const Text(
-          'Transactions in this category are kept and become '
-          'uncategorized.',
-        ),
+        title: Text(l10n.deleteNamed(category.name)),
+        content: Text(l10n.deleteCategoryBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: TextButton.styleFrom(
               foregroundColor: dialogContext.colors.spending,
             ),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -58,19 +57,24 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     try {
       await repo.deleteCategory(category.id);
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not delete: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.couldNotDelete(errorMessage(l10n, e)))),
+      );
     }
   }
 
   Future<void> _reorder(List<CategoryModel> current, int from, int to) async {
     final repo = context.read<TransactionsRepository>();
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final reordered = List<CategoryModel>.of(current);
     reordered.insert(to, reordered.removeAt(from));
     try {
       await repo.reorderCategories(reordered);
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not reorder: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.couldNotReorder(errorMessage(l10n, e)))),
+      );
     }
   }
 
@@ -85,12 +89,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         .toList();
 
     return SubPageScaffold(
-      title: 'Categories',
+      title: context.l10n.categories,
       bottom: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
           onPressed: () => showCategoryEditor(context, type: _type),
-          child: const ButtonLabel('New category', icon: Icons.add),
+          child: ButtonLabel(context.l10n.newCategory, icon: Icons.add),
         ),
       ),
       body: Column(
@@ -102,11 +106,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               segments: [
                 AppSegment(
                   TransactionType.expense,
-                  'Expense · ${count(TransactionType.expense)}',
+                  context.l10n.expenseCount(count(TransactionType.expense)),
                 ),
                 AppSegment(
                   TransactionType.income,
-                  'Income · ${count(TransactionType.income)}',
+                  context.l10n.incomeCount(count(TransactionType.income)),
                 ),
               ],
               onChanged: (type) => setState(() => _type = type),
@@ -115,7 +119,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 14, 24, 12),
             child: Text(
-              'Drag to reorder. The order here is the order in the add screen.',
+              context.l10n.categoriesHelp,
               style: AppText.label.copyWith(fontSize: 14, color: c.muted),
             ),
           ),
@@ -127,9 +131,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       EmptyState(
                         icon: Icons.category_outlined,
                         title: _type == TransactionType.expense
-                            ? 'No expense categories'
-                            : 'No income categories',
-                        message: 'Add one to start sorting what you log.',
+                            ? context.l10n.noExpenseCategories
+                            : context.l10n.noIncomeCategories,
+                        message: context.l10n.noCategoriesHelp,
                       ),
                     ],
                   )
@@ -210,7 +214,7 @@ class _CategoryRow extends StatelessWidget {
           ReorderableDragStartListener(
             index: index,
             child: Semantics(
-              label: 'Drag to reorder ${category.name}',
+              label: context.l10n.dragToReorder(category.name),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(14, 20, 10, 20),
                 child: Icon(Icons.drag_indicator, color: c.faint),
@@ -236,14 +240,14 @@ class _CategoryRow extends StatelessWidget {
                 ),
                 if (category.excludeFromBudget)
                   Text(
-                    'Not in budget',
+                    context.l10n.notInBudget,
                     style: AppText.label.copyWith(color: c.muted),
                   ),
               ],
             ),
           ),
           PopupMenuButton<_Action>(
-            tooltip: 'Options for ${category.name}',
+            tooltip: context.l10n.optionsFor(category.name),
             icon: Icon(Icons.more_vert, color: c.ink),
             onSelected: onAction,
             itemBuilder: (context) => [
@@ -253,7 +257,7 @@ class _CategoryRow extends StatelessWidget {
                   children: [
                     Icon(Icons.edit_outlined, color: c.muted),
                     const SizedBox(width: 12),
-                    const Text('Edit'),
+                    Text(context.l10n.edit),
                   ],
                 ),
               ),
@@ -263,7 +267,10 @@ class _CategoryRow extends StatelessWidget {
                   children: [
                     Icon(Icons.delete_outline, color: c.spending),
                     const SizedBox(width: 12),
-                    Text('Delete…', style: TextStyle(color: c.spending)),
+                    Text(
+                      context.l10n.deleteEllipsis,
+                      style: TextStyle(color: c.spending),
+                    ),
                   ],
                 ),
               ),

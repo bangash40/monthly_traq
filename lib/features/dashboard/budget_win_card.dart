@@ -10,6 +10,7 @@ import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/services/budget_win.dart';
 import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// "September — under budget!" at the top of Home for the first days of a
 /// new cycle, with a burst of confetti the first time it's seen in a
@@ -56,7 +57,7 @@ class _BudgetWinCardState extends State<BudgetWinCard>
     final cycle = win.cycle;
     final name = cycle.startDay == 1
         ? DateFormat('MMMM').format(cycle.start)
-        : 'Last cycle';
+        : context.l10n.lastCycle;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -79,20 +80,22 @@ class _BudgetWinCardState extends State<BudgetWinCard>
                   children: [
                     const SizedBox(height: 2),
                     Text(
-                      '$name — under budget!',
+                      context.l10n.underBudget(name),
                       style: AppText.section.copyWith(fontSize: 18),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'You kept ${money.format(win.leftOver)} of your '
-                      '${money.format(win.budget)} budget. Nice work.',
+                      context.l10n.budgetWinBody(
+                        money.format(win.leftOver),
+                        money.format(win.budget),
+                      ),
                       style: AppText.body.copyWith(color: c.muted),
                     ),
                   ],
                 ),
               ),
               IconButton(
-                tooltip: 'Dismiss',
+                tooltip: context.l10n.dismiss,
                 icon: Icon(Icons.close, color: c.muted, size: 20),
                 onPressed: () =>
                     context.read<AppSettings>().dismissBudgetWin(win.id),

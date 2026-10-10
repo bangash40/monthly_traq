@@ -4,6 +4,7 @@ import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// One line under the budget bar saying what spending was left out of the
 /// budget ("not in budget" categories such as loan repayments). It never
@@ -20,13 +21,16 @@ class NotInBudgetLine extends StatelessWidget {
     final money = context.money;
     final sum = totals.fold(0.0, (s, t) => s + t.amount);
     final text = totals.length == 1
-        ? 'Not counted: ${totals.single.category.name} · ${money.format(sum)}'
-        : 'Not counted: ${money.format(sum)} · ${totals.length} categories';
+        ? context.l10n.notCountedOne(
+            totals.single.category.displayName(context.l10n),
+            money.format(sum),
+          )
+        : context.l10n.notCountedMany(money.format(sum), totals.length);
     final style = AppText.caption.copyWith(fontSize: 13, color: c.muted);
 
     return Semantics(
       button: true,
-      label: '$text. Show details',
+      label: context.l10n.showDetailsLabel(text),
       excludeSemantics: true,
       child: InkWell(
         onTap: () => _showSheet(context, totals),
@@ -81,13 +85,12 @@ class _NotInBudgetSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Not in your budget',
+            context.l10n.notInYourBudget,
             style: AppText.section.copyWith(fontSize: 24),
           ),
           const SizedBox(height: 6),
           Text(
-            'This month\'s spending in these categories lowers your balance '
-            'and shows in Spent, but doesn\'t use up your monthly budget.',
+            context.l10n.notInBudgetHelp,
             style: AppText.body.copyWith(color: c.muted),
           ),
           const SizedBox(height: 18),
@@ -111,7 +114,7 @@ class _NotInBudgetSheet extends StatelessWidget {
                           const SizedBox(width: 14),
                           Expanded(
                             child: Text(
-                              t.category.name,
+                              t.category.displayName(context.l10n),
                               style: AppText.rowTitle.copyWith(fontSize: 16),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -135,7 +138,7 @@ class _NotInBudgetSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Total',
+                    context.l10n.total,
                     style: AppText.rowTitle.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
@@ -151,8 +154,7 @@ class _NotInBudgetSheet extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           Text(
-            'To change which categories count, go to Profile → Categories → '
-            'Edit.',
+            context.l10n.notInBudgetHowToChange,
             style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
           ),
         ],

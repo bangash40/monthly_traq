@@ -1,0 +1,1794 @@
+{
+  "@@locale": "en",
+  "languageSystem": "System default",
+  "@languageSystem": {
+    "description": "Language picker: follow the phone's language."
+  },
+  "languageTitle": "Language",
+  "badgeSoon": "Soon",
+  "badgePro": "PRO",
+  "back": "Back",
+  "appLogo": "MonthlyTraq logo",
+  "comingSoonLabel": "{label}, coming soon",
+  "@comingSoonLabel": {
+    "description": "Screen-reader label for a feature that is not built yet.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "continueWithGoogle": "Continue with Google",
+  "orDivider": "or",
+  "@orDivider": {
+    "description": "Between the email form and the Google button."
+  },
+  "emailHint": "you@example.com",
+  "emailSuggestionLabel": "Did you mean {email}? Tap to use it.",
+  "@emailSuggestionLabel": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "emailSuggestionBefore": "Did you mean ",
+  "@emailSuggestionBefore": {
+    "description": "Text before the suggested email address."
+  },
+  "emailSuggestionAfter": "?",
+  "@emailSuggestionAfter": {
+    "description": "Text after the suggested email address."
+  },
+  "previousMonth": "Previous month",
+  "backToThisMonth": "Back to this month",
+  "nextMonth": "Next month",
+  "privacyPolicy": "Privacy policy",
+  "about": "About",
+  "aboutVersion": "Version {version} ({build})",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutTagline": "Track your income, expenses and monthly budget.",
+  "couldNotSave": "Could not save: {error}",
+  "@couldNotSave": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "monthStartsOn": "Month starts on",
+  "monthStartsOnHelp": "Pick the day your budget resets — usually your payday.",
+  "monthStartsOnShortMonths": "In shorter months, 29–31 fall back to the month's last day.",
+  "transactionDeleteFailed": "Couldn't delete the transaction. Please try again.",
+  "transactionDeleted": "Transaction deleted",
+  "undo": "Undo",
+  "transactionRestoreFailed": "Couldn't bring the transaction back. Please try again.",
+  "uncategorized": "Uncategorized",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "trendChartLabel": "{count, plural, =1{Income and spending, last month} other{Income and spending, last {count} months}}",
+  "@trendChartLabel": {
+    "description": "Screen-reader label for the income/spending bar chart.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetAmountError": "Enter an amount, or 0 for no budget",
+  "budgetSaveFailed": "Could not save budget: {error}",
+  "@budgetSaveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "monthlyBudget": "Monthly budget",
+  "budgetSheetHelp": "How much you plan to spend each cycle. The meter on Home fills as you go.",
+  "budgetResetsOn": "Resets on the {day}",
+  "@budgetResetsOn": {
+    "description": "day is an ordinal like \"1st\" or \"25th\".",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetMatchPayday": "Match it to your payday",
+  "change": "Change",
+  "cancel": "Cancel",
+  "save": "Save",
+  "categoryLimitReached": "You've reached the category limit",
+  "categoryNameError": "Give the category a name",
+  "categorySaveFailed": "Could not save category: {error}",
+  "@categorySaveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryAddFailed": "Could not add category: {error}",
+  "@categoryAddFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "editCategory": "Edit category",
+  "newCategory": "New category",
+  "name": "Name",
+  "categoryNameHintIncome": "e.g. Freelance",
+  "categoryNameHintExpense": "e.g. Groceries",
+  "countTowardBudget": "Count toward monthly budget",
+  "countTowardBudgetOn": "Spending here uses up your monthly budget.",
+  "countTowardBudgetOff": "Not in budget — for loan repayments, savings and the like. Still lowers your balance.",
+  "icon": "Icon",
+  "saveChanges": "Save changes",
+  "addCategory": "Add category",
+  "iconGroupGeneral": "General",
+  "iconGroupFood": "Food & drink",
+  "iconGroupShopping": "Groceries & shopping",
+  "iconGroupTransport": "Transport",
+  "iconGroupBills": "Bills & home",
+  "iconGroupHealth": "Health & care",
+  "iconGroupFamily": "Family & giving",
+  "iconGroupWork": "Education & work",
+  "iconGroupFun": "Fun & travel",
+  "iconGroupMoney": "Money",
+  "tabHome": "Home",
+  "tabTransactions": "Transactions",
+  "tabAnalytics": "Analytics",
+  "tabProfile": "Profile",
+  "addTransaction": "Add transaction",
+  "backOnline": "Back online",
+  "youreOffline": "You're offline",
+  "offlineMessage": "You're offline. Changes will sync when you're back.",
+  "savedOffline": "Saved on your phone. It'll sync when you're back online.",
+  "onboardingTitleTransactions": "Every rupee, in one place",
+  "onboardingBodyTransactions": "Log income and expenses in seconds, sorted by category.",
+  "onboardingTitleBreakdown": "See where it goes",
+  "onboardingBodyBreakdown": "A clear breakdown shows what you spend on, and how much.",
+  "onboardingTitleBudget": "A budget that keeps up",
+  "onboardingBodyBudget": "Set a monthly limit and watch the meter fill as you spend.",
+  "onboardingTitleTrends": "Spot your trends",
+  "onboardingBodyTrends": "Compare what comes in and goes out, month by month.",
+  "onboardingTitleSync": "Safe in your account",
+  "onboardingBodySync": "Everything syncs to your account, so it's there on any device.",
+  "authFailedLogIn": "Couldn't log you in.",
+  "authFailedSignUp": "Couldn't create your account.",
+  "authFailedGoogle": "Couldn't sign in with Google.",
+  "authFailedReset": "Couldn't send the reset email.",
+  "authFailedConfirm": "Couldn't confirm it's you.",
+  "authFailedDelete": "Couldn't delete your account.",
+  "authTryAgain": "{failed} Please try again.",
+  "@authTryAgain": {
+    "description": "failed is one of the authFailed… sentences.",
+    "placeholders": {
+      "failed": {
+        "type": "String"
+      }
+    }
+  },
+  "authGoogleInterrupted": "Google sign-in was interrupted. Please try again.",
+  "authGoogleWrongAccount": "Choose the Google account you signed up with.",
+  "authGoogleUnavailable": "Google sign-in isn't available right now. Use your email instead.",
+  "authNoInternet": "No internet connection. Check your connection and try again.",
+  "authTooManyAttempts": "Too many attempts. Wait a few minutes, then try again.",
+  "authInvalidEmail": "That email address doesn't look right.",
+  "authMissingEmail": "Enter your email address.",
+  "authMissingPassword": "Enter your password.",
+  "authUserDisabled": "This account has been turned off. Contact {email} for help.",
+  "@authUserDisabled": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authEmailInUse": "That email already has an account. Log in instead.",
+  "authWeakPassword": "Choose a stronger password.",
+  "authExistsWithPassword": "That email already has an account. Log in with your email and password.",
+  "authUserMismatch": "That doesn't match the account you're signed in with.",
+  "authWrongLogin": "That email and password don't match an account.",
+  "authWrongPassword": "That password isn't right.",
+  "authLogInAgain": "For your security, log out and back in, then try again.",
+  "authMethodUnavailable": "This way of signing in isn't available right now.",
+  "authBusy": "We're busy right now. Please try again later.",
+  "emailInvalid": "Enter a valid email address, like name@example.com",
+  "emailRequired": "Enter your email address",
+  "emailHasSpaces": "An email address can't have spaces",
+  "emailPlaceholder": "Use your real email address — you'll need it if you forget your password",
+  "emailTemporary": "Temporary emails can't be used — you'll need a real one if you forget your password",
+  "passwordSpaceAtEnds": "A password can't start or end with a space",
+  "passwordTooShort": "Use at least {count} characters",
+  "@passwordTooShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordOnlyNumbers": "Add some letters — numbers alone are easy to guess",
+  "passwordTooCommon": "This password is too common. Try something harder to guess",
+  "passwordPersonal": "Don't use your name or email in your password",
+  "passwordRequired": "Create a password",
+  "forgotNeedsEmail": "Enter your email above, then tap Forgot? again.",
+  "resetLinkSent": "If {email} has an account, a reset link is on its way.",
+  "@resetLinkSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "welcomeBack": "Welcome back",
+  "loginSubtitle": "Log in to keep tracking your month.",
+  "email": "Email",
+  "password": "Password",
+  "forgotPassword": "Forgot?",
+  "passwordHintLogin": "Your password",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "passwordEnter": "Enter your password",
+  "logIn": "Log in",
+  "newToApp": "New to MonthlyTraq?",
+  "createAccount": "Create account",
+  "createYourAccount": "Create your account",
+  "signupSubtitle": "It takes less than a minute.",
+  "fullName": "Full name",
+  "yourName": "Your name",
+  "nameRequired": "Enter your name",
+  "confirmPassword": "Confirm password",
+  "passwordAgain": "Type your password again",
+  "passwordsDontMatch": "Passwords don't match",
+  "signUpWithGoogle": "Sign up with Google",
+  "alreadyHaveAccount": "Already have an account?",
+  "passwordStrengthEmpty": "Use {count} or more characters. A short phrase is easy to remember and hard to guess.",
+  "@passwordStrengthEmpty": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordWeak": "Weak",
+  "passwordOkay": "Okay",
+  "passwordOkayHint": "Good. A longer password is even stronger.",
+  "passwordStrong": "Strong",
+  "passwordStrongHint": "Great password.",
+  "passwordStrengthLabel": "Password strength: {strength}. {hint}",
+  "@passwordStrengthLabel": {
+    "description": "Screen-reader summary of the strength meter; hint may be empty.",
+    "placeholders": {
+      "strength": {
+        "type": "String"
+      },
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingStep": "Step {step} of {total}",
+  "@onboardingStep": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "skip": "Skip",
+  "getStarted": "Get started",
+  "continueButton": "Continue",
+  "sampleGroceries": "Groceries",
+  "sampleSalary": "Salary",
+  "sampleBusPass": "Bus pass",
+  "sampleLeft": "left",
+  "@sampleLeft": {
+    "description": "After an amount: \"Rs. 21,400 left\"."
+  },
+  "percentUsed": "{percent}% used",
+  "@percentUsed": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "daysLeft": "{count, plural, =1{1 day left} other{{count} days left}}",
+  "@daysLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sampleBackedUp": "Backed up",
+  "sampleJustNow": "Just now",
+  "sampleFood": "Food",
+  "sampleShopping": "Shopping",
+  "sampleEntertainment": "Entertainment",
+  "sampleTransport": "Transport",
+  "deleteAccountTitle": "Delete your account?",
+  "deleteAccountBody": "This permanently deletes your account and everything in it: your transactions, categories, budget and profile photo. This can't be undone.",
+  "deleteAccount": "Delete account",
+  "deletingAccount": "Deleting your account…",
+  "accountDeleted": "Your account has been deleted.",
+  "confirmItsYou": "Confirm it's you",
+  "confirmPasswordToDelete": "Enter your password to delete your account.",
+  "homeCardBalance": "Balance",
+  "homeCardBalanceAbout": "Your balance, with this month's income and spending",
+  "homeCardWallets": "Wallets",
+  "homeCardWalletsAbout": "What's in your wallets, and money you're keeping for others. Shows once you add a wallet.",
+  "homeCardRepayments": "Repayments",
+  "homeCardRepaymentsAbout": "What's due next on money you owe. Shows once you add a repayment.",
+  "homeCardGoals": "Savings goals",
+  "homeCardGoalsAbout": "How close you are to what you're saving for. Shows once you add a goal.",
+  "homeCardNetWorth": "Net worth",
+  "homeCardNetWorthAbout": "What you own minus what you owe: wallets, goals, investments and repayments together.",
+  "homeCardBudget": "Monthly budget",
+  "homeCardBudgetAbout": "How much of your budget is left",
+  "homeCardDailyAllowance": "Daily allowance",
+  "homeCardDailyAllowanceAbout": "How much you can spend today and stay on budget. Needs a monthly budget.",
+  "homeCardTopSpending": "Top spending",
+  "homeCardTopSpendingAbout": "Your three biggest categories this month",
+  "homeCardRecent": "Recent",
+  "homeCardRecentAbout": "Your latest transactions",
+  "homeScreenLayout": "Home screen layout",
+  "homeLayoutHelp": "Choose which cards show on Home, and drag the handle to change their order.",
+  "balanceCardSection": "Balance card",
+  "privacyButton": "Privacy button",
+  "privacyButtonAbout": "Adds an eye button to the balance card that hides your amounts on Home.",
+  "resetToDefault": "Reset to default",
+  "dragToReorder": "Drag to reorder {card}",
+  "@dragToReorder": {
+    "placeholders": {
+      "card": {
+        "type": "String"
+      }
+    }
+  },
+  "modeSystem": "System",
+  "modeLight": "Light",
+  "modeDark": "Dark",
+  "fontSizeSmall": "Small",
+  "fontSizeDefault": "Default",
+  "fontSizeLarge": "Large",
+  "fontSizeLargest": "Largest",
+  "appearance": "Appearance",
+  "mode": "Mode",
+  "theme": "Theme",
+  "textSize": "Text size",
+  "textSizePreview": "Groceries · {amount} — this is how text will look.",
+  "@textSizePreview": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "themeCardLabel": "{name} theme",
+  "@themeCardLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "currency": "Currency",
+  "currencySearchHint": "Search by name, code or country",
+  "clearSearch": "Clear search",
+  "noMatchingCurrency": "No matching currency",
+  "choosePhotoFrame": "Choose photo frame",
+  "photoTooLarge": "That photo is too large — please choose one under 1MB.",
+  "photoUpdateFailed": "Could not update photo: {error}",
+  "@photoUpdateFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "photoRemoveFailed": "Could not remove photo: {error}",
+  "@photoRemoveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "viewPhoto": "View photo",
+  "takePhoto": "Take photo",
+  "chooseFromGallery": "Choose from gallery",
+  "removePhoto": "Remove photo",
+  "profileSaved": "Profile saved",
+  "editProfile": "Edit profile",
+  "changePhoto": "Change photo",
+  "emailCantChange": "Your sign-in email can't be changed here.",
+  "noEmailApp": "No email app found. Write to {email}",
+  "@noEmailApp": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "playStoreFailed": "Couldn't open the Play Store",
+  "automaticBackup": "Automatic backup",
+  "automaticBackupBody": "Everything you log is saved to your MonthlyTraq account as you go, so it's there on any device you sign in on. Changes made offline upload once you're back online.",
+  "gotIt": "Got it",
+  "cacheCleared": "Cache cleared",
+  "noTransactionsToDelete": "There are no transactions to delete",
+  "deleteAllDataTitle": "Delete all data?",
+  "deleteAllDataBody": "This permanently deletes all {count, plural, =1{1 transaction} other{{count} transactions}} on your account. Your categories and settings are kept. This can't be undone.",
+  "@deleteAllDataBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteAll": "Delete all",
+  "deletedTransactions": "{count, plural, =1{Deleted 1 transaction} other{Deleted {count} transactions}}",
+  "@deletedTransactions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "couldNotDelete": "Could not delete: {error}",
+  "@couldNotDelete": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetSection": "Budget",
+  "notSet": "Not set",
+  "moneySection": "Money",
+  "netWorth": "Net worth",
+  "wallets": "Wallets",
+  "add": "Add",
+  "walletCount": "{count, plural, =1{1 wallet} other{{count} wallets}}",
+  "@walletCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "repayments": "Repayments",
+  "repaymentCount": "{count, plural, =1{1 repayment} other{{count} repayments}}",
+  "@repaymentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "savingsGoals": "Savings goals",
+  "goalCount": "{count, plural, =1{1 goal} other{{count} goals}}",
+  "@goalCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "investments": "Investments",
+  "layoutDefault": "Default",
+  "@layoutDefault": {
+    "description": "Home screen layout as it comes."
+  },
+  "layoutCustom": "Custom",
+  "@layoutCustom": {
+    "description": "Home screen layout changed by the user."
+  },
+  "appIcon": "App icon",
+  "generalSection": "General",
+  "categories": "Categories",
+  "hapticFeedback": "Haptic feedback",
+  "numbersSection": "Numbers & tools",
+  "thousandsSeparator": "Thousands separator",
+  "calculator": "Calculator",
+  "notificationsSection": "Notifications & sound",
+  "quickAddNotification": "Quick-add notification",
+  "soundEffects": "Sound effects",
+  "advancedSection": "Advanced",
+  "aiSettings": "AI settings",
+  "moreSection": "More",
+  "contactSupport": "Contact support",
+  "rateApp": "Rate {app}",
+  "@rateApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "dataSection": "Data",
+  "backup": "Backup",
+  "backupAutomatic": "Automatic",
+  "clearCache": "Clear cache",
+  "deleteAllData": "Delete all data",
+  "logOut": "Log out",
+  "addYourName": "Add your name",
+  "goodMorning": "Good morning",
+  "goodAfternoon": "Good afternoon",
+  "goodEvening": "Good evening",
+  "seeAll": "See all",
+  "noTransactionsYet": "No transactions yet",
+  "noTransactionsYetHome": "Log what you spend and earn and it shows up here, grouped by day.",
+  "addFirstTransaction": "Add your first transaction",
+  "totalBalance": "Total balance",
+  "showAmounts": "Show amounts",
+  "hideAmounts": "Hide amounts",
+  "income": "Income",
+  "spent": "Spent",
+  "overBudget": "Over budget",
+  "edit": "Edit",
+  "setBudget": "Set budget",
+  "setBudgetPrompt": "Set a budget to see how much is left this month.",
+  "amountOver": "{amount} over",
+  "@amountOver": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetOverTail": "your {budget} budget",
+  "@budgetOverTail": {
+    "description": "After \"Rs. 500 over\".",
+    "placeholders": {
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetLeftTail": "left of {budget}",
+  "@budgetLeftTail": {
+    "description": "After the amount left: \"Rs. 14,000 left of Rs. 60,000\".",
+    "placeholders": {
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetUsed": "Budget used",
+  "percentValue": "{percent} percent",
+  "@percentValue": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "lastDayOfCycle": "Last day of this cycle",
+  "daysLeftInCycle": "{count, plural, =1{1 day left in cycle} other{{count} days left in cycle}}",
+  "@daysLeftInCycle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "allowanceOverTail": "today's {amount}",
+  "@allowanceOverTail": {
+    "description": "After \"Rs. 200 over\".",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "allowanceLeftTail": "left to spend today",
+  "@allowanceLeftTail": {
+    "description": "After the amount."
+  },
+  "allowanceUsedUp": "You've used this cycle's budget. Anything more goes over it.",
+  "allowanceTomorrowLower": "Tomorrow's allowance will be a little lower to stay on budget.",
+  "lastDay": "Last day",
+  "noBudgetLeft": "No budget left",
+  "allowanceUsed": "Today's allowance used",
+  "spentToday": "Spent {amount} today",
+  "@spentToday": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "perDay": "{amount} a day",
+  "@perDay": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "yoursAndOthers": "Yours {yours} · Others' {others}",
+  "@yoursAndOthers": {
+    "placeholders": {
+      "yours": {
+        "type": "String"
+      },
+      "others": {
+        "type": "String"
+      }
+    }
+  },
+  "allYours": "All yours",
+  "lastCycle": "Last cycle",
+  "underBudget": "{name} — under budget!",
+  "@underBudget": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetWinBody": "You kept {left} of your {budget} budget. Nice work.",
+  "@budgetWinBody": {
+    "placeholders": {
+      "left": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "dismiss": "Dismiss",
+  "notCountedOne": "Not counted: {category} · {amount}",
+  "@notCountedOne": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notCountedMany": "Not counted: {amount} · {count, plural, =1{1 category} other{{count} categories}}",
+  "@notCountedMany": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showDetailsLabel": "{summary}. Show details",
+  "@showDetailsLabel": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "notInYourBudget": "Not in your budget",
+  "notInBudgetHelp": "This month's spending in these categories lowers your balance and shows in Spent, but doesn't use up your monthly budget.",
+  "total": "Total",
+  "notInBudgetHowToChange": "To change which categories count, go to Profile → Categories → Edit.",
+  "deleteNamed": "Delete {name}?",
+  "@deleteNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteCategoryBody": "Transactions in this category are kept and become uncategorized.",
+  "delete": "Delete",
+  "couldNotReorder": "Could not reorder: {error}",
+  "@couldNotReorder": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "expenseCount": "Expense · {count}",
+  "@expenseCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "incomeCount": "Income · {count}",
+  "@incomeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoriesHelp": "Drag to reorder. The order here is the order in the add screen.",
+  "noExpenseCategories": "No expense categories",
+  "noIncomeCategories": "No income categories",
+  "noCategoriesHelp": "Add one to start sorting what you log.",
+  "notInBudget": "Not in budget",
+  "optionsFor": "Options for {name}",
+  "@optionsFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteEllipsis": "Delete…",
+  "spending": "Spending",
+  "noSpendingIn": "No spending in {month}",
+  "@noSpendingIn": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "noIncomeIn": "No income in {month}",
+  "@noIncomeIn": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "noSpendingHelp": "Expenses you log are broken down by category here.",
+  "noIncomeHelp": "Income you log is broken down by category here.",
+  "earned": "Earned",
+  "dailyAverage": "Daily average",
+  "biggestDay": "Biggest day",
+  "lastSixMonths": "Last 6 months",
+  "moneyIn": "In",
+  "@moneyIn": {
+    "description": "Money coming in."
+  },
+  "moneyOut": "Out",
+  "@moneyOut": {
+    "description": "Money going out."
+  },
+  "sameAs": "Same as {month}",
+  "@sameAs": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "percentVersus": "{percent}% vs {month}",
+  "@percentVersus": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "shareOfSpending": "{share}% of spending · {count, plural, =1{1 transaction} other{{count} transactions}}",
+  "@shareOfSpending": {
+    "placeholders": {
+      "share": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shareOfIncome": "{share}% of income · {count, plural, =1{1 transaction} other{{count} transactions}}",
+  "@shareOfIncome": {
+    "placeholders": {
+      "share": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "byDay": "By day",
+  "nothingIn": "Nothing in {month}",
+  "@nothingIn": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryEmptyHelp": "Transactions in this category show up here.",
+  "searchTransactions": "Search transactions",
+  "all": "All",
+  "noMatches": "No matches",
+  "noMatchesHelp": "Nothing this month matches your search or filter.",
+  "clearFilters": "Clear filters",
+  "nothingLoggedIn": "Nothing logged in {month}",
+  "@nothingLoggedIn": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "net": "Net",
+  "amountAboveZero": "Enter an amount above zero",
+  "pickCategory": "Pick a category",
+  "close": "Close",
+  "expense": "Expense",
+  "amount": "Amount",
+  "addNote": "Add a note",
+  "category": "Category",
+  "saveIncome": "Save income",
+  "saveExpense": "Save expense",
+  "more": "More",
+  "newLabel": "New",
+  "@newLabel": {
+    "description": "Tile that adds a new category."
+  },
+  "keyDivide": "Divide",
+  "keyMultiply": "Multiply",
+  "keyMinus": "Minus",
+  "keyPlus": "Plus",
+  "keyDecimal": "Decimal point",
+  "keyDeleteDigit": "Delete digit",
+  "saved": "Saved",
+  "note": "Note",
+  "noteHelp": "Shown as the transaction's name. Leave it empty to use the category name.",
+  "noteHint": "e.g. Groceries at Imtiaz",
+  "done": "Done",
+  "frequencyDaily": "Daily",
+  "frequencyMonthly": "Monthly",
+  "frequencyEveryMonths": "Every few months",
+  "frequencyYearly": "Yearly",
+  "frequencyNone": "No deadline",
+  "dueToday": "Due today",
+  "dueTomorrow": "Due tomorrow",
+  "overdueDays": "{count, plural, =1{Overdue 1 day} other{Overdue {count} days}}",
+  "@overdueDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dueInDays": "{count, plural, =1{Due in 1 day} other{Due in {count} days}}",
+  "@dueInDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paidOff": "Paid off",
+  "goalReached": "Reached",
+  "goalOnTrack": "On track",
+  "goalBehind": "Behind",
+  "goalDatePassed": "Date passed",
+  "goalNoDate": "No date",
+  "goalDone": "Done",
+  "@goalDone": {
+    "description": "A savings goal marked as bought."
+  },
+  "stillOwed": "Still owed",
+  "netWorthWalletsAbout": "Your own money in them, not others'",
+  "netWorthGoalsAbout": "Money moved into goals from monthly money or a wallet",
+  "netWorthInvestmentsAbout": "What your accounts are worth now",
+  "netWorthBalanceAbout": "Income minus spending, from Home",
+  "netWorthOwedAbout": "What's left to pay on repayments",
+  "noInternetTryAgain": "No internet connection. Try again when you're back online.",
+  "couldntSaveTryAgain": "Couldn't save. Please try again.",
+  "discardChangesTitle": "Discard changes?",
+  "discardChangesBody": "What you typed here won't be saved.",
+  "discard": "Discard",
+  "keepEditing": "Keep editing",
+  "whichWallet": "Which wallet?",
+  "noWallet": "No wallet",
+  "whoseMoney": "Whose money?",
+  "someoneNewHint": "Someone new, e.g. Ahmed",
+  "tomorrow": "Tomorrow",
+  "notCounted": "Not counted",
+  "netWorthTagline": "What you own, minus what you owe",
+  "madeUpOf": "Made up of",
+  "netWorthHelp": "Switch a part off to leave it out. Total balance starts off: if your income lands in your wallets, it would count the same money twice. Others' money in your wallets is never counted — it isn't yours.",
+  "trackWallets": "Track your wallets",
+  "trackWalletsHelp": "Add JazzCash, Easypaisa, your bank or cash to always know what's in each — and how much of it is money you're keeping for someone else.",
+  "addWallet": "Add a wallet",
+  "inAllWallets": "In all wallets",
+  "moneyYoureKeeping": "Money you're keeping",
+  "keepingEmptyHelp": "When someone gives you money to keep, add it with Received. It stays in your wallet but isn't counted as yours.",
+  "allReturned": "All returned",
+  "yours": "Yours",
+  "othersMoney": "Others' money",
+  "received": "Received",
+  "sendBack": "Send back",
+  "move": "Move",
+  "othersAmount": "Others' {amount}",
+  "@othersAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "ofAmountInAll": "Of {amount} in all",
+  "@ofAmountInAll": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "allOfItHere": "All of it is here",
+  "inPlaces": "In {places}",
+  "@inPlaces": {
+    "description": "Which wallets, e.g. \"In JazzCash, Easypaisa\".",
+    "placeholders": {
+      "places": {
+        "type": "String"
+      }
+    }
+  },
+  "walletOptions": "Wallet options",
+  "editWallet": "Edit wallet",
+  "correctBalance": "Correct balance",
+  "balance": "Balance",
+  "othersMoneyInIt": "Others' money in it",
+  "activity": "Activity",
+  "walletActivityEmpty": "What you spend, add, receive or send back in {wallet} shows up here.",
+  "@walletActivityEmpty": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "editPerson": "Edit person",
+  "youreKeeping": "You're keeping",
+  "history": "History",
+  "someone": "someone",
+  "aWallet": "a wallet",
+  "addedYourMoney": "Added your money",
+  "receivedFrom": "Received from {person}",
+  "@receivedFrom": {
+    "placeholders": {
+      "person": {
+        "type": "String"
+      }
+    }
+  },
+  "sentBackTo": "Sent back to {person}",
+  "@sentBackTo": {
+    "placeholders": {
+      "person": {
+        "type": "String"
+      }
+    }
+  },
+  "movedFrom": "Moved from {wallet}",
+  "@movedFrom": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "movedTo": "Moved to {wallet}",
+  "@movedTo": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceCorrected": "Balance corrected",
+  "walletNameError": "Give the wallet a name",
+  "amountOrEmpty": "Enter an amount, or leave it empty",
+  "youAlreadyHave": "You already have {name}",
+  "@youAlreadyHave": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "walletSameNameEdit": "Another wallet is called {name}. Use the same name for both?",
+  "@walletSameNameEdit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "walletSameNameAdd": "Add another wallet with the same name?",
+  "saveAnyway": "Save anyway",
+  "addAnyway": "Add anyway",
+  "goBack": "Go back",
+  "deleteWalletBody": "Everything recorded in it is deleted too, including money you received in it from others and moves to or from it.",
+  "newWallet": "New wallet",
+  "deleteWallet": "Delete wallet",
+  "addWalletButton": "Add wallet",
+  "walletNameHint": "e.g. JazzCash",
+  "ownMoneyWhenAdded": "Your own money when added",
+  "ownMoneyNow": "Your own money in it now",
+  "ownMoneyHelp": "Only what's yours. Money you're keeping for someone is added next with \"Received\", on top of this.",
+  "deleteCorrectionTitle": "Delete this correction?",
+  "deleteCorrectionBody": "The wallet goes back to the balance it showed before you corrected it.",
+  "pickWhoseMoney": "Pick whose money it is",
+  "pickWallet": "Pick a wallet",
+  "pickWhereItWent": "Pick where it went",
+  "pickDifferentWallet": "Pick a different wallet",
+  "notKeepingAny": "You aren't keeping any of {name}'s money",
+  "@notKeepingAny": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "keepingFor": "You're keeping {amount} for {name}",
+  "@keepingFor": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "thisWallet": "This wallet",
+  "moreThanWalletHas": "More than {wallet} has",
+  "@moreThanWalletHas": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "moreThanWalletBody": "{wallet} has {balance}. Saving this takes it to {after}.",
+  "@moreThanWalletBody": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteEntryTitle": "Delete this entry?",
+  "deleteEntryBody": "Only for an entry made by mistake. The wallet changes as if it never happened.",
+  "chooseWallet": "Choose a wallet",
+  "editSpending": "Edit spending",
+  "spentHelp": "Money you spent from a wallet.",
+  "editAddedMoney": "Edit added money",
+  "addYourMoney": "Add your money",
+  "addYourMoneyHelp": "Money of your own you put into a wallet.",
+  "editReceivedMoney": "Edit received money",
+  "receivedToKeep": "Received to keep",
+  "receivedToKeepHelp": "Money someone gave you to keep. It's theirs, not yours, until you send it back.",
+  "editMoneySentBack": "Edit money sent back",
+  "sendBackHelp": "Money you returned to someone.",
+  "keepingForSentence": "You're keeping {amount} for {name}.",
+  "@keepingForSentence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notKeepingAnySentence": "You aren't keeping any of {name}'s money.",
+  "@notKeepingAnySentence": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "editMove": "Edit move",
+  "moveMoney": "Move money",
+  "moveMoneyHelp": "From one of your wallets to another.",
+  "correction": "Correction",
+  "from": "From",
+  "to": "To",
+  "chooseSomeone": "Choose someone",
+  "sendBackTo": "Send back to",
+  "moveFrom": "Move from",
+  "fromWallet": "From wallet",
+  "intoWallet": "Into wallet",
+  "deleteEntry": "Delete entry",
+  "moveTo": "Move to",
+  "date": "Date",
+  "whatForOptional": "What for (optional)",
+  "noteOptional": "Note (optional)",
+  "spentNoteHint": "e.g. Bike repair",
+  "receivedNoteHint": "e.g. Keep it until he asks",
+  "enterName": "Enter a name",
+  "alreadyInList": "{name} is already in your list",
+  "@alreadyInList": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "samePersonNameBody": "Two people with the same name are easy to mix up. Use it anyway?",
+  "deletePersonBody": "Everything received from and sent back to {name} is deleted too, and your wallets change as if none of it happened.",
+  "@deletePersonBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deletePerson": "Delete person",
+  "enterBalance": "Enter the balance",
+  "correctWallet": "Correct {wallet}",
+  "@correctWallet": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "correctBalanceHelp": "The app shows {current}. Enter what your {wallet} actually has, and the difference is recorded.",
+  "@correctBalanceHelp": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "saveBalance": "Save balance",
+  "realBalanceNow": "Real balance now",
+  "nextPaymentDue": "Next payment due",
+  "giveItName": "Give it a name",
+  "enterTotalOwed": "Enter the total you owe",
+  "moreThanTotal": "More than the total of {total}",
+  "@moreThanTotal": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "enterEachPayment": "Enter how much you pay each time",
+  "pickNextDue": "Pick when the next payment is due",
+  "sameRepaymentNameBody": "Two repayments with the same name are easy to mix up. Save anyway?",
+  "deleteRepaymentBody": "Its payment history is deleted. Expenses and wallet entries its payments added are kept.",
+  "editRepayment": "Edit repayment",
+  "newRepayment": "New repayment",
+  "newRepaymentHelp": "Money you owe and pay back over time: an installment, a loan, a qisht.",
+  "deleteRepayment": "Delete repayment",
+  "addRepaymentButton": "Add repayment",
+  "repaymentNameHint": "e.g. Bike installment",
+  "lenderOptional": "Who it's to (optional)",
+  "lenderHint": "e.g. Honda dealer",
+  "totalYouOwe": "Total you owe",
+  "alreadyPaidOptional": "Already paid (optional)",
+  "alreadyPaidHelp": "What you paid before adding it here.",
+  "howOften": "How often",
+  "everyNMonths": "Every {count} months",
+  "@everyNMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fewerMonths": "Fewer months",
+  "moreMonths": "More months",
+  "eachPayment": "Each payment",
+  "pickDate": "Pick a date",
+  "noScheduleHelp": "No schedule: pay whatever you can, whenever you can.",
+  "onlyLeftToPay": "Only {amount} is left to pay",
+  "@onlyLeftToPay": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pickExpenseCategory": "Pick a category for the expense",
+  "payNamed": "Pay {name}",
+  "@payNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leftToPaySentence": "{amount} left to pay.",
+  "@leftToPaySentence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "nextDueSentence": "Next due {date}.",
+  "@nextDueSentence": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "savePayment": "Save payment",
+  "fullPaymentHelp": "A full payment moves the due date to the next one. Less than {amount} keeps it.",
+  "@fullPaymentHelp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "paidFrom": "Paid from",
+  "monthlyMoney": "Monthly money",
+  "aWalletOption": "A wallet",
+  "justRecordIt": "Just record it",
+  "chooseCategory": "Choose a category",
+  "addsExpenseHere": "Adds an expense in this category.",
+  "addsExpenseNotCounted": "Adds an expense in {category}. Not counted in your monthly budget.",
+  "@addsExpenseNotCounted": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "addsExpenseCounted": "Adds an expense in {category}. Counts toward your monthly budget.",
+  "@addsExpenseCounted": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "addsSpentEntry": "Adds a \"Spent\" entry in the wallet. Your monthly budget isn't touched.",
+  "onlyUpdatesRepayment": "Only updates this repayment. Nothing is added to your transactions or wallets.",
+  "deletePaymentTitle": "Delete this payment?",
+  "paymentGoesBack": "The {amount} goes back to what you owe.",
+  "@paymentGoesBack": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "expenseDeletedToo": "The expense it added is deleted too.",
+  "spentEntryDeletedToo": "The \"Spent\" entry it added in {wallet} is deleted too.",
+  "@spentEntryDeletedToo": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "theWallet": "the wallet",
+  "dueDateGoesBack": "The due date goes back to {date}.",
+  "@dueDateGoesBack": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleDaily": "{amount} daily",
+  "@scheduleDaily": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleMonthly": "{amount} monthly",
+  "@scheduleMonthly": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleEveryMonths": "{amount} every {count} months",
+  "@scheduleEveryMonths": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scheduleYearly": "{amount} yearly",
+  "@scheduleYearly": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "trackWhatYouOwe": "Track what you owe",
+  "trackWhatYouOweHelp": "Add installments, loans and qisht to see what's due next, how much is left, and when you'll be done.",
+  "addRepayment": "Add a repayment",
+  "dueThisMonth": "Due this month",
+  "active": "Active",
+  "everythingPaidOff": "Everything is paid off.",
+  "installmentsPaidOf": "{paid} of {count} paid",
+  "@installmentsPaidOf": {
+    "placeholders": {
+      "paid": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "amountPaidOf": "{paid} of {total} paid",
+  "@amountPaidOf": {
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "amountPaid": "{amount} paid",
+  "@amountPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "amountLeft": "{amount} left",
+  "@amountLeft": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "leftToPay": "Left to pay",
+  "toLender": "to {lender}",
+  "@toLender": {
+    "placeholders": {
+      "lender": {
+        "type": "String"
+      }
+    }
+  },
+  "nextDue": "Next due",
+  "payments": "Payments",
+  "paymentsLeft": "Payments left",
+  "doneBy": "Done by",
+  "pay": "Pay",
+  "paymentsEmpty": "Payments you make show up here.",
+  "paidBeforeTracking": "Paid before tracking",
+  "fromWalletNamed": "From {wallet}",
+  "@fromWalletNamed": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "recordedOnly": "Recorded only",
+  "amountOwed": "{amount} owed",
+  "@amountOwed": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reachItBy": "Reach it by",
+  "whatSavingFor": "What are you saving for?",
+  "enterHowMuchItCosts": "Enter how much it costs",
+  "enterAmountOrLeaveEmpty": "Enter an amount, or leave it empty",
+  "moreThanTarget": "More than the target of {target}",
+  "@moreThanTarget": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "sameGoalNameBody": "Two goals with the same name are easy to mix up. Save anyway?",
+  "deleteGoalBody": "Its history is deleted. Expenses and wallet entries it added are kept.",
+  "editGoal": "Edit goal",
+  "newGoal": "New goal",
+  "newGoalSubtitle": "Something you're saving up for: a mobile, a bike, a trip.",
+  "deleteGoal": "Delete goal",
+  "addGoal": "Add goal",
+  "savingFor": "Saving for",
+  "goalNameHint": "e.g. New mobile",
+  "target": "Target",
+  "alreadySavedOptional": "Already saved (optional)",
+  "reachItByOptional": "Reach it by (optional)",
+  "removeDate": "Remove date",
+  "goalDateHelp": "With a date, the app works out how much to save each month.",
+  "onlyAmountSaved": "Only {amount} is saved",
+  "@onlyAmountSaved": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "savedForGoal": "Saved for {goal}",
+  "@savedForGoal": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "fromGoal": "From {goal}",
+  "@fromGoal": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "fromWhichWallet": "From which wallet?",
+  "intoWhichWallet": "Into which wallet?",
+  "addToGoal": "Add to {goal}",
+  "@addToGoal": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "takeOutOfGoal": "Take out of {goal}",
+  "@takeOutOfGoal": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "savedReachedIt": "{saved} saved. You've reached it.",
+  "@savedReachedIt": {
+    "placeholders": {
+      "saved": {
+        "type": "String"
+      }
+    }
+  },
+  "savedToGo": "{saved} saved, {remaining} to go.",
+  "@savedToGo": {
+    "placeholders": {
+      "saved": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "savedTakingOutLowers": "{saved} saved. Taking some out lowers it.",
+  "@savedTakingOutLowers": {
+    "placeholders": {
+      "saved": {
+        "type": "String"
+      }
+    }
+  },
+  "takeOut": "Take out",
+  "whereItGoes": "Where it goes",
+  "addsExpenseGoalHint": "Adds an expense in this category. A \"Savings\" category set to not counted keeps your budget untouched.",
+  "goalFromWalletHelp": "Takes it out of the wallet and into this goal.",
+  "goalToWalletHelp": "Puts it back in the wallet as your own money.",
+  "onlyUpdatesGoal": "Only updates this goal. Nothing is added to your transactions or wallets.",
+  "youReachedGoal": "You reached {goal}!",
+  "@youReachedGoal": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "goalReachedBody": "{target} saved. Bought it? Mark it done and it moves to Done.",
+  "@goalReachedBody": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "notYet": "Not yet",
+  "markAsDone": "Mark as done",
+  "deleteThisSaving": "Delete this saving?",
+  "deleteThisTakeOut": "Delete this take-out?",
+  "goalGoesDownBy": "The goal goes down by {amount}.",
+  "@goalGoesDownBy": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "goesBackIntoGoal": "The {amount} goes back into the goal.",
+  "@goesBackIntoGoal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "walletEntryDeletedToo": "The entry it added in {wallet} is deleted too.",
+  "@walletEntryDeletedToo": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "doneOn": "Done {date}",
+  "@doneOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reachedMarkDone": "Reached — mark it done when you buy it",
+  "saveAMonthToReach": "Save {amount} a month to reach it by {date}",
+  "@saveAMonthToReach": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "amountToGo": "{amount} to go",
+  "@amountToGo": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "saveUpForSomething": "Save up for something",
+  "saveUpForSomethingHelp": "Add a goal — a new mobile, a bike, a trip — and see how close you are and how much to save each month.",
+  "addAGoal": "Add a goal",
+  "savedForGoals": "Saved for goals",
+  "stillToSave": "Still to save",
+  "goals": "Goals",
+  "allGoalsDone": "All your goals are done.",
+  "amountOfTotal": "{amount} of {total}",
+  "@amountOfTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "ofTotal": "of {total}",
+  "@ofTotal": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "toGo": "To go",
+  "saveEachMonth": "Save each month",
+  "notDoneYet": "Not done yet",
+  "addMoney": "Add money",
+  "goalHistoryEmpty": "Money you add or take out shows up here.",
+  "savedBeforeTracking": "Saved before tracking",
+  "intoWalletNamed": "Into {wallet}",
+  "@intoWalletNamed": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "added": "Added",
+  "tookOut": "Took out",
+  "amountSaved": "{amount} saved",
+  "@amountSaved": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "nameTheAccount": "Name the account",
+  "enterWorthNow": "Enter what it's worth now",
+  "sameAccountNameBody": "Two accounts with the same name are easy to mix up. Save anyway?",
+  "deleteInvestAccountBody": "Its history is deleted. Expenses, income and wallet entries it added are kept.",
+  "editAccount": "Edit account",
+  "newAccount": "New account",
+  "newAccountSubtitle": "A broker account you invest through. Copy the numbers from your broker's app.",
+  "deleteInvestAccount": "Delete account",
+  "addAccount": "Add account",
+  "accountNameHint": "e.g. AKD Trade",
+  "putInSoFar": "Money you've put in so far",
+  "putInSoFarHelp": "Everything you deposited, minus anything you took out.",
+  "worthNowLabel": "What it's worth now",
+  "worthNowHelp": "Shares plus cash, as your broker's app shows it.",
+  "updateNamed": "Update {name}",
+  "@updateNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateValueSubtitle": "Copy the total value — shares plus cash — from your broker's app.",
+  "saveValue": "Save value",
+  "worthNow": "Worth now",
+  "accountIsWorth": "{account} is worth {value}",
+  "@accountIsWorth": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "investedIn": "Invested in {account}",
+  "@investedIn": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendFrom": "Dividend from {account}",
+  "@dividendFrom": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "putMoneyIn": "Put money in",
+  "putMoneyInSubtitle": "Money you deposited into {account}.",
+  "@putMoneyInSubtitle": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "takeMoneyOut": "Take money out",
+  "dividend": "Dividend",
+  "dividendSubtitle": "A dividend from shares in {account}.",
+  "@dividendSubtitle": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "whereItWent": "Where it went",
+  "incomeThisMonth": "Income this month",
+  "addsIncomeHere": "Adds income in this category.",
+  "addsIncomeIn": "Adds income in {category}.",
+  "@addsIncomeIn": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "takesItOutOfWallet": "Takes it out of the wallet.",
+  "addsToWalletAsYours": "Adds it to the wallet as your own money.",
+  "onlyUpdatesAccount": "Only updates this account. Nothing is added to your transactions or wallets.",
+  "deleteThisValue": "Delete this value?",
+  "deleteThisDividend": "Delete this dividend?",
+  "deleteThisEntry": "Delete this entry?",
+  "valueDeleteBody": "The account goes back to the value before it.",
+  "depositDeleteBody": "The {amount} comes off what you put in.",
+  "@depositDeleteBody": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "withdrawDeleteBody": "The {amount} goes back into what you put in.",
+  "@withdrawDeleteBody": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendDeleteBody": "The {amount} comes off your gain.",
+  "@dividendDeleteBody": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionDeletedToo": "The transaction it added is deleted too.",
+  "valueNotUpdatedYet": "Value not updated yet",
+  "updatedToday": "Updated today",
+  "updatedYesterday": "Updated yesterday",
+  "updatedDaysAgo": "Updated {count} days ago",
+  "@updatedDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "updatedMonthsAgo": "{count, plural, =1{Updated a month ago} other{Updated {count} months ago}}",
+  "@updatedMonthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trackInvestments": "Track your investments",
+  "trackInvestmentsHelp": "Add your PSX accounts with what you've put in and what they're worth, and see your gain at a glance.",
+  "addAnAccount": "Add an account",
+  "putIn": "Put in",
+  "gain": "Gain",
+  "includesDividends": "Includes {amount} in dividends",
+  "@includesDividends": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "accounts": "Accounts",
+  "copyValueHelp": "Copy each account's value from your broker's app now and then with Update.",
+  "update": "Update",
+  "valueUpdated": "Value updated"
+}

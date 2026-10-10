@@ -12,6 +12,7 @@ import 'package:monthly_traq/widgets/month_switcher.dart';
 import 'package:monthly_traq/widgets/transaction_rows.dart';
 import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -99,7 +100,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
         children: [
-          const Text('Transactions', style: AppText.screenTitle),
+          Text(context.l10n.tabTransactions, style: AppText.screenTitle),
           const SizedBox(height: 16),
           const MonthSwitcher(),
           const SizedBox(height: 12),
@@ -109,7 +110,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             controller: _searchController,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: 'Search transactions',
+              hintText: context.l10n.searchTransactions,
               prefixIcon: const Padding(
                 padding: EdgeInsets.only(left: 14, right: 8),
                 child: Icon(Icons.search, size: 26),
@@ -118,7 +119,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ? null
                   : IconButton(
                       icon: const Icon(Icons.close),
-                      tooltip: 'Clear search',
+                      tooltip: context.l10n.clearSearch,
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _query = '');
@@ -144,7 +145,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 clipBehavior: Clip.none,
                 children: [
                   _FilterPill(
-                    label: 'All',
+                    label: context.l10n.all,
                     selected: _categoryFilter == null,
                     onTap: () => setState(() => _categoryFilter = null),
                   ),
@@ -171,19 +172,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             hasFilters
                 ? EmptyState(
                     icon: Icons.search_off,
-                    title: 'No matches',
-                    message:
-                        'Nothing this month matches your search or filter.',
-                    actionLabel: 'Clear filters',
+                    title: context.l10n.noMatches,
+                    message: context.l10n.noMatchesHelp,
+                    actionLabel: context.l10n.clearFilters,
                     onAction: _clearFilters,
                   )
                 : EmptyState(
                     icon: Icons.receipt_long,
-                    title: 'Nothing logged in ${repo.selectedCycle.shortTitle}',
-                    message:
-                        'Log what you spend and earn and it shows up here, '
-                        'grouped by day.',
-                    actionLabel: 'Add transaction',
+                    title: context.l10n.nothingLoggedIn(
+                      repo.selectedCycle.shortTitle,
+                    ),
+                    message: context.l10n.noTransactionsYetHome,
+                    actionLabel: context.l10n.addTransaction,
                     onAction: () => _open(null),
                   ),
           ] else
@@ -262,11 +262,11 @@ class _CycleSummary extends StatelessWidget {
 
     return Row(
       children: [
-        tile('In', income, MoneySign.income, c.income),
+        tile(context.l10n.moneyIn, income, MoneySign.income, c.income),
         const SizedBox(width: 10),
-        tile('Out', spent, MoneySign.expense, c.ink),
+        tile(context.l10n.moneyOut, spent, MoneySign.expense, c.ink),
         const SizedBox(width: 10),
-        tile('Net', income - spent, MoneySign.auto, c.ink),
+        tile(context.l10n.net, income - spent, MoneySign.auto, c.ink),
       ],
     );
   }
@@ -344,7 +344,7 @@ class _DeleteBackground extends StatelessWidget {
           const Icon(Icons.delete_outline, color: Colors.white),
           const SizedBox(height: 2),
           Text(
-            'Delete',
+            context.l10n.delete,
             style: AppText.caption.copyWith(
               fontSize: 13,
               color: Colors.white,

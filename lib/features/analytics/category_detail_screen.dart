@@ -12,6 +12,7 @@ import 'package:monthly_traq/widgets/charts.dart';
 import 'package:monthly_traq/widgets/transaction_rows.dart';
 import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// One category in the month Analytics is showing: its total, its share,
 /// a by-day chart, and the transactions behind it.
@@ -67,14 +68,15 @@ class CategoryDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      category.name,
+                      category.displayName(context.l10n),
                       style: AppText.screenTitle.copyWith(fontSize: 26),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      '$share% of ${type == TransactionType.expense ? 'spending' : 'income'}'
-                      ' · $count ${count == 1 ? 'transaction' : 'transactions'}',
+                      type == TransactionType.expense
+                          ? context.l10n.shareOfSpending(share, count)
+                          : context.l10n.shareOfIncome(share, count),
                       style: AppText.body.copyWith(color: c.muted),
                     ),
                   ],
@@ -101,7 +103,7 @@ class CategoryDetailScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'By day',
+                        context.l10n.byDay,
                         style: AppText.rowTitle.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -125,8 +127,8 @@ class CategoryDetailScreen extends StatelessWidget {
             const SizedBox(height: 20),
             EmptyState(
               icon: Icons.receipt_long,
-              title: 'Nothing in ${cycle.shortTitle}',
-              message: 'Transactions in this category show up here.',
+              title: context.l10n.nothingIn(cycle.shortTitle),
+              message: context.l10n.categoryEmptyHelp,
             ),
           ] else
             for (final bucket in groupByDay(transactions)) ...[

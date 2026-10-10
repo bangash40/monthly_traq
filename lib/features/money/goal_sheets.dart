@@ -15,6 +15,7 @@ import 'package:monthly_traq/services/goals_repository.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Icons that suit things people save up for.
 const _goalIconKeys = [
@@ -111,7 +112,7 @@ class _GoalEditorState extends State<_GoalEditor> {
       initialDate: _targetDate ?? DateTime(now.year, now.month + 6, now.day),
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 20),
-      helpText: 'Reach it by',
+      helpText: context.l10n.reachItBy,
     );
     if (picked != null) setState(() => _targetDate = picked);
   }
@@ -124,14 +125,14 @@ class _GoalEditorState extends State<_GoalEditor> {
         ? 0.0
         : parseAmount(_savedBefore.text);
     setState(() {
-      _nameError = name.isEmpty ? 'What are you saving for?' : null;
+      _nameError = name.isEmpty ? context.l10n.whatSavingFor : null;
       _targetError = target == null || target <= 0
-          ? 'Enter how much it costs'
+          ? context.l10n.enterHowMuchItCosts
           : null;
       _savedError = savedBefore == null || savedBefore < 0
-          ? 'Enter an amount, or leave it empty'
+          ? context.l10n.enterAmountOrLeaveEmpty
           : target != null && savedBefore > target
-          ? 'More than the target of ${money.format(target)}'
+          ? context.l10n.moreThanTarget(money.format(target))
           : null;
     });
     if (_nameError != null || _targetError != null || _savedError != null) {
@@ -146,11 +147,10 @@ class _GoalEditorState extends State<_GoalEditor> {
     if (sameName) {
       final proceed = await confirmDialog(
         context,
-        title: 'You already have $name',
-        message:
-            'Two goals with the same name are easy to mix up. Save anyway?',
-        confirmLabel: 'Save anyway',
-        cancelLabel: 'Go back',
+        title: context.l10n.youAlreadyHave(name),
+        message: context.l10n.sameGoalNameBody,
+        confirmLabel: context.l10n.saveAnyway,
+        cancelLabel: context.l10n.goBack,
       );
       if (proceed != true || !mounted) return;
     }
@@ -188,11 +188,9 @@ class _GoalEditorState extends State<_GoalEditor> {
     final existing = _e!;
     final confirmed = await confirmDialog(
       context,
-      title: 'Delete ${existing.name}?',
-      message:
-          'Its history is deleted. Expenses and wallet entries it added are '
-          'kept.',
-      confirmLabel: 'Delete',
+      title: context.l10n.deleteNamed(existing.name),
+      message: context.l10n.deleteGoalBody,
+      confirmLabel: context.l10n.delete,
       destructive: true,
     );
     if (confirmed != true || !mounted) return;
@@ -209,14 +207,12 @@ class _GoalEditorState extends State<_GoalEditor> {
   Widget build(BuildContext context) {
     final c = context.colors;
     return MoneySheet(
-      title: _isEditing ? 'Edit goal' : 'New goal',
-      subtitle: _isEditing
-          ? null
-          : 'Something you\'re saving up for: a mobile, a bike, a trip.',
+      title: _isEditing ? context.l10n.editGoal : context.l10n.newGoal,
+      subtitle: _isEditing ? null : context.l10n.newGoalSubtitle,
       isDirty: _isDirty,
       trailing: _isEditing
           ? IconButton(
-              tooltip: 'Delete goal',
+              tooltip: context.l10n.deleteGoal,
               onPressed: _delete,
               icon: Icon(Icons.delete_outline, color: c.spending),
             )
@@ -224,20 +220,20 @@ class _GoalEditorState extends State<_GoalEditor> {
       button: ElevatedButton(
         onPressed: _saving ? null : _save,
         child: ButtonLabel(
-          _isEditing ? 'Save changes' : 'Add goal',
+          _isEditing ? context.l10n.saveChanges : context.l10n.addGoal,
           loading: _saving,
         ),
       ),
       children: [
         LabeledField(
-          label: 'Saving for',
+          label: context.l10n.savingFor,
           field: TextField(
             controller: _name,
             autofocus: !_isEditing,
             textCapitalization: TextCapitalization.sentences,
             maxLength: 60,
             decoration: InputDecoration(
-              hintText: 'e.g. New mobile',
+              hintText: context.l10n.goalNameHint,
               errorText: _nameError,
               counterText: '',
             ),
@@ -245,32 +241,32 @@ class _GoalEditorState extends State<_GoalEditor> {
         ),
         const SizedBox(height: 16),
         LabeledField(
-          label: 'Target',
+          label: context.l10n.target,
           field: AmountField(controller: _target, errorText: _targetError),
         ),
         const SizedBox(height: 16),
         LabeledField(
-          label: 'Already saved (optional)',
+          label: context.l10n.alreadySavedOptional,
           field: AmountField(controller: _savedBefore, errorText: _savedError),
         ),
         const SizedBox(height: 16),
         LabeledField(
-          label: 'Reach it by (optional)',
+          label: context.l10n.reachItByOptional,
           field: Row(
             children: [
               Expanded(
                 child: FieldButton(
                   leading: Icon(Icons.flag_outlined, color: c.muted),
                   label: _targetDate == null
-                      ? 'No date'
-                      : friendlyDate(_targetDate!),
+                      ? context.l10n.goalNoDate
+                      : friendlyDate(context.l10n, _targetDate!),
                   empty: _targetDate == null,
                   onTap: _pickDate,
                 ),
               ),
               if (_targetDate != null)
                 IconButton(
-                  tooltip: 'Remove date',
+                  tooltip: context.l10n.removeDate,
                   onPressed: () => setState(() => _targetDate = null),
                   icon: Icon(Icons.close, color: c.muted),
                 ),
@@ -279,12 +275,12 @@ class _GoalEditorState extends State<_GoalEditor> {
         ),
         const SizedBox(height: 6),
         Text(
-          'With a date, the app works out how much to save each month.',
+          context.l10n.goalDateHelp,
           style: AppText.label.copyWith(color: c.muted),
         ),
         const SizedBox(height: 16),
         Text(
-          'Icon',
+          context.l10n.icon,
           style: AppText.rowTitle.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 10),
@@ -413,15 +409,15 @@ class _GoalMoneySheetState extends State<_GoalMoneySheet> {
     final amount = parseAmount(_amount.text);
     setState(() {
       _amountError = amount == null || amount <= 0
-          ? 'Enter an amount above zero'
+          ? context.l10n.amountAboveZero
           : !_adding && amount > before.saved + 0.005
-          ? 'Only ${money.format(before.saved)} is saved'
+          ? context.l10n.onlyAmountSaved(money.format(before.saved))
           : null;
       _categoryError = _source == PaymentSource.budget && _categoryId == null
-          ? 'Pick a category for the expense'
+          ? context.l10n.pickExpenseCategory
           : null;
       _walletError = _source == PaymentSource.wallet && _walletId == null
-          ? 'Pick a wallet'
+          ? context.l10n.pickWallet
           : null;
     });
     if (_amountError != null ||
@@ -433,15 +429,18 @@ class _GoalMoneySheetState extends State<_GoalMoneySheet> {
     if (_adding && _source == PaymentSource.wallet) {
       final balance = walletsRepo.ledger.of(_walletId!).total;
       if (amount! > balance + 0.005) {
-        final name = walletsRepo.walletById(_walletId)?.name ?? 'This wallet';
+        final name =
+            walletsRepo.walletById(_walletId)?.name ?? context.l10n.thisWallet;
         final proceed = await confirmDialog(
           context,
-          title: 'More than $name has',
-          message:
-              '$name has ${signedMoney(money, balance)}. Saving this takes '
-              'it to ${signedMoney(money, balance - amount)}.',
-          confirmLabel: 'Save anyway',
-          cancelLabel: 'Go back',
+          title: context.l10n.moreThanWalletHas(name),
+          message: context.l10n.moreThanWalletBody(
+            name,
+            signedMoney(money, balance),
+            signedMoney(money, balance - amount),
+          ),
+          confirmLabel: context.l10n.saveAnyway,
+          cancelLabel: context.l10n.goBack,
         );
         if (proceed != true || !mounted) return;
       }
@@ -449,6 +448,7 @@ class _GoalMoneySheetState extends State<_GoalMoneySheet> {
 
     setState(() => _saving = true);
     final navigator = Navigator.of(context);
+    final l10n = context.l10n;
     try {
       String? transactionId;
       String? walletEntryId;
@@ -473,7 +473,9 @@ class _GoalMoneySheetState extends State<_GoalMoneySheet> {
               walletId: _walletId!,
               amount: amount!,
               date: _date,
-              note: _adding ? 'Saved for ${_g.name}' : 'From ${_g.name}',
+              note: _adding
+                  ? l10n.savedForGoal(_g.name)
+                  : l10n.fromGoal(_g.name),
             ),
           );
         case PaymentSource.none:
@@ -525,14 +527,16 @@ class _GoalMoneySheetState extends State<_GoalMoneySheet> {
       leading: wallet != null
           ? IconTile(icon: wallet.icon, color: wallet.color, size: 36)
           : Icon(Icons.account_balance_wallet_outlined, color: c.muted),
-      label: wallet?.name ?? 'Choose a wallet',
+      label: wallet?.name ?? context.l10n.chooseWallet,
       empty: wallet == null,
       error: _walletError,
       onTap: () async {
         final choice = await pickWallet(
           context,
           selectedId: _walletId,
-          title: _adding ? 'From which wallet?' : 'Into which wallet?',
+          title: _adding
+              ? context.l10n.fromWhichWallet
+              : context.l10n.intoWhichWallet,
         );
         if (choice?.walletId != null) {
           setState(() {
@@ -544,21 +548,28 @@ class _GoalMoneySheetState extends State<_GoalMoneySheet> {
     );
 
     return MoneySheet(
-      title: _adding ? 'Add to ${_g.name}' : 'Take out of ${_g.name}',
+      title: _adding
+          ? context.l10n.addToGoal(_g.name)
+          : context.l10n.takeOutOfGoal(_g.name),
       subtitle: _adding
           ? p.isReached
-                ? '${money.format(p.saved)} saved. You\'ve reached it.'
-                : '${money.format(p.saved)} saved, '
-                      '${money.format(p.remaining)} to go.'
-          : '${money.format(p.saved)} saved. Taking some out lowers it.',
+                ? context.l10n.savedReachedIt(money.format(p.saved))
+                : context.l10n.savedToGo(
+                    money.format(p.saved),
+                    money.format(p.remaining),
+                  )
+          : context.l10n.savedTakingOutLowers(money.format(p.saved)),
       isDirty: _isDirty,
       button: ElevatedButton(
         onPressed: _saving ? null : _save,
-        child: ButtonLabel(_adding ? 'Add' : 'Take out', loading: _saving),
+        child: ButtonLabel(
+          _adding ? context.l10n.add : context.l10n.takeOut,
+          loading: _saving,
+        ),
       ),
       children: [
         LabeledField(
-          label: 'Amount',
+          label: context.l10n.amount,
           field: AmountField(
             controller: _amount,
             errorText: _amountError,
@@ -567,15 +578,16 @@ class _GoalMoneySheetState extends State<_GoalMoneySheet> {
         ),
         const SizedBox(height: 16),
         Text(
-          _adding ? 'From' : 'Where it goes',
+          _adding ? context.l10n.from : context.l10n.whereItGoes,
           style: AppText.rowTitle.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 10),
         ChoicePills<PaymentSource>(
           options: [
-            if (_adding) (PaymentSource.budget, 'Monthly money'),
-            if (wallets.hasWallets) (PaymentSource.wallet, 'A wallet'),
-            (PaymentSource.none, 'Just record it'),
+            if (_adding) (PaymentSource.budget, context.l10n.monthlyMoney),
+            if (wallets.hasWallets)
+              (PaymentSource.wallet, context.l10n.aWalletOption),
+            (PaymentSource.none, context.l10n.justRecordIt),
           ],
           value: _source,
           onChanged: (s) => setState(() => _source = s),
@@ -593,7 +605,7 @@ class _GoalMoneySheetState extends State<_GoalMoneySheet> {
                         size: 36,
                       )
                     : Icon(Icons.category_outlined, color: c.muted),
-                label: category?.name ?? 'Choose a category',
+                label: category?.name ?? context.l10n.chooseCategory,
                 empty: category == null,
                 error: _categoryError,
                 onTap: () async {
@@ -612,14 +624,10 @@ class _GoalMoneySheetState extends State<_GoalMoneySheet> {
               const SizedBox(height: 6),
               Text(
                 category == null
-                    ? 'Adds an expense in this category. A "Savings" '
-                          'category set to not counted keeps your budget '
-                          'untouched.'
+                    ? context.l10n.addsExpenseGoalHint
                     : category.excludeFromBudget
-                    ? 'Adds an expense in ${category.name}. Not counted in '
-                          'your monthly budget.'
-                    : 'Adds an expense in ${category.name}. Counts toward '
-                          'your monthly budget.',
+                    ? context.l10n.addsExpenseNotCounted(category.name)
+                    : context.l10n.addsExpenseCounted(category.name),
                 style: AppText.label.copyWith(color: c.muted),
               ),
             ],
@@ -631,24 +639,23 @@ class _GoalMoneySheetState extends State<_GoalMoneySheet> {
               const SizedBox(height: 6),
               Text(
                 _adding
-                    ? 'Takes it out of the wallet and into this goal.'
-                    : 'Puts it back in the wallet as your own money.',
+                    ? context.l10n.goalFromWalletHelp
+                    : context.l10n.goalToWalletHelp,
                 style: AppText.label.copyWith(color: c.muted),
               ),
             ],
           ),
           PaymentSource.none => Text(
-            'Only updates this goal. Nothing is added to your transactions '
-            'or wallets.',
+            context.l10n.onlyUpdatesGoal,
             style: AppText.label.copyWith(color: c.muted),
           ),
         },
         const SizedBox(height: 16),
         LabeledField(
-          label: 'Date',
+          label: context.l10n.date,
           field: FieldButton(
             leading: Icon(Icons.calendar_today_outlined, color: c.muted),
-            label: friendlyDate(_date),
+            label: friendlyDate(context.l10n, _date),
             onTap: _pickDate,
           ),
         ),
@@ -667,20 +674,19 @@ Future<void> showGoalReached(BuildContext context, GoalModel goal) async {
     context: context,
     builder: (dialogContext) => AlertDialog(
       icon: Icon(Icons.celebration, color: c.accent, size: 44),
-      title: Text('You reached ${goal.name}!'),
+      title: Text(dialogContext.l10n.youReachedGoal(goal.name)),
       content: Text(
-        '${money.format(goal.target)} saved. Bought it? Mark it done and it '
-        'moves to Done.',
+        dialogContext.l10n.goalReachedBody(money.format(goal.target)),
         textAlign: TextAlign.center,
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, false),
-          child: const Text('Not yet'),
+          child: Text(dialogContext.l10n.notYet),
         ),
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, true),
-          child: const Text('Mark as done'),
+          child: Text(dialogContext.l10n.markAsDone),
         ),
       ],
     ),
@@ -711,22 +717,22 @@ Future<void> confirmDeleteGoalEntry(
       .firstOrNull;
   final walletName = linkedEntry == null
       ? null
-      : walletsRepo.walletById(linkedEntry.walletId)?.name ?? 'the wallet';
+      : walletsRepo.walletById(linkedEntry.walletId)?.name ??
+            context.l10n.theWallet;
 
   final confirmed = await confirmDialog(
     context,
     title: entry.kind == GoalEntryKind.add
-        ? 'Delete this saving?'
-        : 'Delete this take-out?',
+        ? context.l10n.deleteThisSaving
+        : context.l10n.deleteThisTakeOut,
     message: [
       entry.kind == GoalEntryKind.add
-          ? 'The goal goes down by ${money.format(entry.amount)}.'
-          : 'The ${money.format(entry.amount)} goes back into the goal.',
-      if (linkedTx) 'The expense it added is deleted too.',
-      if (walletName != null)
-        'The entry it added in $walletName is deleted too.',
+          ? context.l10n.goalGoesDownBy(money.format(entry.amount))
+          : context.l10n.goesBackIntoGoal(money.format(entry.amount)),
+      if (linkedTx) context.l10n.expenseDeletedToo,
+      if (walletName != null) context.l10n.walletEntryDeletedToo(walletName),
     ].join(' '),
-    confirmLabel: 'Delete',
+    confirmLabel: context.l10n.delete,
     destructive: true,
   );
   if (confirmed != true) return;

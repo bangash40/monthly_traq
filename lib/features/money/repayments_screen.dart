@@ -12,18 +12,26 @@ import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 void _open(BuildContext context, Widget screen) =>
     Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
 
-String _schedule(RepaymentModel r, MoneyFormatter money) {
+String _schedule(
+  AppLocalizations l10n,
+  RepaymentModel r,
+  MoneyFormatter money,
+) {
   final each = r.installment == null ? '' : money.format(r.installment!);
   return switch (r.frequency) {
-    RepaymentFrequency.daily => '$each daily',
-    RepaymentFrequency.monthly => '$each monthly',
-    RepaymentFrequency.everyMonths => '$each every ${r.everyMonths} months',
-    RepaymentFrequency.yearly => '$each yearly',
-    RepaymentFrequency.none => 'No deadline',
+    RepaymentFrequency.daily => l10n.scheduleDaily(each),
+    RepaymentFrequency.monthly => l10n.scheduleMonthly(each),
+    RepaymentFrequency.everyMonths => l10n.scheduleEveryMonths(
+      each,
+      r.everyMonths,
+    ),
+    RepaymentFrequency.yearly => l10n.scheduleYearly(each),
+    RepaymentFrequency.none => l10n.frequencyNone,
   };
 }
 
@@ -53,12 +61,12 @@ class DueBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (progress.isPaidOff) {
-      return const TagBadge('Paid off', tone: BadgeTone.income);
+      return TagBadge(context.l10n.paidOff, tone: BadgeTone.income);
     }
     final days = progress.daysUntilDue(DateTime.now());
-    if (days == null) return const TagBadge('No deadline');
+    if (days == null) return TagBadge(context.l10n.frequencyNone);
     return TagBadge(
-      dueLabel(days),
+      dueLabel(context.l10n, days),
       tone: days < 0
           ? BadgeTone.spending
           : days <= 3
@@ -93,18 +101,16 @@ class RepaymentsScreen extends StatelessWidget {
     }
 
     return SubPageScaffold(
-      title: 'Repayments',
+      title: context.l10n.repayments,
       body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
         children: [
           if (!repo.hasRepayments)
             EmptyState(
               icon: Icons.event_repeat,
-              title: 'Track what you owe',
-              message:
-                  'Add installments, loans and qisht to see what\'s due next, '
-                  'how much is left, and when you\'ll be done.',
-              actionLabel: 'Add a repayment',
+              title: context.l10n.trackWhatYouOwe,
+              message: context.l10n.trackWhatYouOweHelp,
+              actionLabel: context.l10n.addRepayment,
               onAction: () => showRepaymentEditor(context),
             )
           else ...[
@@ -114,7 +120,7 @@ class RepaymentsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Still owed',
+                    context.l10n.stillOwed,
                     style: AppText.body.copyWith(color: c.muted),
                   ),
                   const SizedBox(height: 6),
@@ -131,13 +137,13 @@ class RepaymentsScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _Stat(
-                          label: 'Due this month',
+                          label: context.l10n.dueThisMonth,
                           value: money.format(dueThisMonth),
                         ),
                       ),
                       Expanded(
                         child: _Stat(
-                          label: 'Active',
+                          label: context.l10n.active,
                           value: '${active.length}',
                         ),
                       ),
@@ -148,14 +154,14 @@ class RepaymentsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             SectionHeader(
-              'Active',
-              actionLabel: 'Add',
+              context.l10n.active,
+              actionLabel: context.l10n.add,
               onAction: () => showRepaymentEditor(context),
             ),
             const SizedBox(height: 8),
             if (active.isEmpty)
               Text(
-                'Everything is paid off.',
+                context.l10n.everythingPaidOff,
                 style: AppText.body.copyWith(color: c.muted),
               )
             else
@@ -164,7 +170,7 @@ class RepaymentsScreen extends StatelessWidget {
               ),
             if (paidOff.isNotEmpty) ...[
               const SizedBox(height: 24),
-              const SectionHeader('Paid off'),
+              SectionHeader(context.l10n.paidOff),
               const SizedBox(height: 8),
               GroupCard(
                 children: [for (final r in paidOff) RepaymentRow(repayment: r)],
@@ -214,11 +220,14 @@ class RepaymentRow extends StatelessWidget {
     final p = repo.progressOf(repayment);
     final count = p.installmentCount;
     final detail = [
-      _schedule(repayment, money),
+      _schedule(context.l10n, repayment, money),
       if (count != null && count > 0)
-        '${p.installmentsPaid} of $count paid'
+        context.l10n.installmentsPaidOf(p.installmentsPaid ?? 0, count)
       else
-        '${money.format(p.paid)} of ${money.format(repayment.total)} paid',
+        context.l10n.amountPaidOf(
+          money.format(p.paid),
+          money.format(repayment.total),
+        ),
     ].join(' · ');
 
     return InkWell(
@@ -261,8 +270,8 @@ class RepaymentRow extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     p.isPaidOff
-                        ? '${money.format(repayment.total)} paid'
-                        : '${money.format(p.remaining)} left',
+                        ? context.l10n.amountPaid(money.format(repayment.total))
+                        : context.l10n.amountLeft(money.format(p.remaining)),
                     style: AppText.label.copyWith(
                       color: c.ink,
                       fontWeight: FontWeight.w700,
@@ -323,7 +332,7 @@ class RepaymentScreen extends StatelessWidget {
     return SubPageScaffold(
       title: r.name,
       trailing: IconButton(
-        tooltip: 'Edit repayment',
+        tooltip: context.l10n.editRepayment,
         onPressed: () => showRepaymentEditor(context, existing: r),
         icon: Icon(Icons.edit_outlined, color: c.ink),
       ),
@@ -336,7 +345,7 @@ class RepaymentScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  p.isPaidOff ? 'Paid off' : 'Left to pay',
+                  p.isPaidOff ? context.l10n.paidOff : context.l10n.leftToPay,
                   style: AppText.body.copyWith(color: c.muted),
                 ),
                 const SizedBox(height: 6),
@@ -352,8 +361,13 @@ class RepaymentScreen extends StatelessWidget {
                 MeterBar(value: p.fraction, color: c.accent),
                 const SizedBox(height: 10),
                 Text(
-                  '${money.format(p.paid)} of ${money.format(r.total)} paid'
-                  '${r.lender == null ? '' : ' · to ${r.lender}'}',
+                  [
+                    context.l10n.amountPaidOf(
+                      money.format(p.paid),
+                      money.format(r.total),
+                    ),
+                    if (r.lender != null) context.l10n.toLender(r.lender!),
+                  ].join(' · '),
                   style: AppText.label.copyWith(color: c.muted),
                 ),
               ],
@@ -363,7 +377,7 @@ class RepaymentScreen extends StatelessWidget {
           GroupCard(
             children: [
               info(
-                'Next due',
+                context.l10n.nextDue,
                 r.hasSchedule && !p.isPaidOff
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
@@ -375,11 +389,17 @@ class RepaymentScreen extends StatelessWidget {
                       )
                     : DueBadge(progress: p),
               ),
-              info('Payments', infoText(_schedule(r, money))),
+              info(
+                context.l10n.payments,
+                infoText(_schedule(context.l10n, r, money)),
+              ),
               if (left != null && !p.isPaidOff)
-                info('Payments left', infoText('$left')),
+                info(context.l10n.paymentsLeft, infoText('$left')),
               if (finish != null)
-                info('Done by', infoText(DateFormat('MMM y').format(finish))),
+                info(
+                  context.l10n.doneBy,
+                  infoText(DateFormat('MMM y').format(finish)),
+                ),
             ],
           ),
           if (!p.isPaidOff) ...[
@@ -387,15 +407,15 @@ class RepaymentScreen extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () => showPaySheet(context, r),
               icon: const Icon(Icons.check),
-              label: const Text('Pay'),
+              label: Text(context.l10n.pay),
             ),
           ],
           const SizedBox(height: 24),
-          const SectionHeader('Payments'),
+          SectionHeader(context.l10n.payments),
           const SizedBox(height: 8),
           if (payments.isEmpty && r.paidBefore <= 0)
             Text(
-              'Payments you make show up here.',
+              context.l10n.paymentsEmpty,
               style: AppText.body.copyWith(color: c.muted),
             )
           else
@@ -414,7 +434,7 @@ class RepaymentScreen extends StatelessWidget {
                         const SizedBox(width: 14),
                         Expanded(
                           child: Text(
-                            'Paid before tracking',
+                            context.l10n.paidBeforeTracking,
                             style: AppText.rowTitle.copyWith(fontSize: 16),
                           ),
                         ),
@@ -452,16 +472,18 @@ class _PaymentRow extends StatelessWidget {
             .firstOrNull;
         final category = txRepo.categoryById(tx?.categoryId);
         return category == null
-            ? 'Monthly money'
-            : 'Monthly money · ${category.name}';
+            ? context.l10n.monthlyMoney
+            : '${context.l10n.monthlyMoney} · ${category.name}';
       }(),
       PaymentSource.wallet => () {
         final entry = wallets.entries
             .where((e) => e.id == p.walletEntryId)
             .firstOrNull;
-        return 'From ${wallets.walletById(entry?.walletId)?.name ?? 'a wallet'}';
+        return context.l10n.fromWalletNamed(
+          wallets.walletById(entry?.walletId)?.name ?? context.l10n.aWallet,
+        );
       }(),
-      PaymentSource.none => 'Recorded only',
+      PaymentSource.none => context.l10n.recordedOnly,
     };
 
     return InkWell(
@@ -536,9 +558,11 @@ class RepaymentsHomeCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(child: Text('Repayments', style: AppText.section)),
+              Expanded(
+                child: Text(context.l10n.repayments, style: AppText.section),
+              ),
               Text(
-                '${money.format(owed)} owed',
+                context.l10n.amountOwed(money.format(owed)),
                 style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
               ),
               Icon(Icons.chevron_right, color: c.faint),
@@ -549,7 +573,7 @@ class RepaymentsHomeCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Text(
-                'Everything is paid off.',
+                context.l10n.everythingPaidOff,
                 style: AppText.body.copyWith(color: c.muted),
               ),
             )

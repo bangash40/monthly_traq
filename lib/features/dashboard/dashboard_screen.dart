@@ -27,6 +27,7 @@ import 'package:monthly_traq/widgets/budget_sheet.dart';
 import 'package:monthly_traq/widgets/transaction_rows.dart';
 import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Home: this cycle at a glance. Always shows the current cycle, whatever
 /// month the Transactions and Analytics tabs are looking at.
@@ -40,10 +41,10 @@ class DashboardScreen extends StatelessWidget {
     this.onSeeAllSpending,
   });
 
-  static String greeting(DateTime now) {
-    if (now.hour < 12) return 'Good morning';
-    if (now.hour < 17) return 'Good afternoon';
-    return 'Good evening';
+  static String greeting(AppLocalizations l10n, DateTime now) {
+    if (now.hour < 12) return l10n.goodMorning;
+    if (now.hour < 17) return l10n.goodAfternoon;
+    return l10n.goodEvening;
   }
 
   void _openTransaction(BuildContext context, TransactionModel t) {
@@ -87,8 +88,8 @@ class DashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SectionHeader(
-              'Top spending',
-              actionLabel: 'See all',
+              context.l10n.homeCardTopSpending,
+              actionLabel: context.l10n.seeAll,
               onAction: onSeeAllSpending,
             ),
             const SizedBox(height: 10),
@@ -101,19 +102,17 @@ class DashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SectionHeader(
-              'Recent',
-              actionLabel: recent.isEmpty ? null : 'See all',
+              context.l10n.homeCardRecent,
+              actionLabel: recent.isEmpty ? null : context.l10n.seeAll,
               onAction: onSeeAllTransactions,
             ),
             const SizedBox(height: 10),
             if (recent.isEmpty)
               EmptyState(
                 icon: Icons.receipt_long,
-                title: 'No transactions yet',
-                message:
-                    'Log what you spend and earn and it shows up here, '
-                    'grouped by day.',
-                actionLabel: 'Add your first transaction',
+                title: context.l10n.noTransactionsYet,
+                message: context.l10n.noTransactionsYetHome,
+                actionLabel: context.l10n.addFirstTransaction,
                 onAction: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -130,8 +129,8 @@ class DashboardScreen extends StatelessWidget {
                       category: repo.categoryById(t.categoryId),
                       highlight: repo.isJustSaved(t.id),
                       subtitle:
-                          '${repo.categoryById(t.categoryId)?.name ?? 'Uncategorized'}'
-                          ' · ${shortDate(t.date)}',
+                          '${repo.categoryById(t.categoryId)?.name ?? context.l10n.uncategorized}'
+                          ' · ${shortDate(context.l10n, t.date)}',
                       onTap: () => _openTransaction(context, t),
                     ),
                 ],
@@ -205,7 +204,7 @@ class _Greeting extends StatelessWidget {
           children: [
             Semantics(
               button: true,
-              label: 'Edit profile',
+              label: context.l10n.editProfile,
               child: GestureDetector(
                 onTap: () => Navigator.push(
                   context,
@@ -227,7 +226,7 @@ class _Greeting extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    DashboardScreen.greeting(DateTime.now()),
+                    DashboardScreen.greeting(context.l10n, DateTime.now()),
                     style: AppText.body.copyWith(color: c.muted),
                   ),
                   Text(
@@ -271,7 +270,7 @@ class _BalanceCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Total balance',
+                  context.l10n.totalBalance,
                   style: AppText.body.copyWith(
                     color: onPrimary.withValues(alpha: 0.78),
                   ),
@@ -279,7 +278,9 @@ class _BalanceCard extends StatelessWidget {
               ),
               if (settings.showPrivacyButton) ...[
                 IconButton(
-                  tooltip: hidden ? 'Show amounts' : 'Hide amounts',
+                  tooltip: hidden
+                      ? context.l10n.showAmounts
+                      : context.l10n.hideAmounts,
                   onPressed: () => settings.setHideAmounts(!hidden),
                   visualDensity: VisualDensity.compact,
                   icon: Icon(
@@ -333,7 +334,7 @@ class _BalanceCard extends StatelessWidget {
               Expanded(
                 child: _Flow(
                   icon: Icons.south_west,
-                  label: 'Income',
+                  label: context.l10n.income,
                   amount: repo.monthlyIncome,
                   color: onPrimary,
                 ),
@@ -342,7 +343,7 @@ class _BalanceCard extends StatelessWidget {
               Expanded(
                 child: _Flow(
                   icon: Icons.north_east,
-                  label: 'Spent',
+                  label: context.l10n.spent,
                   amount: repo.monthlyExpense,
                   color: onPrimary,
                 ),
@@ -424,10 +425,14 @@ class _BudgetCard extends StatelessWidget {
     final daysLeft = repo.daysLeftInCycle;
 
     final (fill, statusColor, status) = ratio >= 1
-        ? (c.spendingFill, c.spending, 'Over budget')
+        ? (c.spendingFill, c.spending, context.l10n.overBudget)
         : ratio >= 0.7
-        ? (c.warningFill, c.warning, '${(ratio * 100).round()}% used')
-        : (c.accent, c.muted, '${(ratio * 100).round()}% used');
+        ? (
+            c.warningFill,
+            c.warning,
+            context.l10n.percentUsed((ratio * 100).round()),
+          )
+        : (c.accent, c.muted, context.l10n.percentUsed((ratio * 100).round()));
 
     return AppCard(
       padding: const EdgeInsets.fromLTRB(20, 14, 12, 20),
@@ -436,12 +441,14 @@ class _BudgetCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
-                child: Text('Monthly budget', style: AppText.section),
+              Expanded(
+                child: Text(context.l10n.monthlyBudget, style: AppText.section),
               ),
               TextButton(
                 onPressed: () => showBudgetSheet(context),
-                child: Text(budget > 0 ? 'Edit' : 'Set budget'),
+                child: Text(
+                  budget > 0 ? context.l10n.edit : context.l10n.setBudget,
+                ),
               ),
             ],
           ),
@@ -449,7 +456,7 @@ class _BudgetCard extends StatelessWidget {
             padding: const EdgeInsets.only(right: 8),
             child: budget <= 0
                 ? Text(
-                    'Set a budget to see how much is left this month.',
+                    context.l10n.setBudgetPrompt,
                     style: AppText.body.copyWith(color: c.muted),
                   )
                 : Column(
@@ -464,16 +471,17 @@ class _BudgetCard extends StatelessWidget {
                             children: [
                               TextSpan(
                                 text: ratio >= 1
-                                    ? '${money.format(shown)} over'
+                                    ? context.l10n.amountOver(
+                                        money.format(shown),
+                                      )
                                     : money.format(shown),
                                 style: AppText.amountLarge.copyWith(
                                   color: ratio >= 1 ? c.spending : c.ink,
                                 ),
                               ),
                               TextSpan(
-                                text: ratio >= 1
-                                    ? '  your ${money.format(budget)} budget'
-                                    : '  left of ${money.format(budget)}',
+                                text:
+                                    '  ${ratio >= 1 ? context.l10n.budgetOverTail(money.format(budget)) : context.l10n.budgetLeftTail(money.format(budget))}',
                                 style: AppText.label.copyWith(
                                   fontSize: 15,
                                   color: c.muted,
@@ -485,8 +493,8 @@ class _BudgetCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
                       Semantics(
-                        label: 'Budget used',
-                        value: '${(ratio * 100).round()} percent',
+                        label: context.l10n.budgetUsed,
+                        value: context.l10n.percentValue((ratio * 100).round()),
                         child: MeterBar(
                           value: ratio,
                           color: fill,
@@ -512,8 +520,8 @@ class _BudgetCard extends StatelessWidget {
                           const Spacer(),
                           Text(
                             daysLeft <= 1
-                                ? 'Last day of this cycle'
-                                : '$daysLeft days left in cycle',
+                                ? context.l10n.lastDayOfCycle
+                                : context.l10n.daysLeftInCycle(daysLeft),
                             style: AppText.caption.copyWith(
                               fontSize: 13,
                               color: c.muted,
@@ -580,7 +588,7 @@ class _TopSpending extends StatelessWidget {
                         ),
                         const SizedBox(height: 14),
                         Text(
-                          totals[i].category.name,
+                          totals[i].category.displayName(context.l10n),
                           style: AppText.label.copyWith(color: c.muted),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -622,13 +630,17 @@ class _DailyAllowanceCard extends StatelessWidget {
     final (headlineAmount, headlineColor, tail) = a.budgetUsedUp
         ? (null, c.spending, '')
         : a.isOverToday
-        ? (-a.leftToday, c.spending, '  today\'s ${money.format(a.perDay)}')
-        : (a.leftToday, c.ink, '  left to spend today');
+        ? (
+            -a.leftToday,
+            c.spending,
+            '  ${context.l10n.allowanceOverTail(money.format(a.perDay))}',
+          )
+        : (a.leftToday, c.ink, '  ${context.l10n.allowanceLeftTail}');
 
     final footnote = a.budgetUsedUp
-        ? 'You\'ve used this cycle\'s budget. Anything more goes over it.'
+        ? context.l10n.allowanceUsedUp
         : a.isOverToday
-        ? 'Tomorrow\'s allowance will be a little lower to stay on budget.'
+        ? context.l10n.allowanceTomorrowLower
         : null;
 
     return AppCard(
@@ -638,11 +650,16 @@ class _DailyAllowanceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
-                child: Text('Daily allowance', style: AppText.section),
+              Expanded(
+                child: Text(
+                  context.l10n.homeCardDailyAllowance,
+                  style: AppText.section,
+                ),
               ),
               Text(
-                a.daysLeft <= 1 ? 'Last day' : '${a.daysLeft} days left',
+                a.daysLeft <= 1
+                    ? context.l10n.lastDay
+                    : context.l10n.daysLeft(a.daysLeft),
                 style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
               ),
             ],
@@ -655,9 +672,9 @@ class _DailyAllowanceCard extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: headlineAmount == null
-                        ? 'No budget left'
+                        ? context.l10n.noBudgetLeft
                         : a.isOverToday
-                        ? '${money.format(shown)} over'
+                        ? context.l10n.amountOver(money.format(shown))
                         : money.format(shown),
                     style: AppText.amountLarge.copyWith(color: headlineColor),
                   ),
@@ -672,8 +689,8 @@ class _DailyAllowanceCard extends StatelessWidget {
           if (!a.budgetUsedUp) ...[
             const SizedBox(height: 14),
             Semantics(
-              label: 'Today\'s allowance used',
-              value: '${(ratio * 100).round()} percent',
+              label: context.l10n.allowanceUsed,
+              value: context.l10n.percentValue((ratio * 100).round()),
               child: MeterBar(
                 value: ratio.clamp(0, 1),
                 color: c.accent,
@@ -688,12 +705,12 @@ class _DailyAllowanceCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Spent ${money.format(a.spentToday)} today',
+                  context.l10n.spentToday(money.format(a.spentToday)),
                   style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
                 ),
                 const Spacer(),
                 Text(
-                  '${money.format(a.perDay)} a day',
+                  context.l10n.perDay(money.format(a.perDay)),
                   style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
                 ),
               ],
@@ -735,9 +752,11 @@ class _WalletsCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(child: Text('Wallets', style: AppText.section)),
+              Expanded(
+                child: Text(context.l10n.wallets, style: AppText.section),
+              ),
               Text(
-                count == 1 ? '1 wallet' : '$count wallets',
+                context.l10n.walletCount(count),
                 style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
               ),
               Icon(Icons.chevron_right, color: c.faint),
@@ -754,8 +773,11 @@ class _WalletsCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             ledger.others > 0
-                ? 'Yours ${signedMoney(money, ledger.own)} · Others\' ${money.format(ledger.others)}'
-                : 'All yours',
+                ? context.l10n.yoursAndOthers(
+                    signedMoney(money, ledger.own),
+                    money.format(ledger.others),
+                  )
+                : context.l10n.allYours,
             style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

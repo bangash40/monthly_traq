@@ -8,29 +8,34 @@ import 'package:monthly_traq/models/transaction_model.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// What a transaction is called in lists: its title, or its category's
 /// name when it was saved without one.
-String transactionTitle(TransactionModel t, CategoryModel? category) {
+String transactionTitle(
+  AppLocalizations l10n,
+  TransactionModel t,
+  CategoryModel? category,
+) {
   final title = t.title.trim();
   if (title.isNotEmpty) return title;
-  return category?.name ?? 'Uncategorized';
+  return category?.name ?? l10n.uncategorized;
 }
 
 /// "Today", "Yesterday", "Tue, Sep 22" (with the year outside this year).
-String dayLabel(DateTime day, {DateTime? now}) {
+String dayLabel(AppLocalizations l10n, DateTime day, {DateTime? now}) {
   final today = DateUtils.dateOnly(now ?? DateTime.now());
   final date = DateUtils.dateOnly(day);
-  if (date == today) return 'Today';
-  if (date == DateUtils.addDaysToDate(today, -1)) return 'Yesterday';
+  if (date == today) return l10n.today;
+  if (date == DateUtils.addDaysToDate(today, -1)) return l10n.yesterday;
   return DateFormat(date.year == today.year ? 'EEE, MMM d' : 'EEE, MMM d, y')
       .format(date);
 }
 
 /// "Today" or "Sep 22" — the short date in a row subtitle.
-String shortDate(DateTime day, {DateTime? now}) {
-  final label = dayLabel(day, now: now);
-  if (label == 'Today' || label == 'Yesterday') return label;
+String shortDate(AppLocalizations l10n, DateTime day, {DateTime? now}) {
+  final label = dayLabel(l10n, day, now: now);
+  if (label == l10n.today || label == l10n.yesterday) return label;
   final today = now ?? DateTime.now();
   return DateFormat(day.year == today.year ? 'MMM d' : 'MMM d, y').format(day);
 }
@@ -102,7 +107,7 @@ class TransactionRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    transactionTitle(transaction, category),
+                    transactionTitle(context.l10n, transaction, category),
                     style: AppText.rowTitle.copyWith(fontSize: 16),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -200,7 +205,9 @@ class DayHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 20, 4, 10),
       child: Row(
         children: [
-          Expanded(child: Text(dayLabel(bucket.day), style: style)),
+          Expanded(
+            child: Text(dayLabel(context.l10n, bucket.day), style: style),
+          ),
           Text(
             context.money.format(bucket.net, sign: MoneySign.auto),
             style: AppText.tabular(style),

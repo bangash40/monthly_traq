@@ -12,6 +12,7 @@ import 'package:monthly_traq/widgets/charts.dart';
 import 'package:monthly_traq/widgets/month_switcher.dart';
 import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Where the money went (or came from) in the month picked with the month
 /// switcher.
@@ -42,15 +43,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       body: KeptAliveListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
         children: [
-          const Text('Analytics', style: AppText.screenTitle),
+          Text(context.l10n.tabAnalytics, style: AppText.screenTitle),
           const SizedBox(height: 16),
           const MonthSwitcher(),
           const SizedBox(height: 12),
           AppSegmented<TransactionType>(
             value: _type,
-            segments: const [
-              AppSegment(TransactionType.expense, 'Spending'),
-              AppSegment(TransactionType.income, 'Income'),
+            segments: [
+              AppSegment(TransactionType.expense, context.l10n.spending),
+              AppSegment(TransactionType.income, context.l10n.income),
             ],
             onChanged: (type) => setState(() => _type = type),
           ),
@@ -63,11 +64,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     card: false,
                     icon: Icons.donut_large,
                     title: _isSpending
-                        ? 'No spending in ${repo.selectedCycle.shortTitle}'
-                        : 'No income in ${repo.selectedCycle.shortTitle}',
+                        ? context.l10n.noSpendingIn(
+                            repo.selectedCycle.shortTitle,
+                          )
+                        : context.l10n.noIncomeIn(
+                            repo.selectedCycle.shortTitle,
+                          ),
                     message: _isSpending
-                        ? 'Expenses you log are broken down by category here.'
-                        : 'Income you log is broken down by category here.',
+                        ? context.l10n.noSpendingHelp
+                        : context.l10n.noIncomeHelp,
                   )
                 : Column(
                     children: [
@@ -77,7 +82,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              _isSpending ? 'Spent' : 'Earned',
+                              _isSpending
+                                  ? context.l10n.spent
+                                  : context.l10n.earned,
                               style: AppText.label.copyWith(
                                 fontSize: 15,
                                 color: c.muted,
@@ -134,7 +141,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               children: [
                 Expanded(
                   child: _StatCard(
-                    label: 'Daily average',
+                    label: context.l10n.dailyAverage,
                     value: money.format(
                       repo.dailyAverage(_type).roundToDouble(),
                     ),
@@ -143,7 +150,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _StatCard(
-                    label: 'Biggest day',
+                    label: context.l10n.biggestDay,
                     value: biggest == null ? '—' : money.format(biggest.amount),
                     detail: biggest == null
                         ? null
@@ -162,12 +169,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               children: [
                 Row(
                   children: [
-                    const Expanded(
-                      child: Text('Last 6 months', style: AppText.section),
+                    Expanded(
+                      child: Text(
+                        context.l10n.lastSixMonths,
+                        style: AppText.section,
+                      ),
                     ),
-                    _LegendDot(color: c.incomeFill, label: 'In'),
+                    _LegendDot(
+                      color: c.incomeFill,
+                      label: context.l10n.moneyIn,
+                    ),
                     const SizedBox(width: 14),
-                    _LegendDot(color: c.spendingFill, label: 'Out'),
+                    _LegendDot(
+                      color: c.spendingFill,
+                      label: context.l10n.moneyOut,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 18),
@@ -197,12 +213,12 @@ class _ChangeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final percent = change.abs().round();
     if (percent == 0) {
-      return TagBadge('Same as $versus');
+      return TagBadge(context.l10n.sameAs(versus));
     }
     final isUp = change > 0;
     final isGood = isUp == higherIsGood;
     return TagBadge(
-      '$percent% vs $versus',
+      context.l10n.percentVersus(percent, versus),
       icon: isUp ? Icons.arrow_upward : Icons.arrow_downward,
       tone: isGood ? BadgeTone.income : BadgeTone.spending,
     );
@@ -245,7 +261,7 @@ class _BreakdownRow extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          category.name,
+                          category.displayName(context.l10n),
                           style: AppText.rowTitle.copyWith(fontSize: 16),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -263,7 +279,7 @@ class _BreakdownRow extends StatelessWidget {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            'Not in budget',
+                            context.l10n.notInBudget,
                             style: AppText.tiny.copyWith(
                               fontSize: 11,
                               color: c.muted,

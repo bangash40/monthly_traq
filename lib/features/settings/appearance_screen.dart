@@ -5,6 +5,7 @@ import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/app/theme_controller.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Mode (System / Light / Dark), theme and text size, all in one place.
 class AppearanceScreen extends StatelessWidget {
@@ -19,35 +20,35 @@ class AppearanceScreen extends StatelessWidget {
     final steps = kFontScaleSteps.length;
 
     return SubPageScaffold(
-      title: 'Appearance',
+      title: context.l10n.appearance,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
-          const OverlineLabel('Mode'),
+          OverlineLabel(context.l10n.mode),
           AppSegmented<ThemeMode>(
             value: themeController.mode,
             height: 52,
-            segments: const [
+            segments: [
               AppSegment(
                 ThemeMode.system,
-                'System',
+                context.l10n.modeSystem,
                 icon: Icons.brightness_auto_outlined,
               ),
               AppSegment(
                 ThemeMode.light,
-                'Light',
+                context.l10n.modeLight,
                 icon: Icons.light_mode_outlined,
               ),
               AppSegment(
                 ThemeMode.dark,
-                'Dark',
+                context.l10n.modeDark,
                 icon: Icons.dark_mode_outlined,
               ),
             ],
             onChanged: themeController.setMode,
           ),
           const SizedBox(height: 28),
-          const OverlineLabel('Theme'),
+          OverlineLabel(context.l10n.theme),
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
@@ -66,7 +67,7 @@ class AppearanceScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 28),
-          const OverlineLabel('Text size'),
+          OverlineLabel(context.l10n.textSize),
           AppCard(
             radius: AppRadius.largeCard,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
@@ -86,9 +87,9 @@ class AppearanceScreen extends StatelessWidget {
                         min: 0,
                         max: (steps - 1).toDouble(),
                         divisions: steps - 1,
-                        label: themeController.fontSizeLabel,
+                        label: themeController.fontSizeLabel(context.l10n),
                         semanticFormatterCallback: (value) =>
-                            kFontSizeLabels[value.round()],
+                            fontSizeStepLabel(context.l10n, value.round()),
                         onChanged: (value) =>
                             themeController.setFontSizeStep(value.round()),
                       ),
@@ -105,8 +106,7 @@ class AppearanceScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Groceries · ${context.money.format(3450)} — this is how '
-                  'text will look.',
+                  context.l10n.textSizePreview(context.money.format(3450)),
                   style: AppText.body.copyWith(fontSize: 16, color: c.muted),
                 ),
               ],
@@ -143,7 +143,7 @@ class _ThemeCard extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: '${theme.name} theme',
+      label: context.l10n.themeCardLabel(theme.name),
       excludeSemantics: true,
       child: Material(
         color: c.surface,

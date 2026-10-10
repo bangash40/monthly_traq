@@ -4,6 +4,7 @@ import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// "‹ September 2026 ›" — steps Transactions and Analytics through past
 /// budget cycles. The selection lives in the repository, so both tabs stay
@@ -27,13 +28,13 @@ class MonthSwitcher extends StatelessWidget {
           children: [
             IconButton(
               icon: const Icon(Icons.chevron_left),
-              tooltip: 'Previous month',
+              tooltip: context.l10n.previousMonth,
               onPressed: repo.showPreviousCycle,
             ),
             Expanded(
               child: Semantics(
                 button: !isCurrent,
-                hint: isCurrent ? null : 'Back to this month',
+                hint: isCurrent ? null : context.l10n.backToThisMonth,
                 child: GestureDetector(
                   onTap: isCurrent ? null : repo.showCurrentCycle,
                   child: Text(
@@ -56,7 +57,7 @@ class MonthSwitcher extends StatelessWidget {
                 Icons.chevron_right,
                 color: isCurrent ? c.faint.withValues(alpha: 0.5) : null,
               ),
-              tooltip: 'Next month',
+              tooltip: context.l10n.nextMonth,
               onPressed: isCurrent ? null : repo.showNextCycle,
             ),
           ],

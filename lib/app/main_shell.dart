@@ -10,6 +10,7 @@ import 'package:monthly_traq/features/transactions/add_edit_transaction_screen.d
 import 'package:monthly_traq/features/transactions/transactions_screen.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/motion.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -159,14 +160,14 @@ class _MainShellState extends State<MainShell>
                   _NavItem(
                     icon: Icons.home_outlined,
                     selectedIcon: Icons.home_rounded,
-                    label: 'Home',
+                    label: context.l10n.tabHome,
                     isSelected: _selectedIndex == 0,
                     onTap: () => _select(0),
                   ),
                   _NavItem(
                     icon: Icons.receipt_long_outlined,
                     selectedIcon: Icons.receipt_long,
-                    label: 'Transactions',
+                    label: context.l10n.tabTransactions,
                     isSelected: _selectedIndex == 1,
                     onTap: () => _select(1),
                   ),
@@ -181,14 +182,14 @@ class _MainShellState extends State<MainShell>
                   _NavItem(
                     icon: Icons.donut_large,
                     selectedIcon: Icons.donut_large,
-                    label: 'Analytics',
+                    label: context.l10n.tabAnalytics,
                     isSelected: _selectedIndex == 2,
                     onTap: () => _select(2),
                   ),
                   _NavItem(
                     icon: Icons.person_outline,
                     selectedIcon: Icons.person,
-                    label: 'Profile',
+                    label: context.l10n.tabProfile,
                     isSelected: _selectedIndex == 3,
                     onTap: () => _select(3),
                   ),
@@ -216,10 +217,10 @@ class _AddButton extends StatelessWidget {
     return Expanded(
       child: Center(
         child: Tooltip(
-          message: 'Add transaction',
+          message: context.l10n.addTransaction,
           child: Semantics(
             button: true,
-            label: 'Add transaction',
+            label: context.l10n.addTransaction,
             excludeSemantics: true,
             child: Material(
               color: c.primary,

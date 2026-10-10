@@ -4,6 +4,16 @@ All notable changes to MonthlyTraq. Versions match `version:` in
 `pubspec.yaml` (the number in brackets is the Android build number), and
 each release is tagged in git as `vX.Y.Z`.
 
+## 1.9.16 (build 35) — 2026-10-11
+
+### Changed
+- Groundwork for more languages: all screen text now comes from one
+  English language file (`lib/l10n/app_en.arb`), ready for Urdu. Nothing
+  looks different.
+- A Language picker (System default or English) behind the Language row
+  in Profile, shown in debug builds only until Urdu is ready.
+- "Uncategorized" follows the app's language.
+
 ## 1.9.15 (build 34) — 2026-10-11
 
 ### Changed

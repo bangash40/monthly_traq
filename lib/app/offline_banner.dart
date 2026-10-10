@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Tells the person, across every screen, when the app can't reach the
 /// server. When the connection drops a strip slides in saying changes will
@@ -126,10 +127,10 @@ class _OfflineBannerFrameState extends State<OfflineBannerFrame> {
                 container: true,
                 liveRegion: true,
                 label: _backOnline
-                    ? 'Back online'
+                    ? context.l10n.backOnline
                     : _showMessage
                     ? null
-                    : 'You\'re offline',
+                    : context.l10n.youreOffline,
                 child: Padding(
                   padding: EdgeInsets.only(top: top),
                   child: AnimatedSize(
@@ -141,8 +142,7 @@ class _OfflineBannerFrameState extends State<OfflineBannerFrame> {
                           ? Padding(
                               padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                               child: Text(
-                                'You\'re offline. Changes will sync when '
-                                'you\'re back.',
+                                context.l10n.offlineMessage,
                                 textAlign: TextAlign.center,
                                 style: AppText.caption.copyWith(
                                   color: c.warning,

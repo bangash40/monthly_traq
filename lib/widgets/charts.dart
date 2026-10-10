@@ -8,6 +8,7 @@ import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/models/monthly_total.dart';
 import 'package:monthly_traq/services/cycle_stats.dart';
 import 'package:monthly_traq/widgets/motion.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// The smallest "round" number (1, 2 or 5 × 10ⁿ) at or above [value], so
 /// chart axes stop at 60k or 120k rather than 113,450.
@@ -157,7 +158,7 @@ class MonthlyTrendChart extends StatelessWidget {
     final axisStyle = AppText.tabular(AppText.tiny.copyWith(color: c.muted));
 
     return Semantics(
-      label: 'Income and spending, last ${months.length} months',
+      label: context.l10n.trendChartLabel(months.length),
       child: Column(
         children: [
           SizedBox(

@@ -12,13 +12,14 @@ import 'package:monthly_traq/services/investments_repository.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 void _open(BuildContext context, Widget screen) =>
     Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
 
 /// "Updated today", "Updated 3 days ago", "Updated 2 months ago".
-String updatedAgo(DateTime? date) {
-  if (date == null) return 'Value not updated yet';
+String updatedAgo(AppLocalizations l10n, DateTime? date) {
+  if (date == null) return l10n.valueNotUpdatedYet;
   final now = DateTime.now();
   final days = DateTime(
     now.year,
@@ -26,11 +27,10 @@ String updatedAgo(DateTime? date) {
     now.day,
   ).difference(DateTime(date.year, date.month, date.day)).inDays;
   return switch (days) {
-    <= 0 => 'Updated today',
-    1 => 'Updated yesterday',
-    < 30 => 'Updated $days days ago',
-    < 60 => 'Updated a month ago',
-    _ => 'Updated ${days ~/ 30} months ago',
+    <= 0 => l10n.updatedToday,
+    1 => l10n.updatedYesterday,
+    < 30 => l10n.updatedDaysAgo(days),
+    _ => l10n.updatedMonthsAgo(days ~/ 30),
   };
 }
 
@@ -86,18 +86,16 @@ class InvestmentsScreen extends StatelessWidget {
     final totals = repo.totals;
 
     return SubPageScaffold(
-      title: 'Investments',
+      title: context.l10n.investments,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
         children: [
           if (!repo.hasAccounts)
             EmptyState(
               icon: Icons.trending_up,
-              title: 'Track your investments',
-              message:
-                  'Add your PSX accounts with what you\'ve put in and what '
-                  'they\'re worth, and see your gain at a glance.',
-              actionLabel: 'Add an account',
+              title: context.l10n.trackInvestments,
+              message: context.l10n.trackInvestmentsHelp,
+              actionLabel: context.l10n.addAnAccount,
               onAction: () => showInvestAccountEditor(context),
             )
           else ...[
@@ -110,7 +108,7 @@ class InvestmentsScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'Worth now',
+                          context.l10n.worthNow,
                           style: AppText.body.copyWith(color: c.muted),
                         ),
                       ),
@@ -131,13 +129,13 @@ class InvestmentsScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _Stat(
-                          label: 'Put in',
+                          label: context.l10n.putIn,
                           value: money.format(totals.putIn),
                         ),
                       ),
                       Expanded(
                         child: _Stat(
-                          label: 'Gain',
+                          label: context.l10n.gain,
                           value: money.format(
                             totals.gain,
                             sign: MoneySign.auto,
@@ -154,7 +152,9 @@ class InvestmentsScreen extends StatelessWidget {
                   if (totals.dividends > 0) ...[
                     const SizedBox(height: 10),
                     Text(
-                      'Includes ${money.format(totals.dividends)} in dividends',
+                      context.l10n.includesDividends(
+                        money.format(totals.dividends),
+                      ),
                       style: AppText.label.copyWith(color: c.muted),
                     ),
                   ],
@@ -163,8 +163,8 @@ class InvestmentsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             SectionHeader(
-              'Accounts',
-              actionLabel: 'Add',
+              context.l10n.accounts,
+              actionLabel: context.l10n.add,
               onAction: () => showInvestAccountEditor(context),
             ),
             const SizedBox(height: 8),
@@ -176,8 +176,7 @@ class InvestmentsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Copy each account\'s value from your broker\'s app now and '
-              'then with Update.',
+              context.l10n.copyValueHelp,
               style: AppText.label.copyWith(color: c.muted),
             ),
           ],
@@ -245,7 +244,7 @@ class _AccountRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    updatedAgo(p.valuedAt),
+                    updatedAgo(context.l10n, p.valuedAt),
                     style: AppText.label.copyWith(color: c.muted),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -339,7 +338,7 @@ class InvestAccountScreen extends StatelessWidget {
     return SubPageScaffold(
       title: a.name,
       trailing: IconButton(
-        tooltip: 'Edit account',
+        tooltip: context.l10n.editAccount,
         onPressed: () => showInvestAccountEditor(context, existing: a),
         icon: Icon(Icons.edit_outlined, color: c.ink),
       ),
@@ -355,7 +354,7 @@ class InvestAccountScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Worth now',
+                        context.l10n.worthNow,
                         style: AppText.body.copyWith(color: c.muted),
                       ),
                     ),
@@ -373,7 +372,7 @@ class InvestAccountScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  updatedAgo(p.valuedAt),
+                  updatedAgo(context.l10n, p.valuedAt),
                   style: AppText.label.copyWith(color: c.muted),
                 ),
                 if (p.valueHistory.length >= 2) ...[
@@ -409,13 +408,13 @@ class InvestAccountScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _Stat(
-                        label: 'Put in',
+                        label: context.l10n.putIn,
                         value: money.format(p.putIn),
                       ),
                     ),
                     Expanded(
                       child: _Stat(
-                        label: 'Gain',
+                        label: context.l10n.gain,
                         value: gainText(money, p.gain, p.gainPercent),
                         color: p.gain > 0.5
                             ? c.income
@@ -429,7 +428,7 @@ class InvestAccountScreen extends StatelessWidget {
                 if (p.dividends > 0) ...[
                   const SizedBox(height: 10),
                   Text(
-                    'Includes ${money.format(p.dividends)} in dividends',
+                    context.l10n.includesDividends(money.format(p.dividends)),
                     style: AppText.label.copyWith(color: c.muted),
                   ),
                 ],
@@ -442,30 +441,30 @@ class InvestAccountScreen extends StatelessWidget {
             children: [
               action(
                 Icons.edit_note,
-                'Update',
+                context.l10n.update,
                 () => showUpdateValueSheet(context, a),
               ),
               action(
                 Icons.add,
-                'Put in',
+                context.l10n.putIn,
                 () => showInvestMoneySheet(context, a, InvestEntryKind.deposit),
               ),
               action(
                 Icons.remove,
-                'Take out',
+                context.l10n.takeOut,
                 () =>
                     showInvestMoneySheet(context, a, InvestEntryKind.withdraw),
               ),
               action(
                 Icons.payments_outlined,
-                'Dividend',
+                context.l10n.dividend,
                 () =>
                     showInvestMoneySheet(context, a, InvestEntryKind.dividend),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          const SectionHeader('History'),
+          SectionHeader(context.l10n.history),
           const SizedBox(height: 8),
           GroupCard(children: [for (final e in history) _EntryRow(entry: e)]),
         ],
@@ -549,24 +548,30 @@ class _EntryRow extends StatelessWidget {
             .firstOrNull;
         final category = txRepo.categoryById(tx?.categoryId);
         final base = e.kind == InvestEntryKind.deposit
-            ? 'Monthly money'
-            : 'Income';
+            ? context.l10n.monthlyMoney
+            : context.l10n.income;
         return category == null ? base : '$base · ${category.name}';
       }(),
       PaymentSource.wallet => () {
         final w = wallets.entries
             .where((x) => x.id == e.walletEntryId)
             .firstOrNull;
-        final name = wallets.walletById(w?.walletId)?.name ?? 'a wallet';
-        return e.kind == InvestEntryKind.deposit ? 'From $name' : 'Into $name';
+        final name =
+            wallets.walletById(w?.walletId)?.name ?? context.l10n.aWallet;
+        return e.kind == InvestEntryKind.deposit
+            ? context.l10n.fromWalletNamed(name)
+            : context.l10n.intoWalletNamed(name);
       }(),
       PaymentSource.none => null,
     };
     final (IconData icon, String title) = switch (e.kind) {
-      InvestEntryKind.value => (Icons.edit_note, 'Value updated'),
-      InvestEntryKind.deposit => (Icons.add, 'Put in'),
-      InvestEntryKind.withdraw => (Icons.remove, 'Took out'),
-      InvestEntryKind.dividend => (Icons.payments_outlined, 'Dividend'),
+      InvestEntryKind.value => (Icons.edit_note, context.l10n.valueUpdated),
+      InvestEntryKind.deposit => (Icons.add, context.l10n.putIn),
+      InvestEntryKind.withdraw => (Icons.remove, context.l10n.tookOut),
+      InvestEntryKind.dividend => (
+        Icons.payments_outlined,
+        context.l10n.dividend,
+      ),
     };
     final date = DateFormat(
       e.date.year == DateTime.now().year ? 'd MMM' : 'd MMM y',

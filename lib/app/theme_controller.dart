@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monthly_traq/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:monthly_traq/app/theme.dart';
 
@@ -8,8 +9,15 @@ const _fontSizeStepKey = 'font_size_step';
 
 /// Text scale factors for the Text size slider's stops, smallest first.
 const kFontScaleSteps = [0.9, 1.0, 1.12, 1.25];
-const kFontSizeLabels = ['Small', 'Default', 'Large', 'Largest'];
 const kDefaultFontSizeStep = 1;
+
+/// The name of a text-size step: Small, Default, Large or Largest.
+String fontSizeStepLabel(AppLocalizations l10n, int step) => switch (step) {
+  0 => l10n.fontSizeSmall,
+  1 => l10n.fontSizeDefault,
+  2 => l10n.fontSizeLarge,
+  _ => l10n.fontSizeLargest,
+};
 
 /// Out of the box the app is Sage in Light mode, whatever the phone's own
 /// dark-mode setting.
@@ -29,12 +37,13 @@ class ThemeController extends ChangeNotifier {
 
   AppTheme get theme => themeById(themeId);
   double get fontScale => kFontScaleSteps[fontSizeStep];
-  String get fontSizeLabel => kFontSizeLabels[fontSizeStep];
+  String fontSizeLabel(AppLocalizations l10n) =>
+      fontSizeStepLabel(l10n, fontSizeStep);
 
-  String get modeLabel => switch (mode) {
-    ThemeMode.system => 'System',
-    ThemeMode.light => 'Light',
-    ThemeMode.dark => 'Dark',
+  String modeLabel(AppLocalizations l10n) => switch (mode) {
+    ThemeMode.system => l10n.modeSystem,
+    ThemeMode.light => l10n.modeLight,
+    ThemeMode.dark => l10n.modeDark,
   };
 
   Future<void> _load() async {

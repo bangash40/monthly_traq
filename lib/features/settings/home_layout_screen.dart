@@ -5,6 +5,7 @@ import 'package:monthly_traq/app/home_layout.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Profile → Appearance → Home screen layout: turn Home's cards on or off
 /// and drag them into the order you want.
@@ -18,15 +19,14 @@ class HomeLayoutScreen extends StatelessWidget {
     final layout = settings.homeLayout;
 
     return SubPageScaffold(
-      title: 'Home screen layout',
+      title: context.l10n.homeScreenLayout,
       body: ReorderableListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
         buildDefaultDragHandles: false,
         header: Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Text(
-            'Choose which cards show on Home, and drag the handle to change '
-            'their order.',
+            context.l10n.homeLayoutHelp,
             style: AppText.body.copyWith(color: c.muted),
           ),
         ),
@@ -35,16 +35,14 @@ class HomeLayoutScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 14),
             Text(
-              'BALANCE CARD',
+              context.l10n.balanceCardSection.toUpperCase(),
               style: AppText.overline.copyWith(color: c.muted),
             ),
             const SizedBox(height: 10),
             _SwitchCard(
               icon: Icons.visibility_outlined,
-              label: 'Privacy button',
-              description:
-                  'Adds an eye button to the balance card that hides your '
-                  'amounts on Home.',
+              label: context.l10n.privacyButton,
+              description: context.l10n.privacyButtonAbout,
               value: settings.showPrivacyButton,
               onChanged: settings.setShowPrivacyButton,
             ),
@@ -53,7 +51,7 @@ class HomeLayoutScreen extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: settings.isDefaultHome ? null : settings.resetHome,
                 icon: const Icon(Icons.restart_alt),
-                label: const Text('Reset to default'),
+                label: Text(context.l10n.resetToDefault),
               ),
             ),
           ],
@@ -102,14 +100,14 @@ class _CardRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: _SwitchCard(
         icon: card.icon,
-        label: card.label,
-        description: card.description,
+        label: card.label(context.l10n),
+        description: card.description(context.l10n),
         value: visible,
         onChanged: onChanged,
         leading: ReorderableDragStartListener(
           index: index,
           child: Semantics(
-            label: 'Drag to reorder ${card.label}',
+            label: context.l10n.dragToReorder(card.label(context.l10n)),
             child: Padding(
               padding: const EdgeInsets.all(10),
               child: Icon(Icons.drag_indicator, color: c.faint),

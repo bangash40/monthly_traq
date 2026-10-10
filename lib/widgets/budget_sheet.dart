@@ -10,6 +10,7 @@ import 'package:monthly_traq/services/calculator.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/month_start_day_picker.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// The Monthly budget sheet: the amount, and which day the cycle resets.
 Future<void> showBudgetSheet(BuildContext context) {
@@ -48,7 +49,7 @@ class _BudgetSheetState extends State<_BudgetSheet> {
   Future<void> _save() async {
     final value = double.tryParse(_controller.text.replaceAll(',', ''));
     if (value == null || value < 0) {
-      setState(() => _error = 'Enter an amount, or 0 for no budget');
+      setState(() => _error = context.l10n.budgetAmountError);
       return;
     }
     setState(() {
@@ -61,8 +62,13 @@ class _BudgetSheetState extends State<_BudgetSheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not save budget: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.l10n.budgetSaveFailed(errorMessage(context.l10n, e)),
+          ),
+        ),
+      );
     }
   }
 
@@ -82,11 +88,13 @@ class _BudgetSheetState extends State<_BudgetSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Monthly budget', style: AppText.section.copyWith(fontSize: 24)),
+          Text(
+            context.l10n.monthlyBudget,
+            style: AppText.section.copyWith(fontSize: 24),
+          ),
           const SizedBox(height: 6),
           Text(
-            'How much you plan to spend each cycle. The meter on Home fills '
-            'as you go.',
+            context.l10n.budgetSheetHelp,
             style: AppText.body.copyWith(color: c.muted),
           ),
           const SizedBox(height: 20),
@@ -129,13 +137,15 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Resets on the ${ordinal(repo.monthStartDay)}',
+                        context.l10n.budgetResetsOn(
+                          ordinal(repo.monthStartDay),
+                        ),
                         style: AppText.rowTitle.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       Text(
-                        'Match it to your payday',
+                        context.l10n.budgetMatchPayday,
                         style: AppText.label.copyWith(color: c.muted),
                       ),
                     ],
@@ -153,7 +163,7 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                         vertical: 10,
                       ),
                       child: Text(
-                        'Change',
+                        context.l10n.change,
                         style: AppText.rowTitle.copyWith(
                           color: c.accent,
                           fontWeight: FontWeight.w800,
@@ -171,14 +181,14 @@ class _BudgetSheetState extends State<_BudgetSheet> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.cancel),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _save,
-                  child: ButtonLabel('Save', loading: _isSaving),
+                  child: ButtonLabel(context.l10n.save, loading: _isSaving),
                 ),
               ),
             ],

@@ -13,6 +13,7 @@ const _hapticFeedbackKey = 'haptic_feedback';
 const _dismissedWinKey = 'dismissed_budget_win';
 const _lastWalletKey = 'last_wallet_id';
 const _netWorthOffKey = 'net_worth_off';
+const _languageKey = 'language';
 
 /// The on/off preferences from the Profile tab, saved on this device.
 class AppSettings extends ChangeNotifier {
@@ -47,6 +48,10 @@ class AppSettings extends ChangeNotifier {
   /// it, since people mostly pay from the same place.
   String? lastWalletId;
 
+  /// The app's language as a language code ("en"), or null to follow the
+  /// phone's language.
+  String? languageCode;
+
   /// The parts Net worth leaves out (NetWorthPart names). The Home balance
   /// starts out left out: it may be the same money as the wallets.
   Set<String> netWorthOff = {'balance'};
@@ -66,6 +71,7 @@ class AppSettings extends ChangeNotifier {
     hapticFeedback = prefs.getBool(_hapticFeedbackKey) ?? true;
     dismissedBudgetWin = prefs.getString(_dismissedWinKey);
     lastWalletId = prefs.getString(_lastWalletKey);
+    languageCode = prefs.getString(_languageKey);
     netWorthOff = {
       ...(prefs.getStringList(_netWorthOffKey) ?? ['balance']),
     };
@@ -102,6 +108,18 @@ class AppSettings extends ChangeNotifier {
       await prefs.remove(_lastWalletKey);
     } else {
       await prefs.setString(_lastWalletKey, id);
+    }
+  }
+
+  Future<void> setLanguageCode(String? code) async {
+    if (code == languageCode) return;
+    languageCode = code;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    if (code == null) {
+      await prefs.remove(_languageKey);
+    } else {
+      await prefs.setString(_languageKey, code);
     }
   }
 

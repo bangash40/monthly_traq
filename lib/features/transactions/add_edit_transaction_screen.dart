@@ -15,6 +15,7 @@ import 'package:monthly_traq/widgets/category_editor_sheet.dart';
 import 'package:monthly_traq/widgets/delete_transaction.dart';
 import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Adds a transaction, or edits [existing]: amount on a calculator keypad,
 /// a category, a date and an optional note, all on one screen.
@@ -122,11 +123,11 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
   Future<void> _save() async {
     final amount = _calc.value;
     if (amount <= 0) {
-      setState(() => _error = 'Enter an amount above zero');
+      setState(() => _error = context.l10n.amountAboveZero);
       return;
     }
     if (_categoryId == null) {
-      setState(() => _error = 'Pick a category');
+      setState(() => _error = context.l10n.pickCategory);
       return;
     }
 
@@ -168,8 +169,13 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.l10n.couldNotSave(errorMessage(context.l10n, e)),
+          ),
+        ),
+      );
     }
   }
 
@@ -181,9 +187,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
 
   String get _dateLabel {
     final now = DateTime.now();
-    if (DateUtils.isSameDay(_date, now)) return 'Today';
+    if (DateUtils.isSameDay(_date, now)) return context.l10n.today;
     if (DateUtils.isSameDay(_date, now.subtract(const Duration(days: 1)))) {
-      return 'Yesterday';
+      return context.l10n.yesterday;
     }
     return DateFormat(_date.year == now.year ? 'MMM d' : 'MMM d, y')
         .format(_date);
@@ -207,14 +213,17 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
             child: Row(
               children: [
-                const BackCircleButton(icon: Icons.close, tooltip: 'Close'),
+                BackCircleButton(
+                  icon: Icons.close,
+                  tooltip: context.l10n.close,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: AppSegmented<TransactionType>(
                     value: _type,
-                    segments: const [
-                      AppSegment(TransactionType.expense, 'Expense'),
-                      AppSegment(TransactionType.income, 'Income'),
+                    segments: [
+                      AppSegment(TransactionType.expense, context.l10n.expense),
+                      AppSegment(TransactionType.income, context.l10n.income),
                     ],
                     onChanged: (type) => setState(() {
                       if (type == _type) return;
@@ -228,7 +237,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                 const SizedBox(width: 12),
                 if (_isEditing)
                   Tooltip(
-                    message: 'Delete',
+                    message: context.l10n.delete,
                     child: Material(
                       color: c.tint(c.spendingFill),
                       shape: const CircleBorder(),
@@ -269,7 +278,7 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                 const SizedBox(height: 4),
                 Semantics(
                   liveRegion: true,
-                  label: 'Amount',
+                  label: context.l10n.amount,
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
@@ -296,7 +305,9 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                     ),
                     _Chip(
                       icon: Icons.edit_note,
-                      label: _note.trim().isEmpty ? 'Add a note' : _note.trim(),
+                      label: _note.trim().isEmpty
+                          ? context.l10n.addNote
+                          : _note.trim(),
                       muted: _note.trim().isEmpty,
                       onTap: _editNote,
                     ),
@@ -315,13 +326,13 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Category',
+                        context.l10n.category,
                         style: AppText.section.copyWith(color: c.muted),
                       ),
                     ),
                     TextButton(
                       onPressed: _editCategories,
-                      child: const Text('Edit'),
+                      child: Text(context.l10n.edit),
                     ),
                   ],
                 ),
@@ -350,10 +361,10 @@ class _AddEditTransactionScreenState extends State<AddEditTransactionScreen> {
             isSaving: _isSaving,
             justSaved: _justSaved,
             saveLabel: _isEditing
-                ? 'Save changes'
+                ? context.l10n.saveChanges
                 : _type == TransactionType.income
-                ? 'Save income'
-                : 'Save expense',
+                ? context.l10n.saveIncome
+                : context.l10n.saveExpense,
             onSave: _save,
           ),
         ],
@@ -465,14 +476,14 @@ class _CategoryGrid extends StatelessWidget {
               showMore
                   ? _CategoryTile(
                       icon: Icons.more_horiz,
-                      label: 'More',
+                      label: context.l10n.more,
                       color: c.muted,
                       background: c.surfaceHigh,
                       onTap: onMore,
                     )
                   : _CategoryTile(
                       icon: Icons.add,
-                      label: 'New',
+                      label: context.l10n.newLabel,
                       color: c.accent,
                       background: c.primarySoft,
                       onTap: onNew,
@@ -569,6 +580,7 @@ class _Keypad extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
 
+    final l10n = context.l10n;
     Widget digit(String d) =>
         _Key(label: d, onTap: () => onPress(() => calc.digit(d)));
     Widget op(String o, String shown, String name) => _Key(
@@ -579,23 +591,23 @@ class _Keypad extends StatelessWidget {
     );
 
     final rows = [
-      [digit('1'), digit('2'), digit('3'), op('÷', '÷', 'Divide')],
-      [digit('4'), digit('5'), digit('6'), op('×', '×', 'Multiply')],
-      [digit('7'), digit('8'), digit('9'), op('-', '−', 'Minus')],
+      [digit('1'), digit('2'), digit('3'), op('÷', '÷', l10n.keyDivide)],
+      [digit('4'), digit('5'), digit('6'), op('×', '×', l10n.keyMultiply)],
+      [digit('7'), digit('8'), digit('9'), op('-', '−', l10n.keyMinus)],
       [
         _Key(
           label: '.',
-          semanticLabel: 'Decimal point',
+          semanticLabel: l10n.keyDecimal,
           onTap: () => onPress(calc.decimal),
         ),
         digit('0'),
         _Key(
           icon: Icons.backspace_outlined,
-          semanticLabel: 'Delete digit',
+          semanticLabel: l10n.keyDeleteDigit,
           onTap: () => onPress(calc.backspace),
           onLongPress: () => onPress(calc.clear),
         ),
-        op('+', '+', 'Plus'),
+        op('+', '+', l10n.keyPlus),
       ],
     ];
 
@@ -632,9 +644,9 @@ class _Keypad extends StatelessWidget {
                       child: FadeTransition(opacity: animation, child: child),
                     ),
                     child: justSaved
-                        ? const ButtonLabel(
-                            'Saved',
-                            key: ValueKey('saved'),
+                        ? ButtonLabel(
+                            l10n.saved,
+                            key: const ValueKey('saved'),
                             icon: Icons.check_circle,
                           )
                         : ButtonLabel(
@@ -746,11 +758,13 @@ class _NoteSheetState extends State<_NoteSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Note', style: AppText.section.copyWith(fontSize: 24)),
+          Text(
+            context.l10n.note,
+            style: AppText.section.copyWith(fontSize: 24),
+          ),
           const SizedBox(height: 6),
           Text(
-            'Shown as the transaction\'s name. Leave it empty to use the '
-            'category name.',
+            context.l10n.noteHelp,
             style: AppText.body.copyWith(color: c.muted),
           ),
           const SizedBox(height: 16),
@@ -759,8 +773,8 @@ class _NoteSheetState extends State<_NoteSheet> {
             autofocus: true,
             maxLength: 100,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText: 'e.g. Groceries at Imtiaz',
+            decoration: InputDecoration(
+              hintText: context.l10n.noteHint,
               counterText: '',
             ),
             onSubmitted: (value) => Navigator.pop(context, value.trim()),
@@ -768,7 +782,7 @@ class _NoteSheetState extends State<_NoteSheet> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, _controller.text.trim()),
-            child: const Text('Done'),
+            child: Text(context.l10n.done),
           ),
         ],
       ),

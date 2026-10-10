@@ -22,6 +22,8 @@ import 'package:monthly_traq/features/settings/currency_picker_screen.dart';
 import 'package:monthly_traq/features/settings/delete_account.dart';
 import 'package:monthly_traq/features/settings/edit_profile_screen.dart';
 import 'package:monthly_traq/features/settings/home_layout_screen.dart';
+import 'package:monthly_traq/features/settings/language_picker.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 import 'package:monthly_traq/features/settings/privacy_policy_screen.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/budget_cycle.dart';
@@ -60,11 +62,10 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _contactSupport(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     if (!await _launch(AppInfo.supportEmailUri())) {
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('No email app found. Write to ${AppInfo.supportEmail}'),
-        ),
+        SnackBar(content: Text(l10n.noEmailApp(AppInfo.supportEmail))),
       );
     }
   }
@@ -72,27 +73,22 @@ class ProfileScreen extends StatelessWidget {
   /// Opens the Play Store listing, or the web page if there's no store.
   Future<void> _rateApp(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     if (await _launch(AppInfo.playStoreAppUri)) return;
     if (await _launch(AppInfo.playStoreWebUri)) return;
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Couldn\'t open the Play Store')),
-    );
+    messenger.showSnackBar(SnackBar(content: Text(l10n.playStoreFailed)));
   }
 
   Future<void> _showBackupInfo(BuildContext context) {
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Automatic backup'),
-        content: const Text(
-          'Everything you log is saved to your MonthlyTraq account as you '
-          'go, so it\'s there on any device you sign in on. Changes made '
-          'offline upload once you\'re back online.',
-        ),
+        title: Text(context.l10n.automaticBackup),
+        content: Text(context.l10n.automaticBackupBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Got it'),
+            child: Text(context.l10n.gotIt),
           ),
         ],
       ),
@@ -104,16 +100,17 @@ class ProfileScreen extends StatelessWidget {
     cache.clear();
     cache.clearLiveImages();
     ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Cache cleared')));
+        .showSnackBar(SnackBar(content: Text(context.l10n.cacheCleared)));
   }
 
   Future<void> _confirmDeleteAll(BuildContext context) async {
     final repo = context.read<TransactionsRepository>();
     final messenger = ScaffoldMessenger.of(context);
     final count = repo.transactions.length;
+    final l10n = context.l10n;
     if (count == 0) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('There are no transactions to delete')),
+        SnackBar(content: Text(l10n.noTransactionsToDelete)),
       );
       return;
     }
@@ -121,22 +118,19 @@ class ProfileScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete all data?'),
-        content: Text(
-          'This permanently deletes all $count transactions on your account. '
-          'Your categories and settings are kept. This can\'t be undone.',
-        ),
+        title: Text(l10n.deleteAllDataTitle),
+        content: Text(l10n.deleteAllDataBody(count)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: TextButton.styleFrom(
               foregroundColor: dialogContext.colors.spending,
             ),
-            child: const Text('Delete all'),
+            child: Text(l10n.deleteAll),
           ),
         ],
       ),
@@ -146,10 +140,12 @@ class ProfileScreen extends StatelessWidget {
     try {
       final deleted = await repo.deleteAllTransactions();
       messenger.showSnackBar(
-        SnackBar(content: Text('Deleted $deleted transactions')),
+        SnackBar(content: Text(l10n.deletedTransactions(deleted))),
       );
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not delete: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.couldNotDelete(errorMessage(l10n, e)))),
+      );
     }
   }
 
@@ -174,35 +170,35 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
         children: [
-          const Text('Profile', style: AppText.screenTitle),
+          Text(context.l10n.tabProfile, style: AppText.screenTitle),
           const SizedBox(height: 16),
           _ProfileCard(onTap: () => _push(context, const EditProfileScreen())),
           const SizedBox(height: 28),
           SettingsGroup(
-            title: 'Budget',
+            title: context.l10n.budgetSection,
             rows: [
               SettingsRow(
                 icon: Icons.account_balance_wallet_outlined,
-                label: 'Monthly budget',
+                label: context.l10n.monthlyBudget,
                 value: repo.monthlyBudget > 0
                     ? money.format(repo.monthlyBudget)
-                    : 'Not set',
+                    : context.l10n.notSet,
                 onTap: () => showBudgetSheet(context),
               ),
               SettingsRow(
                 icon: Icons.event_repeat,
-                label: 'Month starts on',
+                label: context.l10n.monthStartsOn,
                 value: ordinal(repo.monthStartDay),
                 onTap: () => showMonthStartDayPicker(context),
               ),
             ],
           ),
           SettingsGroup(
-            title: 'Money',
+            title: context.l10n.moneySection,
             rows: [
               SettingsRow(
                 icon: Icons.account_balance_outlined,
-                label: 'Net worth',
+                label: context.l10n.netWorth,
                 value: money.format(
                   netWorth,
                   sign: netWorth < 0 ? MoneySign.expense : MoneySign.none,
@@ -211,76 +207,72 @@ class ProfileScreen extends StatelessWidget {
               ),
               SettingsRow(
                 icon: Icons.wallet_outlined,
-                label: 'Wallets',
-                value: switch (wallets.wallets.length) {
-                  0 => 'Add',
-                  1 => '1 wallet',
-                  final n => '$n wallets',
-                },
+                label: context.l10n.wallets,
+                value: wallets.wallets.isEmpty
+                    ? context.l10n.add
+                    : context.l10n.walletCount(wallets.wallets.length),
                 onTap: () => _push(context, const WalletsScreen()),
               ),
               SettingsRow(
                 icon: Icons.event_repeat,
-                label: 'Repayments',
-                value: switch (repayments.repayments.length) {
-                  0 => 'Add',
-                  1 => '1 repayment',
-                  final n => '$n repayments',
-                },
+                label: context.l10n.repayments,
+                value: repayments.repayments.isEmpty
+                    ? context.l10n.add
+                    : context.l10n.repaymentCount(repayments.repayments.length),
                 onTap: () => _push(context, const RepaymentsScreen()),
               ),
               SettingsRow(
                 icon: Icons.savings_outlined,
-                label: 'Savings goals',
-                value: switch (goals.goals.length) {
-                  0 => 'Add',
-                  1 => '1 goal',
-                  final n => '$n goals',
-                },
+                label: context.l10n.savingsGoals,
+                value: goals.goals.isEmpty
+                    ? context.l10n.add
+                    : context.l10n.goalCount(goals.goals.length),
                 onTap: () => _push(context, const GoalsScreen()),
               ),
               SettingsRow(
                 icon: Icons.trending_up,
-                label: 'Investments',
+                label: context.l10n.investments,
                 value: investments.hasAccounts
                     ? money.format(investments.totals.value)
-                    : 'Add',
+                    : context.l10n.add,
                 onTap: () => _push(context, const InvestmentsScreen()),
               ),
             ],
           ),
           SettingsGroup(
-            title: 'Appearance',
+            title: context.l10n.appearance,
             rows: [
               SettingsRow(
                 icon: Icons.palette_outlined,
-                label: 'Theme',
+                label: context.l10n.theme,
                 value:
-                    '${themeController.theme.name} · ${themeController.modeLabel}',
+                    '${themeController.theme.name} · ${themeController.modeLabel(context.l10n)}',
                 onTap: () => _push(context, const AppearanceScreen()),
               ),
               SettingsRow(
                 icon: Icons.format_size,
-                label: 'Text size',
-                value: themeController.fontSizeLabel,
+                label: context.l10n.textSize,
+                value: themeController.fontSizeLabel(context.l10n),
                 onTap: () => _push(context, const AppearanceScreen()),
               ),
               SettingsRow(
                 icon: Icons.dashboard_customize_outlined,
-                label: 'Home screen layout',
-                value: settings.isDefaultHome ? 'Default' : 'Custom',
+                label: context.l10n.homeScreenLayout,
+                value: settings.isDefaultHome
+                    ? context.l10n.layoutDefault
+                    : context.l10n.layoutCustom,
                 onTap: () => _push(context, const HomeLayoutScreen()),
               ),
               if (_showUnfinished)
-                const SettingsRow.soon(icon: Icons.apps, label: 'App icon'),
+                SettingsRow.soon(icon: Icons.apps, label: context.l10n.appIcon),
             ],
           ),
           SettingsGroup(
-            title: 'General',
+            title: context.l10n.generalSection,
             rows: [
               SettingsRow(
                 icon: Icons.payments_outlined,
-                label: 'Currency',
+                label: context.l10n.currency,
                 value: repo.currencyCode != null
                     ? '${repo.currencyCode} · ${repo.currencySymbol}'
                     : repo.currencySymbol,
@@ -288,53 +280,59 @@ class ProfileScreen extends StatelessWidget {
               ),
               SettingsRow(
                 icon: Icons.category_outlined,
-                label: 'Categories',
+                label: context.l10n.categories,
                 value: '${repo.categories.length}',
                 onTap: () => _push(context, const CategoriesScreen()),
               ),
               SettingsRow(
                 icon: Icons.vibration,
-                label: 'Haptic feedback',
+                label: context.l10n.hapticFeedback,
                 kind: SettingsRowKind.toggle,
                 toggleValue: settings.hapticFeedback,
                 onToggle: settings.setHapticFeedback,
               ),
+              // Shown in released builds once there's a second language.
               if (_showUnfinished)
-                const SettingsRow.soon(icon: Icons.language, label: 'Language'),
+                SettingsRow(
+                  icon: Icons.language,
+                  label: context.l10n.languageTitle,
+                  value: languageLabel(context, settings.languageCode),
+                  onTap: () => showLanguagePicker(context),
+                ),
             ],
           ),
           SettingsGroup(
-            title: 'Numbers & tools',
+            title: context.l10n.numbersSection,
             rows: [
               SettingsRow(
                 icon: Icons.numbers,
-                label: 'Thousands separator',
+                label: context.l10n.thousandsSeparator,
                 kind: SettingsRowKind.toggle,
                 toggleValue: settings.thousandsSeparator,
                 onToggle: settings.setThousandsSeparator,
               ),
               if (_showUnfinished)
-                const SettingsRow.soon(
+                SettingsRow.soon(
                   icon: Icons.calculate_outlined,
-                  label: 'Calculator',
+                  label: context.l10n.calculator,
                 ),
             ],
           ),
           // These switches are remembered but don't do anything yet.
           if (_showUnfinished)
             SettingsGroup(
-              title: 'Notifications & sound',
+              title: context.l10n.notificationsSection,
               rows: [
                 SettingsRow(
                   icon: Icons.notifications_outlined,
-                  label: 'Quick-add notification',
+                  label: context.l10n.quickAddNotification,
                   kind: SettingsRowKind.toggle,
                   toggleValue: settings.quickAddNotification,
                   onToggle: settings.setQuickAddNotification,
                 ),
                 SettingsRow(
                   icon: Icons.volume_up_outlined,
-                  label: 'Sound effects',
+                  label: context.l10n.soundEffects,
                   kind: SettingsRowKind.toggle,
                   toggleValue: settings.soundEffects,
                   onToggle: settings.setSoundEffects,
@@ -343,62 +341,62 @@ class ProfileScreen extends StatelessWidget {
             ),
           if (_showUnfinished)
             SettingsGroup(
-              title: 'Advanced',
-              rows: const [
+              title: context.l10n.advancedSection,
+              rows: [
                 SettingsRow.soon(
                   icon: Icons.auto_awesome_outlined,
-                  label: 'AI settings',
+                  label: context.l10n.aiSettings,
                 ),
               ],
             ),
           SettingsGroup(
-            title: 'More',
+            title: context.l10n.moreSection,
             rows: [
               SettingsRow(
                 icon: Icons.privacy_tip_outlined,
-                label: 'Privacy policy',
+                label: context.l10n.privacyPolicy,
                 onTap: () => _push(context, const PrivacyPolicyScreen()),
               ),
               SettingsRow(
                 icon: Icons.mail_outline,
-                label: 'Contact support',
+                label: context.l10n.contactSupport,
                 onTap: () => _contactSupport(context),
               ),
               SettingsRow(
                 icon: Icons.star_outline,
-                label: 'Rate ${AppInfo.name}',
+                label: context.l10n.rateApp(AppInfo.name),
                 onTap: () => _rateApp(context),
               ),
               SettingsRow(
                 icon: Icons.info_outline,
-                label: 'About',
+                label: context.l10n.about,
                 onTap: () => _push(context, const AboutScreen()),
               ),
             ],
           ),
           SettingsGroup(
-            title: 'Data',
+            title: context.l10n.dataSection,
             rows: [
               SettingsRow(
                 icon: Icons.cloud_done_outlined,
-                label: 'Backup',
-                value: 'Automatic',
+                label: context.l10n.backup,
+                value: context.l10n.backupAutomatic,
                 onTap: () => _showBackupInfo(context),
               ),
               SettingsRow(
                 icon: Icons.cleaning_services_outlined,
-                label: 'Clear cache',
+                label: context.l10n.clearCache,
                 onTap: () => _clearCache(context),
               ),
               SettingsRow(
                 icon: Icons.delete_forever_outlined,
-                label: 'Delete all data',
+                label: context.l10n.deleteAllData,
                 kind: SettingsRowKind.destructive,
                 onTap: () => _confirmDeleteAll(context),
               ),
               SettingsRow(
                 icon: Icons.person_remove_outlined,
-                label: 'Delete account',
+                label: context.l10n.deleteAccount,
                 kind: SettingsRowKind.destructive,
                 onTap: () => deleteAccountFlow(context),
               ),
@@ -437,7 +435,7 @@ class ProfileScreen extends StatelessWidget {
                 Icon(Icons.logout, color: c.spending, size: 22),
                 const SizedBox(width: 10),
                 Text(
-                  'Log out',
+                  context.l10n.logOut,
                   style: AppText.rowTitle.copyWith(
                     fontSize: 16,
                     color: c.spending,
@@ -504,7 +502,9 @@ class _ProfileCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name == null || name.isEmpty ? 'Add your name' : name,
+                      name == null || name.isEmpty
+                          ? context.l10n.addYourName
+                          : name,
                       style: AppText.section.copyWith(fontSize: 19),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

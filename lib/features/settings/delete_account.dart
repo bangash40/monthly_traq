@@ -4,6 +4,7 @@ import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/services/auth_errors.dart';
 import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Permanently deletes the signed-in account and everything in it.
 ///
@@ -16,29 +17,26 @@ Future<void> deleteAccountFlow(BuildContext context) async {
   final auth = AuthService();
   final messenger = ScaffoldMessenger.of(context);
   final navigator = Navigator.of(context, rootNavigator: true);
+  final l10n = context.l10n;
   void toast(String message) =>
       messenger.showSnackBar(SnackBar(content: Text(message)));
 
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('Delete your account?'),
-      content: const Text(
-        'This permanently deletes your account and everything in it: your '
-        'transactions, categories, budget and profile photo. This can\'t be '
-        'undone.',
-      ),
+      title: Text(l10n.deleteAccountTitle),
+      content: Text(l10n.deleteAccountBody),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, false),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, true),
           style: TextButton.styleFrom(
             foregroundColor: dialogContext.colors.spending,
           ),
-          child: const Text('Delete account'),
+          child: Text(l10n.deleteAccount),
         ),
       ],
     ),
@@ -54,7 +52,7 @@ Future<void> deleteAccountFlow(BuildContext context) async {
       return; // cancelled the account picker
     }
   } catch (e) {
-    toast(authErrorMessage(e, AuthAction.confirmIdentity));
+    toast(authErrorMessage(l10n, e, AuthAction.confirmIdentity));
     return;
   }
 
@@ -62,14 +60,14 @@ Future<void> deleteAccountFlow(BuildContext context) async {
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (context) => const PopScope(
+    builder: (context) => PopScope(
       canPop: false,
       child: AlertDialog(
         content: Row(
           children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 20),
-            Expanded(child: Text('Deleting your account…')),
+            const CircularProgressIndicator(),
+            const SizedBox(width: 20),
+            Expanded(child: Text(l10n.deletingAccount)),
           ],
         ),
       ),
@@ -80,10 +78,10 @@ Future<void> deleteAccountFlow(BuildContext context) async {
     await repo.deleteAllUserData();
     await auth.deleteCurrentUser();
     navigator.pop();
-    toast('Your account has been deleted.');
+    toast(l10n.accountDeleted);
   } catch (e) {
     navigator.pop();
-    toast(authErrorMessage(e, AuthAction.deleteAccount));
+    toast(authErrorMessage(l10n, e, AuthAction.deleteAccount));
   }
 }
 
@@ -119,19 +117,19 @@ class _PasswordDialogState extends State<_PasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Confirm it\'s you'),
+      title: Text(context.l10n.confirmItsYou),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Enter your password to delete your account.'),
+          Text(context.l10n.confirmPasswordToDelete),
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
             obscureText: true,
             autofocus: true,
             autofillHints: const [AutofillHints.password],
-            decoration: const InputDecoration(hintText: 'Password'),
+            decoration: InputDecoration(hintText: context.l10n.password),
             onSubmitted: (_) => _submit(),
           ),
         ],
@@ -139,9 +137,12 @@ class _PasswordDialogState extends State<_PasswordDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
-        TextButton(onPressed: _submit, child: const Text('Continue')),
+        TextButton(
+          onPressed: _submit,
+          child: Text(context.l10n.continueButton),
+        ),
       ],
     );
   }

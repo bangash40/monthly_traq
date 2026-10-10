@@ -10,6 +10,7 @@ import 'package:monthly_traq/models/wallet_models.dart';
 import 'package:monthly_traq/services/wallet_ledger.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 void _open(BuildContext context, Widget screen) =>
     Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
@@ -36,24 +37,21 @@ class WalletsScreen extends StatelessWidget {
     ];
 
     return SubPageScaffold(
-      title: 'Wallets',
+      title: context.l10n.wallets,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
         children: [
           if (wallets.isEmpty)
             EmptyState(
               icon: Icons.account_balance_wallet_outlined,
-              title: 'Track your wallets',
-              message:
-                  'Add JazzCash, Easypaisa, your bank or cash to always know '
-                  'what\'s in each — and how much of it is money you\'re '
-                  'keeping for someone else.',
-              actionLabel: 'Add a wallet',
+              title: context.l10n.trackWallets,
+              message: context.l10n.trackWalletsHelp,
+              actionLabel: context.l10n.addWallet,
               onAction: () => showWalletEditor(context),
             )
           else ...[
             BalanceSplitCard(
-              label: 'In all wallets',
+              label: context.l10n.inAllWallets,
               total: ledger.total,
               others: ledger.others,
             ),
@@ -61,8 +59,8 @@ class WalletsScreen extends StatelessWidget {
             const EntryActions(),
             const SizedBox(height: 24),
             SectionHeader(
-              'Wallets',
-              actionLabel: 'Add',
+              context.l10n.wallets,
+              actionLabel: context.l10n.add,
               onAction: () => showWalletEditor(context),
             ),
             const SizedBox(height: 8),
@@ -78,16 +76,15 @@ class WalletsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             SectionHeader(
-              'Money you\'re keeping',
-              actionLabel: 'Add',
+              context.l10n.moneyYoureKeeping,
+              actionLabel: context.l10n.add,
               onAction: () =>
                   showEntrySheet(context, kind: WalletEntryKind.receive),
             ),
             const SizedBox(height: 8),
             if (keeping.isEmpty)
               Text(
-                'When someone gives you money to keep, add it with Received. '
-                'It stays in your wallet but isn\'t counted as yours.',
+                context.l10n.keepingEmptyHelp,
                 style: AppText.body.copyWith(color: c.muted),
               )
             else
@@ -99,7 +96,7 @@ class WalletsScreen extends StatelessWidget {
               ),
             if (settled.isNotEmpty) ...[
               const SizedBox(height: 24),
-              const SectionHeader('All returned'),
+              SectionHeader(context.l10n.allReturned),
               const SizedBox(height: 8),
               GroupCard(
                 children: [
@@ -163,14 +160,14 @@ class BalanceSplitCard extends StatelessWidget {
               Expanded(
                 child: _Legend(
                   color: c.accent,
-                  label: 'Yours',
+                  label: context.l10n.yours,
                   value: signedMoney(money, total - others),
                 ),
               ),
               Expanded(
                 child: _Legend(
                   color: othersColor,
-                  label: 'Others\' money',
+                  label: context.l10n.othersMoney,
                   value: money.format(others),
                 ),
               ),
@@ -291,12 +288,24 @@ class EntryActions extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        action(Icons.shopping_bag_outlined, 'Spent', WalletEntryKind.spend),
-        action(Icons.add, 'Add', WalletEntryKind.add),
-        action(Icons.call_received, 'Received', WalletEntryKind.receive),
-        action(Icons.call_made, 'Send back', WalletEntryKind.giveBack),
+        action(
+          Icons.shopping_bag_outlined,
+          context.l10n.spent,
+          WalletEntryKind.spend,
+        ),
+        action(Icons.add, context.l10n.add, WalletEntryKind.add),
+        action(
+          Icons.call_received,
+          context.l10n.received,
+          WalletEntryKind.receive,
+        ),
+        action(
+          Icons.call_made,
+          context.l10n.sendBack,
+          WalletEntryKind.giveBack,
+        ),
         if (walletCount > 1)
-          action(Icons.swap_horiz, 'Move', WalletEntryKind.transfer),
+          action(Icons.swap_horiz, context.l10n.move, WalletEntryKind.transfer),
       ],
     );
   }
@@ -391,8 +400,10 @@ class _WalletRow extends StatelessWidget {
                   const SizedBox(height: 1),
                   Text(
                     balance.others > 0
-                        ? 'Others\' ${money.format(balance.others)}'
-                        : 'All yours',
+                        ? context.l10n.othersAmount(
+                            money.format(balance.others),
+                          )
+                        : context.l10n.allYours,
                     style: AppText.label.copyWith(color: c.muted),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -447,12 +458,12 @@ class PersonRow extends StatelessWidget {
         if (placement.containsKey(w.id)) w.name,
     ];
     final subtitle = settled
-        ? 'All returned'
+        ? context.l10n.allReturned
         : inWalletId != null
         ? (placement.length > 1
-              ? 'Of ${money.format(owed)} in all'
-              : 'All of it is here')
-        : 'In ${where.join(', ')}';
+              ? context.l10n.ofAmountInAll(money.format(owed))
+              : context.l10n.allOfItHere)
+        : context.l10n.inPlaces(where.join(', '));
 
     return InkWell(
       onTap: () => _open(context, PersonScreen(personId: person.id)),
@@ -531,21 +542,24 @@ class WalletScreen extends StatelessWidget {
     return SubPageScaffold(
       title: wallet.name,
       trailing: PopupMenuButton<String>(
-        tooltip: 'Wallet options',
+        tooltip: context.l10n.walletOptions,
         icon: Icon(Icons.more_vert, color: c.ink),
         onSelected: (action) => action == 'edit'
             ? showWalletEditor(context, existing: wallet)
             : showCorrectBalanceSheet(context, wallet, balance.total),
-        itemBuilder: (context) => const [
-          PopupMenuItem(value: 'edit', child: Text('Edit wallet')),
-          PopupMenuItem(value: 'correct', child: Text('Correct balance')),
+        itemBuilder: (context) => [
+          PopupMenuItem(value: 'edit', child: Text(context.l10n.editWallet)),
+          PopupMenuItem(
+            value: 'correct',
+            child: Text(context.l10n.correctBalance),
+          ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
         children: [
           BalanceSplitCard(
-            label: 'Balance',
+            label: context.l10n.balance,
             total: balance.total,
             others: balance.others,
             leading: IconTile(icon: wallet.icon, color: wallet.color, size: 40),
@@ -554,7 +568,7 @@ class WalletScreen extends StatelessWidget {
           EntryActions(walletId: walletId),
           if (peopleHere.isNotEmpty) ...[
             const SizedBox(height: 24),
-            const SectionHeader('Others\' money in it'),
+            SectionHeader(context.l10n.othersMoneyInIt),
             const SizedBox(height: 8),
             GroupCard(
               children: [
@@ -570,12 +584,11 @@ class WalletScreen extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 24),
-          const SectionHeader('Activity'),
+          SectionHeader(context.l10n.activity),
           const SizedBox(height: 8),
           if (activity.isEmpty)
             Text(
-              'What you spend, add, receive or send back in ${wallet.name} '
-              'shows up here.',
+              context.l10n.walletActivityEmpty(wallet.name),
               style: AppText.body.copyWith(color: c.muted),
             )
           else
@@ -621,7 +634,7 @@ class PersonScreen extends StatelessWidget {
     return SubPageScaffold(
       title: person.name,
       trailing: IconButton(
-        tooltip: 'Edit person',
+        tooltip: context.l10n.editPerson,
         onPressed: () => showPersonEditor(context, person),
         icon: Icon(Icons.edit_outlined, color: c.ink),
       ),
@@ -638,7 +651,9 @@ class PersonScreen extends StatelessWidget {
                     PersonAvatar(name: person.name, radius: 20),
                     const SizedBox(width: 12),
                     Text(
-                      owed > 0 ? 'You\'re keeping' : 'All returned',
+                      owed > 0
+                          ? context.l10n.youreKeeping
+                          : context.l10n.allReturned,
                       style: AppText.body.copyWith(color: c.muted),
                     ),
                   ],
@@ -661,7 +676,7 @@ class PersonScreen extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'In ${w.name}',
+                            context.l10n.inPlaces(w.name),
                             style: AppText.body,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -685,7 +700,7 @@ class PersonScreen extends StatelessWidget {
                     personId: personId,
                   ),
                   icon: const Icon(Icons.call_received),
-                  label: const Text('Received'),
+                  label: Text(context.l10n.received),
                 ),
               ),
               const SizedBox(width: 10),
@@ -697,13 +712,13 @@ class PersonScreen extends StatelessWidget {
                     personId: personId,
                   ),
                   icon: const Icon(Icons.call_made),
-                  label: const Text('Send back'),
+                  label: Text(context.l10n.sendBack),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          const SectionHeader('History'),
+          SectionHeader(context.l10n.history),
           const SizedBox(height: 8),
           GroupCard(
             children: [
@@ -736,43 +751,50 @@ class EntryRow extends StatelessWidget {
     final money = context.money;
     final repo = context.watch<WalletsRepository>();
     final e = entry;
-    final person = repo.personById(e.personId)?.name ?? 'someone';
-    final walletName = repo.walletById(e.walletId)?.name ?? 'a wallet';
+    final person = repo.personById(e.personId)?.name ?? context.l10n.someone;
+    final walletName =
+        repo.walletById(e.walletId)?.name ?? context.l10n.aWallet;
     final movedIn =
         e.kind == WalletEntryKind.transfer && e.toWalletId == walletId;
 
     final (IconData icon, String title, double amount) = switch (e.kind) {
       WalletEntryKind.spend => (
         Icons.shopping_bag_outlined,
-        e.note ?? 'Spent',
+        e.note ?? context.l10n.spent,
         -e.amount,
       ),
       WalletEntryKind.add => (
         Icons.add,
-        e.note ?? 'Added your money',
+        e.note ?? context.l10n.addedYourMoney,
         e.amount,
       ),
       WalletEntryKind.receive => (
         Icons.call_received,
-        'Received from $person',
+        context.l10n.receivedFrom(person),
         e.amount,
       ),
       WalletEntryKind.giveBack => (
         Icons.call_made,
-        'Sent back to $person',
+        context.l10n.sentBackTo(person),
         -e.amount,
       ),
       WalletEntryKind.transfer when movedIn => (
         Icons.swap_horiz,
-        'Moved from $walletName',
+        context.l10n.movedFrom(walletName),
         e.amount,
       ),
       WalletEntryKind.transfer => (
         Icons.swap_horiz,
-        'Moved to ${repo.walletById(e.toWalletId)?.name ?? 'a wallet'}',
+        context.l10n.movedTo(
+          repo.walletById(e.toWalletId)?.name ?? context.l10n.aWallet,
+        ),
         -e.amount,
       ),
-      WalletEntryKind.adjust => (Icons.tune, 'Balance corrected', e.amount),
+      WalletEntryKind.adjust => (
+        Icons.tune,
+        context.l10n.balanceCorrected,
+        e.amount,
+      ),
     };
     // The note shows under the title unless it already is the title.
     final noteIsTitle =

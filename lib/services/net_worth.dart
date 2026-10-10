@@ -1,21 +1,30 @@
+import 'package:monthly_traq/l10n/app_localizations.dart';
 import 'package:monthly_traq/models/goal_models.dart';
 import 'package:monthly_traq/models/repayment_models.dart';
 
 /// The pieces Net worth is made of. Each can be switched off.
 enum NetWorthPart {
-  wallets('Wallets', 'Your own money in them, not others\''),
-  goals(
-    'Savings goals',
-    'Money moved into goals from monthly money or a wallet',
-  ),
-  investments('Investments', 'What your accounts are worth now'),
-  balance('Total balance', 'Income minus spending, from Home'),
-  repayments('Still owed', 'What\'s left to pay on repayments');
+  wallets,
+  goals,
+  investments,
+  balance,
+  repayments;
 
-  final String label;
-  final String detail;
+  String label(AppLocalizations l10n) => switch (this) {
+    wallets => l10n.wallets,
+    goals => l10n.savingsGoals,
+    investments => l10n.investments,
+    balance => l10n.totalBalance,
+    repayments => l10n.stillOwed,
+  };
 
-  const NetWorthPart(this.label, this.detail);
+  String detail(AppLocalizations l10n) => switch (this) {
+    wallets => l10n.netWorthWalletsAbout,
+    goals => l10n.netWorthGoalsAbout,
+    investments => l10n.netWorthInvestmentsAbout,
+    balance => l10n.netWorthBalanceAbout,
+    repayments => l10n.netWorthOwedAbout,
+  };
 
   /// Parts that count against net worth.
   bool get isOwed => this == repayments;

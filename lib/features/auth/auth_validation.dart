@@ -1,21 +1,22 @@
 // Form checks for the login and sign-up screens: email format, likely typos
 // in the email's domain, and the rules a new password has to meet.
 
+import 'package:monthly_traq/l10n/app_localizations.dart';
+
 final _localPart = RegExp(r"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+$");
 final _domainLabel = RegExp(r'^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$');
 final _topLevelDomain = RegExp(r'^[A-Za-z]{2,}$');
 
-const _invalidEmail = 'Enter a valid email address, like name@example.com';
-
-String? validateEmail(String? value) {
+String? validateEmail(AppLocalizations l10n, String? value) {
+  final invalidEmail = l10n.emailInvalid;
   final email = value?.trim() ?? '';
-  if (email.isEmpty) return 'Enter your email address';
+  if (email.isEmpty) return l10n.emailRequired;
   if (email.contains(RegExp(r'\s'))) {
-    return 'An email address can\'t have spaces';
+    return l10n.emailHasSpaces;
   }
 
   final parts = email.split('@');
-  if (parts.length != 2) return _invalidEmail;
+  if (parts.length != 2) return invalidEmail;
   final [local, domain] = parts;
 
   if (local.isEmpty ||
@@ -24,14 +25,14 @@ String? validateEmail(String? value) {
       local.startsWith('.') ||
       local.endsWith('.') ||
       local.contains('..')) {
-    return _invalidEmail;
+    return invalidEmail;
   }
 
   final labels = domain.split('.');
   if (labels.length < 2 ||
       !labels.every(_domainLabel.hasMatch) ||
       !_topLevelDomain.hasMatch(labels.last)) {
-    return _invalidEmail;
+    return invalidEmail;
   }
   return null;
 }
@@ -40,8 +41,8 @@ String? validateEmail(String? value) {
 /// turns away placeholder and temporary addresses, which can never receive
 /// a password-reset email. Login uses plain [validateEmail] so accounts made
 /// before this check still get in.
-String? validateSignupEmail(String? value) {
-  final formatProblem = validateEmail(value);
+String? validateSignupEmail(AppLocalizations l10n, String? value) {
+  final formatProblem = validateEmail(l10n, value);
   if (formatProblem != null) return formatProblem;
 
   final email = value!.trim().toLowerCase();
@@ -56,12 +57,10 @@ String? validateSignupEmail(String? value) {
   final names = labels.sublist(0, labels.length - 1);
   if (_reservedEndings.contains(labels.last) ||
       names.any(_placeholderNames.contains)) {
-    return 'Use your real email address — you\'ll need it if you forget '
-        'your password';
+    return l10n.emailPlaceholder;
   }
   if (_temporaryEmailDomains.any(isOrUnder)) {
-    return 'Temporary emails can\'t be used — you\'ll need a real one if you '
-        'forget your password';
+    return l10n.emailTemporary;
   }
   return null;
 }
@@ -235,6 +234,7 @@ class PasswordCheck {
 /// or email — rather than demanding a mix of character types, which mostly
 /// produces predictable passwords like "Password1!".
 PasswordCheck checkNewPassword(
+  AppLocalizations l10n,
   String password, {
   String name = '',
   String email = '',
@@ -245,19 +245,19 @@ PasswordCheck checkNewPassword(
       PasswordCheck(PasswordStrength.weak, problem);
 
   if (password.trim() != password) {
-    return weak('A password can\'t start or end with a space');
+    return weak(l10n.passwordSpaceAtEnds);
   }
   if (password.length < minPasswordLength) {
-    return weak('Use at least $minPasswordLength characters');
+    return weak(l10n.passwordTooShort(minPasswordLength));
   }
   if (RegExp(r'^\d+$').hasMatch(password) && password.length < 12) {
-    return weak('Add some letters — numbers alone are easy to guess');
+    return weak(l10n.passwordOnlyNumbers);
   }
   if (_isEasyToGuess(password)) {
-    return weak('This password is too common. Try something harder to guess');
+    return weak(l10n.passwordTooCommon);
   }
   if (_containsPersonalInfo(password, name: name, email: email)) {
-    return weak('Don\'t use your name or email in your password');
+    return weak(l10n.passwordPersonal);
   }
 
   final kinds = [
@@ -278,12 +278,13 @@ PasswordCheck checkNewPassword(
 
 /// Validator for choosing a new password.
 String? validateNewPassword(
+  AppLocalizations l10n,
   String? value, {
   String name = '',
   String email = '',
 }) {
-  final check = checkNewPassword(value ?? '', name: name, email: email);
-  if (check.strength == PasswordStrength.empty) return 'Create a password';
+  final check = checkNewPassword(l10n, value ?? '', name: name, email: email);
+  if (check.strength == PasswordStrength.empty) return l10n.passwordRequired;
   return check.problem;
 }
 

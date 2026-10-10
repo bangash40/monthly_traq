@@ -1,26 +1,31 @@
+import 'package:monthly_traq/l10n/app_localizations.dart';
 import 'package:monthly_traq/models/goal_models.dart';
 
 DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
 enum GoalStatus {
   /// Saved the whole target.
-  reached('Reached'),
+  reached,
 
   /// Saved at least as much as an even pace from the start would have by now.
-  onTrack('On track'),
+  onTrack,
 
   /// Saved less than that.
-  behind('Behind'),
+  behind,
 
   /// The target date has passed without reaching it.
-  overdue('Date passed'),
+  overdue,
 
   /// No target date, so no pace to keep.
-  noDate('No date');
+  noDate;
 
-  final String label;
-
-  const GoalStatus(this.label);
+  String label(AppLocalizations l10n) => switch (this) {
+    reached => l10n.goalReached,
+    onTrack => l10n.goalOnTrack,
+    behind => l10n.goalBehind,
+    overdue => l10n.goalDatePassed,
+    noDate => l10n.goalNoDate,
+  };
 }
 
 /// Where a goal stands: saved, left, and the pace to reach it in time.

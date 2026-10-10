@@ -1,16 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:monthly_traq/l10n/app_localizations.dart';
 
 /// How often a repayment is due.
 enum RepaymentFrequency {
-  daily('Daily'),
-  monthly('Monthly'),
-  everyMonths('Every few months'),
-  yearly('Yearly'),
-  none('No deadline');
+  daily,
+  monthly,
+  everyMonths,
+  yearly,
+  none;
 
-  final String label;
-
-  const RepaymentFrequency(this.label);
+  String label(AppLocalizations l10n) => switch (this) {
+    daily => l10n.frequencyDaily,
+    monthly => l10n.frequencyMonthly,
+    everyMonths => l10n.frequencyEveryMonths,
+    yearly => l10n.frequencyYearly,
+    none => l10n.frequencyNone,
+  };
 
   static RepaymentFrequency byName(String? name) =>
       values.where((f) => f.name == name).firstOrNull ?? none;

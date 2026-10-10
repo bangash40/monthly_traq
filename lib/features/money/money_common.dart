@@ -12,6 +12,7 @@ import 'package:monthly_traq/services/wallet_ledger.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/budget_sheet.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// Every wallet's balance and what's owed to each person, rebuilt whenever
 /// anything in the wallets changes. Call from `build`.
@@ -114,10 +115,10 @@ class MoneySheet extends StatelessWidget {
         if (!isDirty() ||
             await confirmDialog(
                   context,
-                  title: 'Discard changes?',
-                  message: 'What you typed here won\'t be saved.',
-                  confirmLabel: 'Discard',
-                  cancelLabel: 'Keep editing',
+                  title: context.l10n.discardChangesTitle,
+                  message: context.l10n.discardChangesBody,
+                  confirmLabel: context.l10n.discard,
+                  cancelLabel: context.l10n.keepEditing,
                   destructive: true,
                 ) ==
                 true) {
@@ -195,7 +196,9 @@ Future<bool?> confirmDialog(
   required String title,
   required String message,
   required String confirmLabel,
-  String cancelLabel = 'Cancel',
+
+  /// Defaults to "Cancel".
+  String? cancelLabel,
   bool destructive = false,
 }) => showDialog<bool>(
   context: context,
@@ -205,7 +208,7 @@ Future<bool?> confirmDialog(
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(dialogContext, false),
-        child: Text(cancelLabel),
+        child: Text(cancelLabel ?? dialogContext.l10n.cancel),
       ),
       TextButton(
         onPressed: () => Navigator.pop(dialogContext, true),
@@ -233,7 +236,9 @@ Future<WalletChoice?> pickWallet(
   BuildContext context, {
   String? selectedId,
   bool allowNone = false,
-  String title = 'Which wallet?',
+
+  /// Defaults to "Which wallet?".
+  String? title,
   String? excludeId,
 }) {
   return showMoneySheet<WalletChoice>(
@@ -241,7 +246,7 @@ Future<WalletChoice?> pickWallet(
     _WalletPickerSheet(
       selectedId: selectedId,
       allowNone: allowNone,
-      title: title,
+      title: title ?? context.l10n.whichWallet,
       excludeId: excludeId,
     ),
   );
@@ -331,7 +336,7 @@ class _WalletPickerSheet extends StatelessWidget {
                         color: c.muted,
                         size: 40,
                       ),
-                      label: 'No wallet',
+                      label: context.l10n.noWallet,
                       selected: selectedId == null,
                       onTap: () =>
                           Navigator.pop(context, const WalletChoice(null)),
@@ -476,10 +481,15 @@ class PersonChoice {
 Future<PersonChoice?> pickPerson(
   BuildContext context, {
   String? selectedId,
-  String title = 'Whose money?',
+
+  /// Defaults to "Whose money?".
+  String? title,
 }) => showMoneySheet<PersonChoice>(
   context,
-  _PersonPickerSheet(selectedId: selectedId, title: title),
+  _PersonPickerSheet(
+    selectedId: selectedId,
+    title: title ?? context.l10n.whoseMoney,
+  ),
 );
 
 class _PersonPickerSheet extends StatefulWidget {
@@ -549,8 +559,8 @@ class _PersonPickerSheetState extends State<_PersonPickerSheet> {
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _addNew(),
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    hintText: 'Someone new, e.g. Ahmed',
+                  decoration: InputDecoration(
+                    hintText: context.l10n.someoneNewHint,
                     counterText: '',
                   ),
                 ),
@@ -558,7 +568,7 @@ class _PersonPickerSheetState extends State<_PersonPickerSheet> {
               const SizedBox(width: 10),
               FilledButton(
                 onPressed: _name.text.trim().isEmpty ? null : _addNew,
-                child: const Text('Add'),
+                child: Text(context.l10n.add),
               ),
             ],
           ),
@@ -627,8 +637,8 @@ void toastSaveError(BuildContext context, Object error) {
     SnackBar(
       content: Text(
         error is SyncTimeoutException
-            ? error.toString()
-            : 'Couldn\'t save. Please try again.',
+            ? context.l10n.noInternetTryAgain
+            : context.l10n.couldntSaveTryAgain,
       ),
     ),
   );
@@ -642,14 +652,14 @@ String plainAmount(double amount) => GroupedNumberFormatter.formatText(
 );
 
 /// "Today", "Tomorrow", "Yesterday", "Mon, 5 Oct", or "5 Oct 2025".
-String friendlyDate(DateTime date) {
+String friendlyDate(AppLocalizations l10n, DateTime date) {
   final now = DateTime.now();
-  if (DateUtils.isSameDay(date, now)) return 'Today';
+  if (DateUtils.isSameDay(date, now)) return l10n.today;
   if (DateUtils.isSameDay(date, now.add(const Duration(days: 1)))) {
-    return 'Tomorrow';
+    return l10n.tomorrow;
   }
   if (DateUtils.isSameDay(date, now.subtract(const Duration(days: 1)))) {
-    return 'Yesterday';
+    return l10n.yesterday;
   }
   return DateFormat(date.year == now.year ? 'EEE, d MMM' : 'd MMM y')
       .format(date);
@@ -743,7 +753,10 @@ class _CategoryPicker extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Category', style: AppText.section.copyWith(fontSize: 24)),
+          Text(
+            context.l10n.category,
+            style: AppText.section.copyWith(fontSize: 24),
+          ),
           const SizedBox(height: 16),
           Flexible(
             child: SingleChildScrollView(
@@ -774,7 +787,7 @@ class _CategoryPicker extends StatelessWidget {
                               ),
                             ),
                             if (cat.excludeFromBudget) ...[
-                              const TagBadge('Not counted'),
+                              TagBadge(context.l10n.notCounted),
                               const SizedBox(width: 8),
                             ],
                             Icon(

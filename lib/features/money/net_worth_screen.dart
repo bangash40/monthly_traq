@@ -16,6 +16,7 @@ import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/wallets_repository.dart';
 import 'package:monthly_traq/widgets/motion.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// What each Net worth part adds up to right now. Call from `build`.
 Map<NetWorthPart, double> watchNetWorthParts(BuildContext context) {
@@ -68,7 +69,7 @@ class NetWorthScreen extends StatelessWidget {
     };
 
     return SubPageScaffold(
-      title: 'Net worth',
+      title: context.l10n.netWorth,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
         children: [
@@ -78,7 +79,7 @@ class NetWorthScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'What you own, minus what you owe',
+                  context.l10n.netWorthTagline,
                   style: AppText.body.copyWith(color: c.muted),
                 ),
                 const SizedBox(height: 6),
@@ -97,7 +98,7 @@ class NetWorthScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const SectionHeader('Made up of'),
+          SectionHeader(context.l10n.madeUpOf),
           const SizedBox(height: 8),
           GroupCard(
             children: [
@@ -118,10 +119,7 @@ class NetWorthScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Switch a part off to leave it out. Total balance starts off: '
-            'if your income lands in your wallets, it would count the same '
-            'money twice. Others\' money in your wallets is never counted — '
-            'it isn\'t yours.',
+            context.l10n.netWorthHelp,
             style: AppText.label.copyWith(color: c.muted),
           ),
         ],
@@ -159,7 +157,7 @@ class _PartRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    part.label,
+                    part.label(context.l10n),
                     style: AppText.rowTitle.copyWith(
                       fontSize: 16,
                       color: counted ? c.ink : c.muted,
@@ -167,7 +165,7 @@ class _PartRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    part.detail,
+                    part.detail(context.l10n),
                     style: AppText.label.copyWith(color: c.muted),
                   ),
                   const SizedBox(height: 4),
@@ -220,7 +218,9 @@ class NetWorthHomeCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(child: Text('Net worth', style: AppText.section)),
+              Expanded(
+                child: Text(context.l10n.netWorth, style: AppText.section),
+              ),
               Icon(Icons.chevron_right, color: c.faint),
             ],
           ),
@@ -237,7 +237,7 @@ class NetWorthHomeCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'What you own, minus what you owe',
+            context.l10n.netWorthTagline,
             style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
           ),
         ],

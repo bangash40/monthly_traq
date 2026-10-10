@@ -3,16 +3,18 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// "Continue with Google" — an outlined button with the Google "G".
 class GoogleSignInButton extends StatelessWidget {
-  final String label;
+  /// Defaults to "Continue with Google".
+  final String? label;
   final VoidCallback? onPressed;
   final bool loading;
 
   const GoogleSignInButton({
     super.key,
-    this.label = 'Continue with Google',
+    this.label,
     this.onPressed,
     this.loading = false,
   });
@@ -34,7 +36,7 @@ class GoogleSignInButton extends StatelessWidget {
                   const SizedBox.square(dimension: 22, child: _GoogleLogo()),
                   const SizedBox(width: 12),
                   Text(
-                    label,
+                    label ?? context.l10n.continueWithGoogle,
                     style: AppText.button.copyWith(color: context.colors.ink),
                   ),
                 ],
@@ -56,7 +58,10 @@ class OrDivider extends StatelessWidget {
         const Expanded(child: Divider()),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('or', style: AppText.rowTitle.copyWith(color: c.muted)),
+          child: Text(
+            context.l10n.orDivider,
+            style: AppText.rowTitle.copyWith(color: c.muted),
+          ),
         ),
         const Expanded(child: Divider()),
       ],

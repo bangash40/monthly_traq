@@ -12,6 +12,7 @@ import 'package:monthly_traq/services/auth_service.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/widgets/google_sign_in_button.dart';
 import 'package:monthly_traq/widgets/ui.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 class LoginScreen extends StatefulWidget {
   /// True right after a fresh install finishes onboarding — a new user has
@@ -72,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     setState(() => _isLoading = true);
+    final l10n = context.l10n;
     try {
       await _authService.signIn(
         email: _emailController.text.trim(),
@@ -79,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       // AuthGate swaps to the app when the auth state changes.
     } catch (e) {
-      _toast(authErrorMessage(e, AuthAction.logIn));
+      _toast(authErrorMessage(l10n, e, AuthAction.logIn));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -87,11 +89,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _forgotPassword() async {
     final email = _emailController.text.trim();
-    if (validateEmail(email) != null) {
-      _toast('Enter your email above, then tap Forgot? again.');
+    final l10n = context.l10n;
+    if (validateEmail(l10n, email) != null) {
+      _toast(l10n.forgotNeedsEmail);
       return;
     }
-    final sent = 'If $email has an account, a reset link is on its way.';
+    final sent = l10n.resetLinkSent(email);
     try {
       await _authService.sendPasswordReset(email);
       _toast(sent);
@@ -100,12 +103,15 @@ class _LoginScreenState extends State<LoginScreen> {
       // doesn't reveal which emails have accounts.
       final noAccount =
           e is FirebaseAuthException && e.code == 'user-not-found';
-      _toast(noAccount ? sent : authErrorMessage(e, AuthAction.resetPassword));
+      _toast(
+        noAccount ? sent : authErrorMessage(l10n, e, AuthAction.resetPassword),
+      );
     }
   }
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isGoogleLoading = true);
+    final l10n = context.l10n;
     try {
       final credential = await _authService.signInWithGoogle();
       if (credential == null) return; // cancelled the account picker
@@ -114,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await context.read<TransactionsRepository>().seedDefaultsForNewUser();
       }
     } catch (e) {
-      _toast(authErrorMessage(e, AuthAction.google));
+      _toast(authErrorMessage(l10n, e, AuthAction.google));
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }
@@ -141,15 +147,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: AppLogoTile(),
                 ),
                 const SizedBox(height: 32),
-                const Text('Welcome back', style: AppText.titleLarge),
+                Text(context.l10n.welcomeBack, style: AppText.titleLarge),
                 const SizedBox(height: 8),
                 Text(
-                  'Log in to keep tracking your month.',
+                  context.l10n.loginSubtitle,
                   style: AppText.body.copyWith(fontSize: 17, color: c.muted),
                 ),
                 const SizedBox(height: 32),
                 LabeledField(
-                  label: 'Email',
+                  label: context.l10n.email,
                   field: EmailField(
                     controller: _emailController,
                     showIcon: true,
@@ -157,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 18),
                 LabeledField(
-                  label: 'Password',
+                  label: context.l10n.password,
                   trailing: TextButton(
                     onPressed: _forgotPassword,
                     style: TextButton.styleFrom(
@@ -165,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       minimumSize: const Size(0, 28),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('Forgot?'),
+                    child: Text(context.l10n.forgotPassword),
                   ),
                   field: TextFormField(
                     controller: _passwordController,
@@ -174,12 +180,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _login(),
                     decoration: InputDecoration(
-                      hintText: 'Your password',
+                      hintText: context.l10n.passwordHintLogin,
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         tooltip: _obscurePassword
-                            ? 'Show password'
-                            : 'Hide password',
+                            ? context.l10n.showPassword
+                            : context.l10n.hidePassword,
                         icon: Icon(
                           _obscurePassword
                               ? Icons.visibility_outlined
@@ -191,14 +197,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     validator: (value) => (value == null || value.isEmpty)
-                        ? 'Enter your password'
+                        ? context.l10n.passwordEnter
                         : null,
                   ),
                 ),
                 const SizedBox(height: 28),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _login,
-                  child: ButtonLabel('Log in', loading: _isLoading),
+                  child: ButtonLabel(context.l10n.logIn, loading: _isLoading),
                 ),
                 const SizedBox(height: 24),
                 const OrDivider(),
@@ -209,8 +215,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 28),
                 AuthFooterLink(
-                  prompt: 'New to MonthlyTraq?',
-                  action: 'Create account',
+                  prompt: context.l10n.newToApp,
+                  action: context.l10n.createAccount,
                   onTap: _openSignup,
                 ),
               ],

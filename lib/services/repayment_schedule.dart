@@ -1,3 +1,4 @@
+import 'package:monthly_traq/l10n/app_localizations.dart';
 import 'package:monthly_traq/models/repayment_models.dart';
 
 DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -128,10 +129,9 @@ class RepaymentProgress {
 }
 
 /// "Due today", "Due tomorrow", "Due in 3 days", "Overdue 2 days".
-String dueLabel(int days) => switch (days) {
-  0 => 'Due today',
-  1 => 'Due tomorrow',
-  -1 => 'Overdue 1 day',
-  < 0 => 'Overdue ${-days} days',
-  _ => 'Due in $days days',
+String dueLabel(AppLocalizations l10n, int days) => switch (days) {
+  0 => l10n.dueToday,
+  1 => l10n.dueTomorrow,
+  < 0 => l10n.overdueDays(-days),
+  _ => l10n.dueInDays(days),
 };

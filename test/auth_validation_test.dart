@@ -1,10 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/widgets.dart';
 import 'package:monthly_traq/features/auth/auth_validation.dart';
+import 'package:monthly_traq/l10n/app_localizations.dart';
 import 'package:monthly_traq/services/auth_errors.dart';
 
 void main() {
+  final en = lookupAppLocalizations(const Locale('en'));
+
   group('validateEmail', () {
     test('accepts ordinary addresses', () {
       for (final email in [
@@ -13,18 +17,18 @@ void main() {
         'first.last+budget@company.co.uk',
         'a_b-c@sub-domain.example.pk',
       ]) {
-        expect(validateEmail(email), isNull, reason: email);
+        expect(validateEmail(en, email), isNull, reason: email);
       }
     });
 
     test('asks for an email when empty', () {
-      expect(validateEmail(''), 'Enter your email address');
-      expect(validateEmail(null), 'Enter your email address');
-      expect(validateEmail('   '), 'Enter your email address');
+      expect(validateEmail(en, ''), 'Enter your email address');
+      expect(validateEmail(en, null), 'Enter your email address');
+      expect(validateEmail(en, '   '), 'Enter your email address');
     });
 
     test('rejects spaces inside the address', () {
-      expect(validateEmail('ali @gmail.com'), contains('spaces'));
+      expect(validateEmail(en, 'ali @gmail.com'), contains('spaces'));
     });
 
     test('rejects malformed addresses', () {
@@ -47,7 +51,7 @@ void main() {
         'ali(x)@gmail.com',
       ]) {
         expect(
-          validateEmail(email),
+          validateEmail(en, email),
           'Enter a valid email address, like name@example.com',
           reason: email,
         );
@@ -123,12 +127,12 @@ void main() {
         'ali@email.com',
         'someone@yazeed.com',
       ]) {
-        expect(validateSignupEmail(email), isNull, reason: email);
+        expect(validateSignupEmail(en, email), isNull, reason: email);
       }
     });
 
     test('still runs the format check first', () {
-      expect(validateSignupEmail('ali@gmail'), contains('valid email'));
+      expect(validateSignupEmail(en, 'ali@gmail'), contains('valid email'));
     });
 
     test('turns away placeholder addresses', () {
@@ -151,7 +155,7 @@ void main() {
         'ali@abc.xyz',
       ]) {
         expect(
-          validateSignupEmail(email),
+          validateSignupEmail(en, email),
           startsWith('Use your real email address'),
           reason: email,
         );
@@ -166,7 +170,7 @@ void main() {
         'ali@guerrillamail.com',
       ]) {
         expect(
-          validateSignupEmail(email),
+          validateSignupEmail(en, email),
           startsWith('Temporary emails can\'t be used'),
           reason: email,
         );
@@ -174,38 +178,38 @@ void main() {
     });
 
     test('login keeps accepting them, so older accounts still get in', () {
-      expect(validateEmail('ali@example.com'), isNull);
-      expect(validateEmail('ali@test.com'), isNull);
+      expect(validateEmail(en, 'ali@example.com'), isNull);
+      expect(validateEmail(en, 'ali@test.com'), isNull);
     });
   });
 
   group('checkNewPassword', () {
-    PasswordStrength strength(String p) => checkNewPassword(p).strength;
+    PasswordStrength strength(String p) => checkNewPassword(en, p).strength;
 
     test('empty', () {
       expect(strength(''), PasswordStrength.empty);
-      expect(validateNewPassword(''), 'Create a password');
-      expect(validateNewPassword(null), 'Create a password');
+      expect(validateNewPassword(en, ''), 'Create a password');
+      expect(validateNewPassword(en, null), 'Create a password');
     });
 
     test('needs at least 8 characters', () {
-      expect(validateNewPassword('Tk9#mz'), 'Use at least 8 characters');
+      expect(validateNewPassword(en, 'Tk9#mz'), 'Use at least 8 characters');
       expect(strength('Tk9#mz'), PasswordStrength.weak);
     });
 
     test('does not demand uppercase, numbers or symbols', () {
-      expect(validateNewPassword('tealkettle'), isNull);
-      expect(validateNewPassword('rainy tuesday lunch'), isNull);
+      expect(validateNewPassword(en, 'tealkettle'), isNull);
+      expect(validateNewPassword(en, 'rainy tuesday lunch'), isNull);
     });
 
     test('rejects leading or trailing spaces', () {
-      expect(validateNewPassword(' tealkettle'), contains('space'));
-      expect(validateNewPassword('tealkettle '), contains('space'));
+      expect(validateNewPassword(en, ' tealkettle'), contains('space'));
+      expect(validateNewPassword(en, 'tealkettle '), contains('space'));
     });
 
     test('rejects short all-number passwords', () {
-      expect(validateNewPassword('03001234567'), contains('numbers alone'));
-      expect(validateNewPassword('20262026'), isNotNull);
+      expect(validateNewPassword(en, '03001234567'), contains('numbers alone'));
+      expect(validateNewPassword(en, '20262026'), isNotNull);
     });
 
     test('rejects common and easy-to-guess passwords', () {
@@ -231,7 +235,7 @@ void main() {
         'abcdabcd',
       ]) {
         expect(
-          validateNewPassword(password),
+          validateNewPassword(en, password),
           'This password is too common. Try something harder to guess',
           reason: password,
         );
@@ -239,12 +243,13 @@ void main() {
     });
 
     test('a common word inside a longer phrase is fine', () {
-      expect(validateNewPassword('LoveMyKids2026'), isNull);
-      expect(validateNewPassword('cricket at sunset'), isNull);
+      expect(validateNewPassword(en, 'LoveMyKids2026'), isNull);
+      expect(validateNewPassword(en, 'cricket at sunset'), isNull);
     });
 
     test('rejects the person\'s own name or email', () {
       String? check(String p) => validateNewPassword(
+        en,
         p,
         name: 'Farhan Haider',
         email: 'farhan.b@gmail.com',
@@ -256,7 +261,7 @@ void main() {
 
     test('short names are not checked, so "Ali" does not block "Italian"', () {
       expect(
-        validateNewPassword('Italian2026', name: 'Ali', email: 'ali@x.com'),
+        validateNewPassword(en, 'Italian2026', name: 'Ali', email: 'ali@x.com'),
         isNull,
       );
     });
@@ -271,7 +276,7 @@ void main() {
 
     test('an accepted password never has a problem', () {
       for (final p in ['tealkettle', 'Teal-kettle9', 'rainy tuesday lunch']) {
-        expect(checkNewPassword(p).problem, isNull, reason: p);
+        expect(checkNewPassword(en, p).problem, isNull, reason: p);
       }
     });
   });
@@ -283,11 +288,11 @@ void main() {
     test('wrong login details depend on what the user was doing', () {
       for (final code in ['invalid-credential', 'wrong-password']) {
         expect(
-          authErrorMessage(auth(code), AuthAction.logIn),
+          authErrorMessage(en, auth(code), AuthAction.logIn),
           'That email and password don\'t match an account.',
         );
         expect(
-          authErrorMessage(auth(code), AuthAction.confirmIdentity),
+          authErrorMessage(en, auth(code), AuthAction.confirmIdentity),
           'That password isn\'t right.',
         );
       }
@@ -295,23 +300,24 @@ void main() {
 
     test('common failures get friendly messages', () {
       expect(
-        authErrorMessage(auth('network-request-failed'), AuthAction.logIn),
+        authErrorMessage(en, auth('network-request-failed'), AuthAction.logIn),
         startsWith('No internet connection'),
       );
       expect(
-        authErrorMessage(auth('too-many-requests'), AuthAction.logIn),
+        authErrorMessage(en, auth('too-many-requests'), AuthAction.logIn),
         startsWith('Too many attempts'),
       );
       expect(
-        authErrorMessage(auth('email-already-in-use'), AuthAction.signUp),
+        authErrorMessage(en, auth('email-already-in-use'), AuthAction.signUp),
         'That email already has an account. Log in instead.',
       );
       expect(
-        authErrorMessage(auth('user-disabled'), AuthAction.logIn),
+        authErrorMessage(en, auth('user-disabled'), AuthAction.logIn),
         contains('turned off'),
       );
       expect(
         authErrorMessage(
+          en,
           auth('password-does-not-meet-requirements'),
           AuthAction.signUp,
         ),
@@ -321,6 +327,7 @@ void main() {
 
     test('never shows raw Firebase text', () {
       final message = authErrorMessage(
+        en,
         auth('some-new-code'),
         AuthAction.signUp,
       );
@@ -330,7 +337,7 @@ void main() {
 
     test('non-Firebase errors fall back to the action message', () {
       expect(
-        authErrorMessage(Exception('boom'), AuthAction.resetPassword),
+        authErrorMessage(en, Exception('boom'), AuthAction.resetPassword),
         'Couldn\'t send the reset email. Please try again.',
       );
     });
@@ -338,6 +345,7 @@ void main() {
     test('Google sign-in errors', () {
       expect(
         authErrorMessage(
+          en,
           const GoogleSignInException(
             code: GoogleSignInExceptionCode.uiUnavailable,
           ),
@@ -347,6 +355,7 @@ void main() {
       );
       expect(
         authErrorMessage(
+          en,
           const GoogleSignInException(
             code: GoogleSignInExceptionCode.unknownError,
           ),

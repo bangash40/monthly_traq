@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:monthly_traq/app/text_styles.dart';
 import 'package:monthly_traq/app/theme.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 
 /// A sheet with days 1–31 for which day the budget cycle resets — useful
 /// when income (like a salary) doesn't land on the 1st.
@@ -21,11 +22,14 @@ class _MonthStartDaySheet extends StatelessWidget {
   Future<void> _select(BuildContext context, int day) async {
     final repo = context.read<TransactionsRepository>();
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     Navigator.pop(context);
     try {
       await repo.updateMonthStartDay(day);
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.couldNotSave(errorMessage(l10n, e)))),
+      );
     }
   }
 
@@ -43,12 +47,12 @@ class _MonthStartDaySheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Month starts on',
+            context.l10n.monthStartsOn,
             style: AppText.section.copyWith(fontSize: 24),
           ),
           const SizedBox(height: 6),
           Text(
-            'Pick the day your budget resets — usually your payday.',
+            context.l10n.monthStartsOnHelp,
             style: AppText.body.copyWith(color: c.muted),
           ),
           const SizedBox(height: 18),
@@ -83,7 +87,7 @@ class _MonthStartDaySheet extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'In shorter months, 29–31 fall back to the month\'s last day.',
+            context.l10n.monthStartsOnShortMonths,
             style: AppText.caption.copyWith(color: c.muted),
           ),
         ],

@@ -1,6 +1,8 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:monthly_traq/models/repayment_models.dart';
 import 'package:monthly_traq/services/repayment_schedule.dart';
+import 'package:monthly_traq/l10n/app_localizations.dart';
 
 RepaymentModel _repayment({
   double total = 271200,
@@ -31,6 +33,8 @@ RepaymentPayment _paid(double amount, {String id = 'bike'}) => RepaymentPayment(
 );
 
 void main() {
+  final en = lookupAppLocalizations(const Locale('en'));
+
   group('due dates', () {
     test('monthly keeps its day, and the 31st falls back in short months', () {
       final r = _repayment(nextDue: DateTime(2026, 1, 31));
@@ -66,11 +70,11 @@ void main() {
     });
 
     test('labels', () {
-      expect(dueLabel(0), 'Due today');
-      expect(dueLabel(1), 'Due tomorrow');
-      expect(dueLabel(5), 'Due in 5 days');
-      expect(dueLabel(-1), 'Overdue 1 day');
-      expect(dueLabel(-3), 'Overdue 3 days');
+      expect(dueLabel(en, 0), 'Due today');
+      expect(dueLabel(en, 1), 'Due tomorrow');
+      expect(dueLabel(en, 5), 'Due in 5 days');
+      expect(dueLabel(en, -1), 'Overdue 1 day');
+      expect(dueLabel(en, -3), 'Overdue 3 days');
     });
   });
 

@@ -6,6 +6,7 @@ import 'package:monthly_traq/app/money.dart';
 import 'package:monthly_traq/app/offline_banner.dart';
 import 'package:monthly_traq/app/onboarding_gate.dart';
 import 'package:monthly_traq/app/theme_controller.dart';
+import 'package:monthly_traq/l10n/l10n.dart';
 import 'package:monthly_traq/services/transactions_repository.dart';
 import 'package:monthly_traq/services/goals_repository.dart';
 import 'package:monthly_traq/services/investments_repository.dart';
@@ -21,12 +22,10 @@ final _messenger = GlobalKey<ScaffoldMessengerState>();
 /// "Undo") shows first and stays in reach.
 void _showSavedOfflineNote() {
   Future.delayed(const Duration(milliseconds: 700), () {
-    _messenger.currentState?.showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Saved on your phone. It\'ll sync when you\'re back online.',
-        ),
-      ),
+    final messenger = _messenger.currentState;
+    if (messenger == null) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text(messenger.context.l10n.savedOffline)),
     );
   });
 }
@@ -56,8 +55,15 @@ class MonthlyTraqApp extends StatelessWidget {
       child: Consumer<ThemeController>(
         builder: (context, themeController, _) {
           final theme = themeController.theme;
+          final languageCode = context.select<AppSettings, String?>(
+            (s) => s.languageCode,
+          );
           return MaterialApp(
             title: 'MonthlyTraq',
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            // Null follows the phone's language, falling back to English.
+            locale: languageCode == null ? null : Locale(languageCode),
             scaffoldMessengerKey: _messenger,
             debugShowCheckedModeBanner: false,
             home: const OnboardingGate(),
